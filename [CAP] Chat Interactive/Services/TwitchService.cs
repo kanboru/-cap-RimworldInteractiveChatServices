@@ -349,6 +349,12 @@ namespace CAP_ChatInteractive
             foreach (var msg in messages)
             {
                 SendSingleMessage(msg);
+
+                // Add a small delay between messages to ensure they're sent in order
+                if (messages.Count > 1)
+                {
+                    System.Threading.Thread.Sleep(200); // 200ms delay between messages
+                }
             }
         }
 

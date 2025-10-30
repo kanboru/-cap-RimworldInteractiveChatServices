@@ -267,13 +267,6 @@ namespace CAP_ChatInteractive
             }
         }
 
-        private static void RegisterDefaultCommands()
-        {
-            RegisterCommand(new HelpCommand());
-            RegisterCommand(new PointsCommand());
-            // More commands will be added from XML Defs
-        }
-
         public static IEnumerable<ChatCommand> GetAvailableCommands(ChatMessageWrapper user)
         {
             return _commands.Values.Distinct().Where(cmd => cmd.CanExecute(user));

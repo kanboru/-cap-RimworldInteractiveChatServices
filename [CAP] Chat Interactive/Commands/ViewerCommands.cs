@@ -718,21 +718,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         private string ShowMyPawnHelp()
         {
-            return "Usage: !mypawn <info-type>\n" +
-                   "Available info types:\n" +
-                   "• body/health - Show pawn's health and body information\n" +  
-                   "• gear - Show equipped items and apparel\n" +
-                   "• health [capacity] - Show health status\n" +
-                   "• kills - Show kill count and history\n" +
-                   "• needs - Show pawn's needs\n" +
-                   "• relations [viewer] - Show relationships\n" +
-                   "• skills - Show skill levels\n" +
-                   "• stats [stat1] [stat2] - Show specific stats\n" +
-                   "• story backstory - Show detailed backstories\n" +
-                   "• story traits - Show detailed traits\n" +
-                   "• story all - Show complete story info\n" +
-                   "• work [worktype=priority] - Show work priorities\n" +
-                   "Example: !mypawn health, !mypawn skills, !mypawn stats shooting melee";
+            return "!mypawn <type>: body, gear, kills, needs, relations, skills, stats, story, traits, work\n" +
+                "Ex: !mypawn health, !mypawn skills, !mypawn stats shooting melee";
         }
     }
 

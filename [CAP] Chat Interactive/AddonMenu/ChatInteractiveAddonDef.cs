@@ -33,7 +33,7 @@ namespace CAP_ChatInteractive
             }
             catch (Exception ex)
             {
-                // Logger.Error($"Failed to create addon menu for {defName}: {ex.Message}");
+                Logger.Error($"Failed to create addon menu for {defName}: {ex.Message}");
                 return null;
             }
         }

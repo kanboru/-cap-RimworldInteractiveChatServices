@@ -62,8 +62,9 @@ namespace CAP_ChatInteractive.Incidents.Weather
                 }
                 return true;
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
+                Logger.Error($"Error loading weather JSON: {e.Message}");   
                 return false;
             }
         }

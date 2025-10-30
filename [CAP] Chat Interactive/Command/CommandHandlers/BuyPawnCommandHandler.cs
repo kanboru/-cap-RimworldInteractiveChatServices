@@ -194,7 +194,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     allowDead: false,
                     allowDowned: false,
                     canGeneratePawnRelations: true,
-                    mustBeCapableOfViolence: true,
+                    mustBeCapableOfViolence: false,
                     colonistRelationChanceFactor: 0f,
                     forceAddFreeWarmLayerIfNeeded: true,
                     allowGay: true,

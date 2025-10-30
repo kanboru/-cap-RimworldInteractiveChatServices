@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEngine;
 using Verse;
 
 namespace CAP_ChatInteractive.Commands.CommandHandlers
@@ -24,10 +25,10 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 var assignmentManager = CAPChatInteractiveMod.GetPawnAssignmentManager();
 
                 // Check if viewer already has a pawn assigned using the new manager
-                if (assignmentManager != null && assignmentManager.HasAssignedPawn(user.Username))
+                if (assignmentManager != null)
                 {
                     Pawn existingPawn = assignmentManager.GetAssignedPawn(user.Username);
-                    if (existingPawn == null || existingPawn.Dead)
+                    if (existingPawn == null)
                     {
                         return "You don't have an active pawn in the colony. Use !pawn to purchase one!";
                     }
@@ -55,7 +56,9 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     case "stats":
                         return HandleStatsInfo(pawn, args);
                     case "story":
-                        return HandleStoryInfo(pawn, args);
+                        return HandleBackstoriesInfo(pawn, args);
+                    case "traits":
+                        return HandleTraitsInfo(pawn, args);
                     case "work":
                         return HandleWorkInfo(pawn, args);
                     default:
@@ -87,6 +90,10 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             // Get visible health conditions grouped by body part
             var healthConditions = GetVisibleHealthConditions(pawn);
 
+            int maxConditions = 8;
+            var limitedConditions = healthConditions.Take(maxConditions).ToList();
+            bool hasMore = healthConditions.Count > maxConditions;
+
             if (healthConditions.Count == 0)
             {
                 report.AppendLine("No visible health issues. ✅");
@@ -95,7 +102,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
             report.AppendLine("Health Conditions:");
 
-            foreach (var partGroup in healthConditions)
+            foreach (var partGroup in limitedConditions)
             {
                 string partName = partGroup.Key?.LabelCap ?? "Whole Body";
                 report.Append($"• {partName}: ");
@@ -116,6 +123,11 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     report.Append(string.Join(", ", conditions));
                     report.AppendLine();
                 }
+            }
+
+            if (hasMore)
+            {
+                report.AppendLine($"... and {healthConditions.Count - maxConditions} more conditions");
             }
 
             // Add summary
@@ -215,11 +227,17 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 report.AppendLine("👕 Apparel:");
                 foreach (var item in apparel)
                 {
+                    // Get base name without quality
+                    string baseName = StripTags(item.def.LabelCap);
+
+                    // Add quality if it exists
                     string quality = item.TryGetQuality(out QualityCategory qc) ? $" ({qc})" : "";
+
+                    // Add hit points if damaged
                     string hitPoints = item.HitPoints != item.MaxHitPoints ?
                         $" 🩹{((float)item.HitPoints / item.MaxHitPoints).ToStringPercent()}" : "";
 
-                    report.AppendLine($"  • {StripTags(item.LabelCap)}{quality}{hitPoints}");
+                    report.AppendLine($"  • {baseName}{quality}{hitPoints}");
                 }
             }
             else
@@ -327,28 +345,63 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static string GetArmorSummary(Pawn pawn)
         {
-            var armorStats = new List<string>();
-
-            // Simple armor values from RimWorld stats
-            float sharpArmor = pawn.GetStatValue(StatDefOf.ArmorRating_Sharp);
-            float bluntArmor = pawn.GetStatValue(StatDefOf.ArmorRating_Blunt);
-            float heatArmor = pawn.GetStatValue(StatDefOf.ArmorRating_Heat);
-
-            if (sharpArmor > 0.01f)
-                armorStats.Add($"🗡️{sharpArmor.ToStringPercent()}");
-
-            if (bluntArmor > 0.01f)
-                armorStats.Add($"🔨{bluntArmor.ToStringPercent()}");
-
-            if (heatArmor > 0.01f)
-                armorStats.Add($"🔥{heatArmor.ToStringPercent()}");
-
-            if (armorStats.Count > 0)
+            try
             {
-                return $"🛡️ Armor: {string.Join(" ", armorStats)}\n";
+                float sharpArmor = CalculateArmorRating(pawn, StatDefOf.ArmorRating_Sharp);
+                float bluntArmor = CalculateArmorRating(pawn, StatDefOf.ArmorRating_Blunt);
+                float heatArmor = CalculateArmorRating(pawn, StatDefOf.ArmorRating_Heat);
+
+                Logger.Debug($"Calculated armor: Sharp={sharpArmor:P0}, Blunt={bluntArmor:P0}, Heat={heatArmor:P0}");
+
+                var armorStats = new List<string>();
+
+                if (sharpArmor >= 0.01f)
+                    armorStats.Add($"🗡️{sharpArmor.ToStringPercent()}");
+
+                if (bluntArmor >= 0.01f)
+                    armorStats.Add($"🔨{bluntArmor.ToStringPercent()}");
+
+                if (heatArmor >= 0.01f)
+                    armorStats.Add($"🔥{heatArmor.ToStringPercent()}");
+
+                if (armorStats.Count > 0)
+                {
+                    return $"🛡️ Armor: {string.Join(" ", armorStats)}\n";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error calculating armor: {ex}");
             }
 
             return "🛡️ Armor: None\n";
+        }
+
+        private static float CalculateArmorRating(Pawn pawn, StatDef stat)
+        {
+            if (pawn.apparel?.WornApparel == null || !pawn.apparel.WornApparel.Any())
+                return 0f;
+
+            var rating = 0f;
+            float baseValue = Mathf.Clamp01(pawn.GetStatValue(stat) / 2f);
+            var parts = pawn.RaceProps.body.AllParts;
+            var apparel = pawn.apparel.WornApparel;
+
+            foreach (var part in parts)
+            {
+                float cache = 1f - baseValue;
+
+                if (apparel != null && apparel.Any())
+                {
+                    cache = apparel.Where(a => a.def.apparel?.CoversBodyPart(part) ?? false)
+                       .Select(a => Mathf.Clamp01(a.GetStatValue(stat) / 2f))
+                       .Aggregate(cache, (current, v) => current * (1f - v));
+                }
+
+                rating += part.coverageAbs * (1f - cache);
+            }
+
+            return Mathf.Clamp(rating * 2f, 0f, 2f);
         }
 
         private static string StripTags(string text)
@@ -736,21 +789,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             };
         }
 
-        private static string GetSkillLevelDescription(int level)
-        {
-            return level switch
-            {
-                >= 20 => "Legendary 🌟",
-                >= 16 => "Master 🎯",
-                >= 12 => "Expert 💪",
-                >= 8 => "Skilled ✨",
-                >= 4 => "Competent 👍",
-                >= 1 => "Novice 👶",
-                _ => "Ignorant ❓"
-            };
-        }
-
-        // Alternative more detailed level descriptions if you prefer:
         private static string GetSkillLevelDescriptionDetailed(int level)
         {
             if (level >= 20) return "Legendary 🌟";
@@ -808,7 +846,8 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             report.AppendLine();
             report.AppendLine("💡 Usage: !mypawn stats <stat1> <stat2> ...");
             report.AppendLine("Examples: !mypawn stats movespeed shootingaccuracy meleedps");
-            report.AppendLine("Available: movespeed, shootingaccuracy, meleehitchance, meleedps, workspeed, medicaltend, socialimpact, tradeprice, etc.");
+            // reduced for brevity
+            //report.AppendLine("Available: movespeed, shootingaccuracy, meleehitchance, meleedps, workspeed, medicaltend, socialimpact, tradeprice, etc.");
 
             return report.ToString();
         }
@@ -887,66 +926,19 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
         }
 
-        private static string HandleStoryInfo(Pawn pawn, string[] args)
-        {
-            // If specific subcommand provided, route to appropriate handler
-            if (args.Length > 0)
-            {
-                string subCommand = args[0].ToLower();
-                switch (subCommand)
-                {
-                    case "backstory":
-                    case "backstories":
-                    case "history":
-                        return HandleBackstoriesInfo(pawn, args.Skip(1).ToArray());
-                    case "traits":
-                        return HandleTraitsInfo(pawn, args.Skip(1).ToArray());
-                    case "all":
-                        return HandleFullStoryInfo(pawn);
-                }
-            }
-
-            // Default: show brief overview
-            return GetStoryOverview(pawn);
-        }
-
-        private static string GetStoryOverview(Pawn pawn)
-        {
-            var report = new StringBuilder();
-            report.AppendLine($"📖 Story Overview for {pawn.Name}:");
-
-            // Backstory count
-            int backstoryCount = 0;
-            if (pawn.story?.Childhood != null) backstoryCount++;
-            if (pawn.story?.Adulthood != null) backstoryCount++;
-
-            report.AppendLine($"• Backstories: {backstoryCount} (use !mypawn story backstory for details)");
-
-            // Traits
-            if (pawn.story?.traits != null && pawn.story.traits.allTraits.Count > 0)
-            {
-                var traitNames = pawn.story.traits.allTraits.Select(t => StripTags(t.LabelCap));
-                report.AppendLine($"• Traits: {string.Join(", ", traitNames)}");
-                report.AppendLine($"  (use !mypawn story traits for details)");
-            }
-            else
-            {
-                report.AppendLine("• Traits: None");
-            }
-
-            return report.ToString();
-        }
-
         private static string HandleBackstoriesInfo(Pawn pawn, string[] args)
         {
             var report = new StringBuilder();
             report.AppendLine($"👤 Backstories for {pawn.Name}:");
 
-            // Childhood backstory
+            // Childhood backstory - truncated to fit in one message
             if (pawn.story?.Childhood != null)
             {
+                var childhoodDesc = StripTags(pawn.story.Childhood.FullDescriptionFor(pawn));
+                var truncatedChildhood = TruncateDescription(childhoodDesc, 183); // Limit to 188 chars
+
                 report.AppendLine($"🎒 Childhood: {StripTags(pawn.story.Childhood.title)}");
-                report.AppendLine($"   {StripTags(pawn.story.Childhood.FullDescriptionFor(pawn))}");
+                report.AppendLine($"   {truncatedChildhood}");
             }
             else
             {
@@ -955,11 +947,14 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
             report.AppendLine(); // Spacing
 
-            // Adulthood backstory (only if pawn is old enough)
+            // Adulthood backstory - truncated to fit in one message
             if (pawn.story?.Adulthood != null)
             {
+                var adulthoodDesc = StripTags(pawn.story.Adulthood.FullDescriptionFor(pawn));
+                var truncatedAdulthood = TruncateDescription(adulthoodDesc, 183); // Limit to 183 chars
+
                 report.AppendLine($"🧑 Adulthood: {StripTags(pawn.story.Adulthood.title)}");
-                report.AppendLine($"   {StripTags(pawn.story.Adulthood.FullDescriptionFor(pawn))}");
+                report.AppendLine($"   {truncatedAdulthood}");
             }
             else if (pawn.ageTracker.AgeBiologicalYears >= 18)
             {
@@ -970,15 +965,22 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 report.AppendLine("🧑 Adulthood: Too young for adulthood backstory");
             }
 
-            // Backstory stats if requested
-            if (args.Length > 0 && args[0].ToLower() == "stats")
+            return report.ToString();
+        }
+
+        private static string TruncateDescription(string description, int maxLength)
+        {
+            if (string.IsNullOrEmpty(description) || description.Length <= maxLength)
+                return description;
+
+            // Find the last space before maxLength to avoid breaking words
+            int lastSpace = description.LastIndexOf(' ', maxLength - 3);
+            if (lastSpace > 0)
             {
-                report.AppendLine();
-                report.AppendLine("📊 Backstory Skill Modifiers:");
-                report.Append(GetBackstorySkillModifiers(pawn));
+                return description.Substring(0, lastSpace) + "...";
             }
 
-            return report.ToString();
+            return description.Substring(0, maxLength - 3) + "...";
         }
 
         private static string HandleTraitsInfo(Pawn pawn, string[] args)
@@ -1009,42 +1011,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
 
             return report.ToString();
-        }
-
-        private static string HandleFullStoryInfo(Pawn pawn)
-        {
-            var report = new StringBuilder();
-            report.AppendLine($"📚 Complete Story for {pawn.Name}:");
-
-            // Backstories section
-            report.AppendLine(HandleBackstoriesInfo(pawn, new string[0]));
-            report.AppendLine();
-
-            // Traits section  
-            report.AppendLine(HandleTraitsInfo(pawn, new string[0]));
-
-            return report.ToString();
-        }
-
-        private static string GetBackstorySkillModifiers(Pawn pawn)
-        {
-            var modifiers = new StringBuilder();
-
-            // Check childhood modifiers
-            if (pawn.story?.Childhood?.workDisables != 0)
-            {
-                modifiers.AppendLine($"Childhood disables: {pawn.story.Childhood.workDisables}");
-            }
-
-            // Check adulthood modifiers  
-            if (pawn.story?.Adulthood?.workDisables != 0)
-            {
-                modifiers.AppendLine($"Adulthood disables: {pawn.story.Adulthood.workDisables}");
-            }
-
-            // You could add more detailed skill modifier analysis here if needed
-
-            return modifiers.Length > 0 ? modifiers.ToString() : "No significant skill modifiers from backstories.";
         }
 
         private static string HandleWorkInfo(Pawn pawn, string[] args)

@@ -50,38 +50,8 @@ namespace CAP_ChatInteractive.Utilities
                 return SplitListMessage(message, effectiveMax, prefix);
             }
 
-            var sentences = SplitIntoSentences(message);
-            var currentPart = new StringBuilder();
-
-            foreach (var sentence in sentences)
-            {
-                if (currentPart.Length + sentence.Length > effectiveMax)
-                {
-                    if (currentPart.Length > 0)
-                    {
-                        parts.Add(prefix + currentPart.ToString().Trim());
-                        currentPart.Clear();
-                    }
-
-                    if (sentence.Length > effectiveMax)
-                    {
-                        var wordParts = SplitByWords(sentence, effectiveMax);
-                        parts.AddRange(wordParts.Select(p => prefix + p));
-                        continue;
-                    }
-                }
-
-                if (currentPart.Length > 0)
-                    currentPart.Append(" ");
-                currentPart.Append(sentence);
-            }
-
-            if (currentPart.Length > 0)
-            {
-                parts.Add(prefix + currentPart.ToString().Trim());
-            }
-
-            return AddPagination(parts, prefix);
+            // Simply split by max length without sentence logic
+            return SplitByMaxLengthOnly(message, effectiveMax, prefix);
         }
 
         private static List<string> SplitForYouTube(string message, int maxLength, string username)
@@ -96,32 +66,52 @@ namespace CAP_ChatInteractive.Utilities
                 return SplitListMessage(message, effectiveMax, prefix);
             }
 
-            var sentences = SplitIntoSentences(message);
+            // Simply split by max length without sentence logic
+            return SplitByMaxLengthOnly(message, effectiveMax, prefix);
+        }
+
+        private static List<string> SplitByMaxLengthOnly(string message, int maxLength, string prefix)
+        {
+            var parts = new List<string>();
+
+            // If the entire message fits, just return it
+            if (message.Length <= maxLength)
+            {
+                parts.Add(prefix + message);
+                return parts;
+            }
+
+            var words = message.Split(' ');
             var currentPart = new StringBuilder();
 
-            foreach (var sentence in sentences)
+            foreach (var word in words)
             {
-                if (currentPart.Length + sentence.Length > effectiveMax)
+                // Check if adding this word would exceed max length
+                if (currentPart.Length + word.Length + 1 > maxLength)
                 {
+                    // If current part has content, add it to parts
                     if (currentPart.Length > 0)
                     {
                         parts.Add(prefix + currentPart.ToString().Trim());
                         currentPart.Clear();
                     }
 
-                    if (sentence.Length > effectiveMax)
+                    // If a single word is too long, split it
+                    if (word.Length > maxLength)
                     {
-                        var chunks = SplitSentenceForYouTube(sentence, effectiveMax);
-                        parts.AddRange(chunks.Select(c => prefix + c));
+                        var wordChunks = SplitLongWord(word, maxLength);
+                        parts.AddRange(wordChunks.Select(chunk => prefix + chunk));
                         continue;
                     }
                 }
 
+                // Add the word to current part
                 if (currentPart.Length > 0)
                     currentPart.Append(" ");
-                currentPart.Append(sentence);
+                currentPart.Append(word);
             }
 
+            // Add any remaining content
             if (currentPart.Length > 0)
             {
                 parts.Add(prefix + currentPart.ToString().Trim());
@@ -130,73 +120,12 @@ namespace CAP_ChatInteractive.Utilities
             return AddPagination(parts, prefix);
         }
 
-        private static List<string> SplitSentenceForYouTube(string sentence, int maxLength)
-        {
-            return SplitByWords(sentence, maxLength);
-        }
-
-        private static List<string> SplitIntoSentences(string text)
-        {
-            var sentences = new List<string>();
-            var current = new StringBuilder();
-
-            foreach (char c in text)
-            {
-                current.Append(c);
-                if (c == '.' || c == '!' || c == '?' || c == ',' || c == ';')
-                {
-                    sentences.Add(current.ToString().Trim());
-                    current.Clear();
-                }
-            }
-
-            if (current.Length > 0)
-                sentences.Add(current.ToString().Trim());
-
-            return sentences.Where(s => !string.IsNullOrEmpty(s)).ToList();
-        }
-
-        private static List<string> SplitByWords(string text, int maxLength)
-        {
-            var parts = new List<string>();
-            var words = text.Split(' ');
-            var currentPart = new StringBuilder();
-
-            foreach (var word in words)
-            {
-                if (currentPart.Length + word.Length + 1 > maxLength)
-                {
-                    if (currentPart.Length > 0)
-                    {
-                        parts.Add(currentPart.ToString().Trim());
-                        currentPart.Clear();
-                    }
-
-                    if (word.Length > maxLength)
-                    {
-                        var chunks = SplitString(word, maxLength);
-                        parts.AddRange(chunks);
-                        continue;
-                    }
-                }
-
-                if (currentPart.Length > 0)
-                    currentPart.Append(" ");
-                currentPart.Append(word);
-            }
-
-            if (currentPart.Length > 0)
-                parts.Add(currentPart.ToString().Trim());
-
-            return parts;
-        }
-
-        private static List<string> SplitString(string text, int chunkSize)
+        private static List<string> SplitLongWord(string word, int maxLength)
         {
             var chunks = new List<string>();
-            for (int i = 0; i < text.Length; i += chunkSize)
+            for (int i = 0; i < word.Length; i += maxLength)
             {
-                chunks.Add(text.Substring(i, Math.Min(chunkSize, text.Length - i)));
+                chunks.Add(word.Substring(i, Math.Min(maxLength, word.Length - i)));
             }
             return chunks;
         }
@@ -274,9 +203,20 @@ namespace CAP_ChatInteractive.Utilities
                         cleanPart = cleanPart.Substring(prefix.Length);
                     }
                     parts[i] = $"{prefix}{cleanPart} ({i + 1}/{parts.Count})";
+
+                    // Check if adding pagination made it too long
+                    if (parts[i].Length > GetPlatformMaxLength("twitch")) // Use appropriate platform
+                    {
+                        // If too long, truncate and add pagination
+                        int maxWithoutPagination = GetPlatformMaxLength("twitch") - $" ({i + 1}/{parts.Count})".Length;
+                        if (cleanPart.Length > maxWithoutPagination)
+                        {
+                            cleanPart = cleanPart.Substring(0, maxWithoutPagination - 3) + "...";
+                        }
+                        parts[i] = $"{prefix}{cleanPart} ({i + 1}/{parts.Count})";
+                    }
                 }
             }
-
             return parts;
         }
     }
