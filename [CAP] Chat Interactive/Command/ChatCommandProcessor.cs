@@ -257,6 +257,60 @@ namespace CAP_ChatInteractive
             }
         }
 
+        public static void SendMessageToUsername(string username, string text)
+        {
+            try
+            {
+                var viewer = Viewers.GetViewer(username);
+                if (viewer == null) return;
+
+                var mod = CAPChatInteractiveMod.Instance;
+                if (mod == null) return;
+
+                // Determine which platform this user is from
+                string platform = DetermineUserPlatform(viewer);
+
+                if (platform == "twitch" && mod.TwitchService?.IsConnected == true)
+                {
+                    mod.TwitchService.SendMessage($"@{username} {text}");
+                }
+                else if (platform == "youtube" && mod.YouTubeService?.IsConnected == true)
+                {
+                    // YouTube has API limitations
+                    if (mod.YouTubeService.CanSendMessages)
+                    {
+                        mod.YouTubeService.SendMessage($"@{username} {text}");
+                    }
+                    else
+                    {
+                        // Fallback to in-game notification for YouTube
+                        Messages.Message($"[YouTube] @{username} {text}", MessageTypeDefOf.NeutralEvent);
+                    }
+                }
+                else
+                {
+                    // Fallback - user platform unknown or service not connected
+                    Messages.Message($"[Chat] @{username} {text}", MessageTypeDefOf.NeutralEvent);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error sending message to username {username}: {ex.Message}");
+            }
+        }
+
+        private static string DetermineUserPlatform(Viewer viewer)
+        {
+            // Check which platform IDs the user has
+            if (viewer.PlatformUserIds.ContainsKey("twitch"))
+                return "twitch";
+            if (viewer.PlatformUserIds.ContainsKey("youtube"))
+                return "youtube";
+
+            // Default to Twitch if we can't determine (most common case)
+            return "twitch";
+        }
+
         public static void RegisterCommand(ChatCommand command)
         {
             _commands[command.Name] = command;

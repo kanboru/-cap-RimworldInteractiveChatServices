@@ -563,16 +563,18 @@ namespace CAP_ChatInteractive
         {
             var queueManager = GetQueueManager();
 
-            // Remove from queue and add as pending offer
+            // Remove from queue and add as pending offer (DO NOT assign pawn yet)
             queueManager.RemoveFromQueue(username);
-            queueManager.AddPendingOffer(username, 60); // 60 second timeout
+            queueManager.AddPendingOffer(username, pawn); // Pass the pawn to the offer
 
-            // Assign pawn to viewer
-            queueManager.AssignPawnToViewer(username, pawn);
+            // Get the actual timeout being used for the message
+            var settings = CAPChatInteractiveMod.Instance?.Settings?.GlobalSettings;
+            int timeoutSeconds = settings?.PawnOfferTimeoutSeconds ?? 300;
+            int timeoutMinutes = timeoutSeconds / 60;
 
-            // Send chat message
-            string offerMessage = $"🎉 @{username} You've been assigned {pawn.Name}! Type !acceptpawn within 60 seconds to claim your pawn!";
-            //MessageHandler.SendChatMessage(offerMessage);
+            // Send chat message with real timeout
+            string offerMessage = $"🎉 You've been offered {pawn.Name}! Type !acceptpawn within {timeoutMinutes} minutes to claim your pawn!";
+            ChatCommandProcessor.SendMessageToUsername(username, offerMessage);
 
             // Update UI
             RefreshAvailablePawns();

@@ -79,6 +79,8 @@ namespace CAP_ChatInteractive
         public bool EventCooldownsEnabled = true;
         public int EventCooldownDays = 15;
         public int EventsperCooldown = 5;
+        // New pawn queue settings
+        public int PawnOfferTimeoutSeconds = 300; // 5 minutes default
 
         public bool KarmaTypeLimitsEnabled = false;
         public int MaxBadEvents = 3;
@@ -118,6 +120,7 @@ namespace CAP_ChatInteractive
             Scribe_Values.Look(ref MaxGoodEvents, "maxGoodEvents", 10);
             Scribe_Values.Look(ref MaxNeutralEvents, "maxNeutralEvents", 10);
             Scribe_Values.Look(ref MaxItemPurchases, "maxItemPurchases", 10);
+            Scribe_Values.Look(ref PawnOfferTimeoutSeconds, "pawnOfferTimeoutSeconds", 300);
 
             Scribe_Values.Look(ref Prefix, "prefix", "!");
             Scribe_Values.Look(ref BuyPrefix, "buyPrefix", "$");

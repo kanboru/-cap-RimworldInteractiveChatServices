@@ -99,9 +99,38 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         {
             try
             {
-                // This will be called when a user accepts a pawn offer
-                // We'll implement this after the dialog system
-                return "Pawn acceptance functionality coming soon!";
+                var assignmentManager = CAPChatInteractiveMod.GetPawnAssignmentManager();
+
+                Logger.Debug($"Accept pawn command received from {user.Username}");
+
+                // Check if user has a pending offer
+                if (!assignmentManager.HasPendingOffer(user.Username))
+                {
+                    Logger.Debug($"No pending offer found for {user.Username}");
+                    return "You don't have a pending pawn offer. Join the queue with !join to get in line!";
+                }
+
+                // Check if user already has a pawn
+                if (assignmentManager.HasAssignedPawn(user.Username))
+                {
+                    Logger.Debug($"User {user.Username} already has an assigned pawn");
+                    assignmentManager.RemovePendingOffer(user.Username);
+                    return "You already have a pawn assigned! Use !leave to release your current pawn first.";
+                }
+
+                // Accept the offer and get the assigned pawn
+                Pawn assignedPawn = assignmentManager.AcceptPendingOffer(user.Username);
+
+                if (assignedPawn != null)
+                {
+                    Logger.Debug($"Successfully accepted pawn {assignedPawn.Name} for {user.Username}");
+                    return $"🎉 @{user.Username}, you have accepted your pawn {assignedPawn.Name}. Welcome to the colony!";
+                }
+                else
+                {
+                    Logger.Debug($"Pawn acceptance failed for {user.Username} - pawn no longer available");
+                    return "❌ Your pawn offer is no longer valid. Please join the queue again with !join";
+                }
             }
             catch (Exception ex)
             {

@@ -213,13 +213,21 @@ namespace CAP_ChatInteractive
             pawnQueue.Clear();
             queueJoinTimes.Clear();
         }
-        public void AddPendingOffer(string username, int timeoutSeconds = 60)
+        public void AddPendingOffer(string username, Pawn pawn, int timeoutSeconds = -1)
         {
+            // Use global setting if not specified, default to 300 seconds (5 minutes)
+            if (timeoutSeconds == -1)
+            {
+                var settings = CAPChatInteractiveMod.Instance?.Settings?.GlobalSettings;
+                timeoutSeconds = settings?.PawnOfferTimeoutSeconds ?? 300;
+            }
+
             pendingOffers[username.ToLowerInvariant()] = new PendingPawnOffer
             {
                 Username = username,
                 OfferTime = Find.TickManager.TicksGame,
-                TimeoutTicks = timeoutSeconds * 60 // Convert to ticks
+                TimeoutTicks = timeoutSeconds * 60,
+                PawnThingId = pawn?.ThingID // NEW: Store the pawn's ID
             };
         }
 
@@ -228,15 +236,45 @@ namespace CAP_ChatInteractive
             return pendingOffers.ContainsKey(username.ToLowerInvariant());
         }
 
-        public bool AcceptPendingOffer(string username)
+        public Pawn AcceptPendingOffer(string username)
         {
             string lowerUsername = username.ToLowerInvariant();
-            if (pendingOffers.ContainsKey(lowerUsername))
+            if (pendingOffers.TryGetValue(lowerUsername, out PendingPawnOffer offer))
             {
+                // Find the pawn by its stored ThingID
+                Pawn pawn = FindPawnByThingId(offer.PawnThingId);
                 pendingOffers.Remove(lowerUsername);
-                return true;
+
+                // Only assign if pawn is still valid
+                if (pawn != null && !pawn.Dead)
+                {
+                    // Set the pawn's nickname to the username
+                    if (pawn.Name is NameTriple nameTriple)
+                    {
+                        pawn.Name = new NameTriple(nameTriple.First, username, nameTriple.Last);
+                    }
+                    else
+                    {
+                        pawn.Name = new NameSingle(username);
+                    }
+
+                    // Assign the pawn to the viewer
+                    AssignPawnToViewer(username, pawn);
+
+                    // Debug logging
+                    Logger.Debug($"Successfully assigned pawn {pawn.Name} (ThingID: {pawn.ThingID}) to viewer {username}");
+
+                    return pawn;
+                }
+                else
+                {
+                    Logger.Debug($"Pawn offer for {username} failed - pawn null: {pawn == null}, pawn dead: {(pawn != null && pawn.Dead)}");
+                    return null;
+                }
             }
-            return false;
+
+            Logger.Debug($"No pending offer found for {username}");
+            return null;
         }
 
         public void RemovePendingOffer(string username)
@@ -256,9 +294,9 @@ namespace CAP_ChatInteractive
                     expired.Add(offer.Key);
                     expiredOffers.Add(offer.Key);
 
-                    // Send timeout message to chat
-                    string timeoutMessage = $"⏰ @{offer.Value.Username} Your pawn offer has expired! Join the queue again with !join";
-                    //SendMessageToUser(timeoutMessage);
+                    // Send timeout message to chat using the new broadcast function
+                    string timeoutMessage = $"⏰ Your pawn offer has expired! Join the queue again with !join";
+                    ChatCommandProcessor.SendMessageToUsername(offer.Value.Username, timeoutMessage);
                 }
             }
 
@@ -291,12 +329,14 @@ namespace CAP_ChatInteractive
         public string Username;
         public float OfferTime;
         public int TimeoutTicks;
+        public string PawnThingId;
 
         public void ExposeData()
         {
             Scribe_Values.Look(ref Username, "username");
             Scribe_Values.Look(ref OfferTime, "offerTime");
             Scribe_Values.Look(ref TimeoutTicks, "timeoutTicks");
+            Scribe_Values.Look(ref PawnThingId, "pawnThingId");
         }
 
         public float TimeRemaining
