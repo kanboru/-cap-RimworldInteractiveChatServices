@@ -1,4 +1,5 @@
 ﻿using CAP_ChatInteractive.Commands.CommandHandlers;
+using CAP_ChatInteractive.Store;
 using RimWorld;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class Buy : ChatCommand
     {
         public override string Name => "buy";
-        public override string Description => "Purchase an item from the store or pawn";
+        public override string Description => "Purchase an item from the store";
         public override string PermissionLevel => "everyone";
         public override int CooldownSeconds
         {
@@ -20,6 +21,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return settings?.CooldownSeconds ?? 0;
             }
         }
+
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
             if (!IsEnabled())
@@ -29,20 +31,18 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
             if (args.Length == 0)
             {
-                return "Usage: !buy <item> OR !buy pawn <race> <xenotype> <gender> <age>";
+                return "Usage: !buy <item> [quality] [material] [quantity] OR !buy pawn <race> <xenotype> <gender> <age>";
             }
 
             // Check if this is a pawn purchase
             if (args[0].ToLower() == "pawn")
             {
-                // Redirect to pawn command with remaining arguments
                 var pawnArgs = args.Skip(1).ToArray();
                 var pawnCommand = new Pawn();
                 return pawnCommand.Execute(user, pawnArgs);
             }
 
-            // TODO: Implement regular store purchasing logic
-            return $"Store purchasing for '{args[0]}' coming soon!";
+            return BuyItemCommandHandler.HandleBuyItem(user, args, false, false);
         }
     }
 
@@ -59,18 +59,15 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return settings?.CooldownSeconds ?? 0;
             }
         }
+
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Check if command is enabled
             if (!IsEnabled())
             {
                 return "The Use command is currently disabled.";
             }
 
-            // Get command settings
-            var settingsCommand = GetCommandSettings();
-            // TODO: Implement item usage logic
-            return "Item usage functionality coming soon!";
+            return BuyItemCommandHandler.HandleUseItem(user, args);
         }
     }
 
@@ -87,18 +84,15 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return settings?.CooldownSeconds ?? 0;
             }
         }
+
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Check if command is enabled
             if (!IsEnabled())
             {
-                return "The equip command is currently disabled.";
+                return "The Equip command is currently disabled.";
             }
 
-            // Get command settings
-            var settingsCommand = GetCommandSettings();
-            // TODO: Implement equipment logic
-            return "Equipment functionality coming soon!";
+            return BuyItemCommandHandler.HandleBuyItem(user, args, true, false);
         }
     }
 
@@ -115,18 +109,15 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return settings?.CooldownSeconds ?? 0;
             }
         }
+
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Check if command is enabled
             if (!IsEnabled())
             {
                 return "The Wear command is currently disabled.";
             }
 
-            // Get command settings
-            var settingsCommand = GetCommandSettings();
-            // TODO: Implement apparel logic
-            return "Apparel functionality coming soon!";
+            return BuyItemCommandHandler.HandleBuyItem(user, args, false, true);
         }
     }
 
@@ -143,18 +134,15 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return settings?.CooldownSeconds ?? 0;
             }
         }
+
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Check if command is enabled
             if (!IsEnabled())
             {
                 return "The Backpack command is currently disabled.";
             }
 
-            // Get command settings
-            var settingsCommand = GetCommandSettings();
-            // TODO: Implement inventory logic
-            return "Inventory functionality coming soon!";
+            return BuyItemCommandHandler.HandleBuyItem(user, args, false, false, true);
         }
     }
 
@@ -171,19 +159,23 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return settings?.CooldownSeconds ?? 0;
             }
         }
+
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Check if command is enabled
             if (!IsEnabled())
             {
-                return "The PurchaseList command is currently disabled.";
+                return "The items command is currently disabled.";
             }
 
-            // Get command settings
-            var settingsCommand = GetCommandSettings();
+            // Show available categories or a simple message
+            var enabledItems = StoreInventory.GetEnabledItems().Take(5); // Show first 5 as example
+            var itemList = string.Join(", ", enabledItems.Select(item =>
+            {
+                var thingDef = DefDatabase<ThingDef>.GetNamedSilentFail(item.DefName);
+                return thingDef?.LabelCap ?? item.DefName;
+            }));
 
-            // TODO: Implement item listing logic
-            return "Available items: !buy heal, !buy weapon, !buy food (more coming soon!)";
+            return $"Available items (sample): {itemList}. Use !buy <itemname> to purchase.";
         }
     }
 }

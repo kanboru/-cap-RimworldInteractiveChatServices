@@ -118,7 +118,8 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     string xenotypeInfo = xenotypeName != "Baseliner" ? $" ({xenotypeName})" : "";
                     string ageInfo = ageString != "Random" ? $", Age: {age}" : "";
 
-                    MessageHandler.SendGreenLetter(
+                    // Send gold letter for pawn purchases (always considered major)
+                    MessageHandler.SendGoldLetter(
                         $"New Colonist - {user.Username}",
                         $"{user.Username} has purchased a {raceName}{xenotypeInfo} pawn!{ageInfo}\n\nCost: {finalPrice}{currencySymbol}\nPawn: {result.Pawn?.Name?.ToStringFull ?? "Unknown"}"
                     );
