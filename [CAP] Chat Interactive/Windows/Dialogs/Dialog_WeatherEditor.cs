@@ -43,15 +43,18 @@ namespace CAP_ChatInteractive
                 FilterWeather();
             }
 
-            Rect headerRect = new Rect(0f, 0f, inRect.width, 40f);
+            Rect headerRect = new Rect(0f, 0f, inRect.width, 65f); // Changed from 40f to 65f
             DrawHeader(headerRect);
 
-            Rect contentRect = new Rect(0f, 45f, inRect.width, inRect.height - 45f - CloseButSize.y);
+            Rect contentRect = new Rect(0f, 70f, inRect.width, inRect.height - 70f - CloseButSize.y); // Changed from 45f to 70f
             DrawContent(contentRect);
         }
         private void DrawHeader(Rect rect)
         {
             Widgets.BeginGroup(rect);
+
+            // Make the header taller to accommodate both rows
+            // float headerHeight = 65f; // Increased from 40f to 65f
 
             // Title row
             Text.Font = GameFont.Medium;
@@ -67,20 +70,20 @@ namespace CAP_ChatInteractive
             GUI.color = Color.white;
 
             // Second row for controls - positioned below the title
-            float controlsY = titleRect.yMax + 5f;
+            float controlsY = 35f; // Position below title with some spacing
 
             // Search bar with label
             Rect searchLabelRect = new Rect(0f, controlsY, 60f, 30f);
             Widgets.Label(searchLabelRect, "Search:");
 
-            Rect searchRect = new Rect(65f, controlsY, 200f, 30f); // Positioned next to label
+            Rect searchRect = new Rect(65f, controlsY, 200f, 30f);
             searchQuery = Widgets.TextField(searchRect, searchQuery);
 
-            // Sort buttons - positioned after search
+            // Sort buttons
             Rect sortRect = new Rect(270f, controlsY, 300f, 30f);
             DrawSortButtons(sortRect);
 
-            // Action buttons - positioned after sort
+            // Action buttons
             Rect actionsRect = new Rect(575f, controlsY, 400f, 30f);
             DrawActionButtons(actionsRect);
 

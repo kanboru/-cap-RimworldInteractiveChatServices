@@ -785,24 +785,37 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             {
                 Passion.Major => "🔥🔥", // Burning passion
                 Passion.Minor => "🔥",   // Minor passion  
-                _ => "⚫"                // No passion
+                _ => ""                // No passion
             };
         }
 
         private static string GetSkillLevelDescriptionDetailed(int level)
         {
-            if (level >= 20) return "Legendary 🌟";
-            if (level >= 18) return "Master 🎯";
-            if (level >= 16) return "Expert 💪";
-            if (level >= 14) return "Proficient ✨";
-            if (level >= 12) return "Skilled 👍";
-            if (level >= 10) return "Adept 👌";
-            if (level >= 8) return "Competent ✅";
-            if (level >= 6) return "Experienced 📚";
-            if (level >= 4) return "Novice 👶";
-            if (level >= 2) return "Beginner 🌱";
-            if (level >= 1) return "Awkward 🐣";
-            return "Ignorant ❓";
+            //if (level >= 20) return "Legendary 🌟";
+            //if (level >= 18) return "Master 🎯";
+            //if (level >= 16) return "Expert 💪";
+            //if (level >= 14) return "Proficient ✨";
+            //if (level >= 12) return "Skilled 👍";
+            //if (level >= 10) return "Adept 👌";
+            //if (level >= 8) return "Competent ✅";
+            //if (level >= 6) return "Experienced 📚";
+            //if (level >= 4) return "Novice 👶";
+            //if (level >= 2) return "Beginner 🌱";
+            //if (level >= 1) return "Awkward 🐣";
+            //return "Ignorant ❓";
+
+            if (level >= 20) return "🌟";
+            if (level >= 18) return "🎯";
+            if (level >= 16) return "💪";
+            if (level >= 14) return "✨";
+            if (level >= 12) return "👍";
+            if (level >= 10) return "👌";
+            if (level >= 8) return "✅";
+            if (level >= 6) return "📚";
+            if (level >= 4) return "👶";
+            if (level >= 2) return "🌱";
+            if (level >= 1) return "🐣";
+            return "❓";
         }
 
         private static string HandleStatsInfo(Pawn pawn, string[] args)

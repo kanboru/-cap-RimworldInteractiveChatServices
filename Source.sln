@@ -38,9 +38,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Misc", "Misc", "{79FF489B-5
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WeatherDef", "WeatherDef", "{07153523-D502-4C06-863F-995F5503835A}"
-	ProjectSection(SolutionItems) = preProject
-		..\Defs\WeatherDefs\CAPWeathers.xml = ..\Defs\WeatherDefs\CAPWeathers.xml
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "[CAP] HAR Patch", "[CAP] HAR Patch\[CAP] HAR Patch.csproj", "{6A6186C9-4DC4-4098-B598-BAACF789CE32}"
 EndProject
