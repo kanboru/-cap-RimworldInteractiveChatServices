@@ -47,9 +47,9 @@ namespace CAP_ChatInteractive.Store
             IsWeapon = thingDef.IsWeapon;
             IsMelee = thingDef.IsMeleeWeapon;
             IsRanged = thingDef.IsRangedWeapon;
-            IsEquippable = thingDef.IsWeapon;
-            IsWearable = thingDef.IsApparel;
-            IsUsable = IsItemUsable(thingDef);  
+            IsUsable = IsItemUsable(thingDef);
+            IsEquippable = !IsUsable && thingDef.IsWeapon;
+            IsWearable = !IsUsable && !IsEquippable && thingDef.IsApparel;
             IsStuffAllowed = thingDef.IsStuff;
 
             // FIX: Set default quantity limit to 1 stack instead of 0
@@ -58,7 +58,7 @@ namespace CAP_ChatInteractive.Store
             QuantityLimit = baseStack;
             LimitMode = QuantityLimitMode.OneStack;
         }
-        private bool IsItemUsable(ThingDef thingDef)
+        public static bool IsItemUsable(ThingDef thingDef)
         {
             // Items that should NEVER be usable
             if (thingDef.IsApparel || thingDef.IsWeapon || thingDef.IsBuildingArtificial)

@@ -86,6 +86,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             viewer.TakeCoins(pricePerRevive);
             BuyItemCommandHandler.ResurrectPawn(viewerPawn);
 
+            int karmaEarned = pricePerRevive / 100;
+            if (karmaEarned > 0)
+            {
+                viewer.GiveKarma(karmaEarned);
+                Logger.Debug($"Awarded {karmaEarned} karma for {pricePerRevive} coin purchase");
+            }
+
             // Send resurrection invoice
             string invoiceLabel = $"💖 Rimazon Resurrection - {user.Username}";
             string invoiceMessage = BuyItemCommandHandler.CreateRimazonResurrectionInvoice(user.Username, "Pawn Resurrection", pricePerRevive, currencySymbol);
@@ -123,6 +130,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             // Deduct coins and revive
             viewer.TakeCoins(pricePerRevive);
             BuyItemCommandHandler.ResurrectPawn(targetPawn);
+
+            int karmaEarned = pricePerRevive / 100;
+            if (karmaEarned > 0)
+            {
+                viewer.GiveKarma(karmaEarned);
+                Logger.Debug($"Awarded {karmaEarned} karma for {pricePerRevive} coin purchase");
+            }
 
             // Send resurrection invoice
             string invoiceLabel = $"💖 Rimazon Resurrection - {user.Username} → {targetUsername}";
@@ -177,6 +191,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
             // Deduct total cost
             viewer.TakeCoins(totalCost);
+
+            int karmaEarned = pricePerRevive / 100;
+            if (karmaEarned > 0)
+            {
+                viewer.GiveKarma(karmaEarned);
+                Logger.Debug($"Awarded {karmaEarned} karma for {pricePerRevive} coin purchase");
+            }
 
             // Send resurrection invoice
             string invoiceLabel = $"💖 Rimazon Mass Resurrection - {user.Username}";

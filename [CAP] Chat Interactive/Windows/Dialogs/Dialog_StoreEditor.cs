@@ -577,21 +577,22 @@ namespace CAP_ChatInteractive
                 string label = null;
                 Action<Rect, StoreItem> drawAction = null;
 
-                if (item.IsUsable)
+                if (StoreItem.IsItemUsable(thingDef))
                 {
                     label = "Usable";
                     drawAction = DrawUsableCheckbox;
                 }
-                else if (item.IsWearable)
-                {
-                    label = "Wearable";
-                    drawAction = DrawWearableCheckbox;
-                }
-                else if (item.IsEquippable)
+                else if (!item.IsUsable && thingDef.IsWeapon)
                 {
                     label = "Equippable";
                     drawAction = DrawEquippableCheckbox;
                 }
+                else if (!item.IsUsable && !item.IsEquippable && thingDef.IsApparel) 
+                {
+                    label = "Wearable";
+                    drawAction = DrawWearableCheckbox;
+                }
+
 
                 if (label != null && drawAction != null)
                 {

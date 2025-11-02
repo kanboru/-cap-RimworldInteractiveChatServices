@@ -416,9 +416,10 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         public static string GetItemTypeDescription(StoreItem storeItem)
         {
-            if (storeItem.IsWeapon) return "weapon";
-            if (storeItem.IsWearable) return "apparel";
-            if (storeItem.IsUsable) return "usable item";
+            // FIX: Use the correct StoreItem properties that users can toggle
+            if (storeItem.IsEquippable) return "equippable";
+            if (storeItem.IsWearable) return "wearable";
+            if (storeItem.IsUsable) return "usable";
             return "item";
         }
 

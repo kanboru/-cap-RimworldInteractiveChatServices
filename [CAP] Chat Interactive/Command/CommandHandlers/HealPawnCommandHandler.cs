@@ -101,6 +101,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             viewer.TakeCoins(totalCost);
             int injuriesHealed = ApplyHealing(viewerPawn, quantity);
 
+            int karmaEarned = totalCost / 100;
+            if (karmaEarned > 0)
+            {
+                viewer.GiveKarma(karmaEarned);
+                Logger.Debug($"Awarded {karmaEarned} karma for {totalCost} coin purchase");
+            }
+
             // Send healing invoice
             string invoiceLabel = $"💚 Rimazon Healing - {user.Username}";
             string invoiceMessage = CreateHealingInvoice(user.Username, user.Username, injuriesHealed, totalCost, currencySymbol);
@@ -140,6 +147,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             // Deduct coins and heal
             viewer.TakeCoins(totalCost);
             int injuriesHealed = ApplyHealing(targetPawn, quantity);
+
+            int karmaEarned = totalCost / 100;
+            if (karmaEarned > 0)
+            {
+                viewer.GiveKarma(karmaEarned);
+                Logger.Debug($"Awarded {karmaEarned} karma for {totalCost} coin purchase");
+            }
 
             // Send healing invoice
             string invoiceLabel = $"💚 Rimazon Healing - {user.Username} → {targetUsername}";
@@ -196,6 +210,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
             // Deduct total cost
             viewer.TakeCoins(totalCost);
+
+            int karmaEarned = totalCost / 100;
+            if (karmaEarned > 0)
+            {
+                viewer.GiveKarma(karmaEarned);
+                Logger.Debug($"Awarded {karmaEarned} karma for {totalCost} coin purchase");
+            }
 
             // Send healing invoice
             string invoiceLabel = $"💚 Rimazon Complete Healing - {user.Username}";

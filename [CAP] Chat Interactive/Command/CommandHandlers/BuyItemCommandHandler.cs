@@ -214,6 +214,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 // Deduct coins and process purchase
                 viewer.TakeCoins(finalPrice);
 
+                int karmaEarned = finalPrice / 100;
+                if (karmaEarned > 0)
+                {
+                    viewer.GiveKarma(karmaEarned);
+                    Logger.Debug($"Awarded {karmaEarned} karma for {finalPrice} coin purchase");
+                }
+
                 // Spawn the item
                 if (requireEquippable || requireWearable)
                 {
@@ -375,6 +382,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 // Deduct coins
                 viewer.TakeCoins(finalPrice);
+
+                int karmaEarned = finalPrice / 100;
+                if (karmaEarned > 0)
+                {
+                    viewer.GiveKarma(karmaEarned);
+                    Logger.Debug($"Awarded {karmaEarned} karma for {finalPrice} coin purchase");
+                }
 
                 // SPECIAL RESURRECTION: Handle resurrector serum differently
                 if (isResurrectorSerum && viewerPawn.Dead)
