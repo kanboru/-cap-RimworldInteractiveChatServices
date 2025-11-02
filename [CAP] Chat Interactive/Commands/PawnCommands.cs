@@ -561,10 +561,10 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         }
     }
 
-    public class Healpawn : ChatCommand
+    public class HealPawn : ChatCommand
     {
         public override string Name => "heal pawn";
-        public override string Description => "Heals a pawn - ";
+        public override string Description => "Heals a pawn - self, specific user, or all pawns with optional quantity";
         public override string PermissionLevel => "everyone";
         public override int CooldownSeconds
         {
@@ -579,9 +579,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (!IsEnabled())
             {
-                return "The Revivepawn command is currently disabled.";
+                return "The Healpawn command is currently disabled.";
             }
-            return RevivePawnCommandHandler.HandleHealPawn(user, args);
+            return HealPawnCommandHandler.HandleHealPawn(user, args);
         }
     }
 }
