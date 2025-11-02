@@ -30,14 +30,13 @@ namespace CAP_ChatInteractive
         private List<StoreItem> filteredItems = new List<StoreItem>();
         private Dictionary<string, int> originalPrices = new Dictionary<string, int>();
 
-        public override Vector2 InitialSize => new Vector2(1200f, 700f);
+        public override Vector2 InitialSize => new Vector2(1200f, 755f);
 
         public Dialog_StoreEditor()
         {
             doCloseButton = true;
             forcePause = true;
             absorbInputAroundWindow = true;
-            // optionalTitle = "Store Item Editor"; Duplicated in DrawHeader
 
             BuildCategoryCounts();
             FilterItems();
@@ -53,11 +52,11 @@ namespace CAP_ChatInteractive
             }
 
             // Header
-            Rect headerRect = new Rect(0f, 0f, inRect.width, 40f);
+            Rect headerRect = new Rect(0f, 0f, inRect.width, 70f); // Increased from 40f to 70f
             DrawHeader(headerRect);
 
             // Main content area
-            Rect contentRect = new Rect(0f, 45f, inRect.width, inRect.height - 45f - CloseButSize.y);
+            Rect contentRect = new Rect(0f, 75f, inRect.width, inRect.height - 75f - CloseButSize.y);
             DrawContent(contentRect);
         }
 
@@ -65,22 +64,41 @@ namespace CAP_ChatInteractive
         {
             Widgets.BeginGroup(rect);
 
-            // Title
+            // Custom title with larger font and underline effect - similar to PawnQueue
             Text.Font = GameFont.Medium;
-            Rect titleRect = new Rect(0f, 0f, 200f, 30f);
-            Widgets.Label(titleRect, "Store Items Editor");
+            GUI.color = ColorLibrary.Orange;
+            Rect titleRect = new Rect(0f, 0f, 430f, 35f);
+            string titleText = "Store Items Editor";
+
+            // Draw title
+            Widgets.Label(titleRect, titleText);
+
+            // Draw underline
+            Rect underlineRect = new Rect(titleRect.x, titleRect.yMax - 2f, titleRect.width, 2f);
+            Widgets.DrawLineHorizontal(underlineRect.x, underlineRect.y, underlineRect.width);
+
+            Text.Font = GameFont.Small;
+            GUI.color = Color.white;
+
+            // Second row for controls - positioned below the title
+            float controlsY = titleRect.yMax + 5f;
+            float controlsHeight = 30f;
+
+            // Search bar with label - similar to PawnQueue
+            Rect searchLabelRect = new Rect(0f, controlsY, 80f, controlsHeight);
+            Text.Font = GameFont.Medium; // Medium font for the label
+            Widgets.Label(searchLabelRect, "Search:");
             Text.Font = GameFont.Small;
 
-            // Search bar
-            Rect searchRect = new Rect(210f, 5f, 250f, 30f);
+            Rect searchRect = new Rect(85f, controlsY, 250f, controlsHeight);
             searchQuery = Widgets.TextField(searchRect, searchQuery);
 
-            // Sort buttons
-            Rect sortRect = new Rect(470f, 5f, 400f, 30f);
+            // Sort buttons - adjusted position
+            Rect sortRect = new Rect(345f, controlsY, 400f, controlsHeight);
             DrawSortButtons(sortRect);
 
-            // Action buttons
-            Rect actionsRect = new Rect(880f, 5f, 300f, 30f);
+            // Action buttons - adjusted position
+            Rect actionsRect = new Rect(695f, controlsY, 430f, controlsHeight);
             DrawActionButtons(actionsRect);
 
             Widgets.EndGroup();
@@ -167,14 +185,15 @@ namespace CAP_ChatInteractive
             }
             x += buttonWidth + spacing;
 
-            // NEW: Quality & Research Settings button
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Quality/Research"))
+            // Quality & Research Settings button
+            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth + 60f, 30f), "Quality/Research"))
             {
                 StoreInventory.OpenQualitySettings();
             }
 
             Widgets.EndGroup();
         }
+
         private void ShowEnableMenu()
         {
             var options = new List<FloatMenuOption>();
@@ -338,6 +357,11 @@ namespace CAP_ChatInteractive
 
         private void DrawContent(Rect rect)
         {
+            // Add 2px padding to the left side
+            float padding = 2f;
+            rect.x += padding;
+            rect.width -= padding;
+
             // Split into categories (left) and items (right)
             float categoryWidth = 200f;
             float itemsWidth = rect.width - categoryWidth - 10f;
@@ -357,7 +381,9 @@ namespace CAP_ChatInteractive
             // Header
             Rect headerRect = new Rect(rect.x, rect.y, rect.width, 30f);
             Text.Font = GameFont.Medium;
+            Text.Anchor = TextAnchor.MiddleCenter;
             Widgets.Label(headerRect, "Categories");
+            Text.Anchor = TextAnchor.UpperLeft;
             Text.Font = GameFont.Small;
 
             // Category list
@@ -385,7 +411,7 @@ namespace CAP_ChatInteractive
                 foreach (var cat in orderedCategories)
                 {
                     var count = categoryCounts[cat];
-                    Rect categoryButtonRect = new Rect(0f, y, viewRect.width, 28f);
+                    Rect categoryButtonRect = new Rect(2f, y, viewRect.width-4f, 28f);
 
                     // Highlight selected category
                     if (selectedCategory == cat)
@@ -414,14 +440,26 @@ namespace CAP_ChatInteractive
             // Header with item count
             Rect headerRect = new Rect(rect.x, rect.y, rect.width, 30f);
             Text.Font = GameFont.Medium;
+            Text.Anchor = TextAnchor.MiddleCenter; // Add this to center the text
             string headerText = $"Items ({filteredItems.Count})";
             if (selectedCategory != "All") headerText += $" - {selectedCategory}";
             Widgets.Label(headerRect, headerText);
+            Text.Anchor = TextAnchor.UpperLeft; // Reset anchor
             Text.Font = GameFont.Small;
 
             // Item list with virtual scrolling
             Rect listRect = new Rect(rect.x, rect.y + 35f, rect.width, rect.height - 35f);
             float rowHeight = 60f;
+
+            // Handle empty filtered items case
+            if (filteredItems.Count == 0)
+            {
+                Rect emptyRect = new Rect(listRect.x, listRect.y, listRect.width, 30f);
+                Text.Anchor = TextAnchor.MiddleCenter;
+                Widgets.Label(emptyRect, "No items found");
+                Text.Anchor = TextAnchor.UpperLeft;
+                return;
+            }
 
             // Calculate visible range
             int firstVisibleIndex = Mathf.FloorToInt(scrollPosition.y / rowHeight);
@@ -469,8 +507,8 @@ namespace CAP_ChatInteractive
                 }
                 x += 80f;
 
-                // === Info text ===
-                float infoWidth = rect.width - 710f; // shifted ~60px left
+                // === Info text === - FIXED: Use dynamic calculation instead of fixed width
+                float infoWidth = 210f; // Fixed reasonable width for item info
                 Rect infoRect = new Rect(x, 5f, infoWidth, 50f);
                 Text.Anchor = TextAnchor.MiddleLeft;
                 string itemName = thingDef?.LabelCap ?? item.DefName;
@@ -498,8 +536,19 @@ namespace CAP_ChatInteractive
                 x += priceRect.width + 8f;
 
                 // === Quantity preset controls ===
-                Rect qtyRect = new Rect(x, centerY, 300f, 30f);
-                DrawQuantityPresetControls(qtyRect, item);
+                // Use remaining space for quantity controls
+                float remainingWidth = rect.width - x - 10f;
+                if (remainingWidth > 200f) // Ensure minimum width for quantity controls
+                {
+                    Rect qtyRect = new Rect(x, centerY, remainingWidth, 30f);
+                    DrawQuantityPresetControls(qtyRect, item);
+                }
+                else
+                {
+                    // Fallback: if not enough space, use compact layout
+                    Rect qtyRect = new Rect(x, centerY, 200f, 30f);
+                    DrawQuantityPresetControls(qtyRect, item);
+                }
             }
             finally
             {
@@ -673,7 +722,6 @@ namespace CAP_ChatInteractive
             }
         }
 
-
         private void DrawEnabledToggle(Rect rect, StoreItem item)
         {
             bool wasEnabled = item.Enabled;
@@ -783,7 +831,6 @@ namespace CAP_ChatInteractive
 
             Widgets.EndGroup();
         }
-
 
         private void BuildCategoryCounts()
         {

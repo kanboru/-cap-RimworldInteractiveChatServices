@@ -28,7 +28,7 @@ namespace CAP_ChatInteractive
             doCloseButton = true;
             forcePause = true;
             absorbInputAroundWindow = true;
-            optionalTitle = "Traits Editor";
+            ///optionalTitle = "Traits Editor";
 
             BuildModSourceCounts();
             FilterTraits();
@@ -42,10 +42,12 @@ namespace CAP_ChatInteractive
                 FilterTraits();
             }
 
-            Rect headerRect = new Rect(0f, 0f, inRect.width, 40f);
+            // Header - increased height to accommodate two rows (matching other dialogs)
+            Rect headerRect = new Rect(0f, 0f, inRect.width, 70f); // Increased from 40f to 70f
             DrawHeader(headerRect);
 
-            Rect contentRect = new Rect(0f, 45f, inRect.width, inRect.height - 45f - CloseButSize.y);
+            // Main content area - adjusted position
+            Rect contentRect = new Rect(0f, 75f, inRect.width, inRect.height - 75f - CloseButSize.y); // Adjusted from 45f to 75f
             DrawContent(contentRect);
         }
 
@@ -53,22 +55,38 @@ namespace CAP_ChatInteractive
         {
             Widgets.BeginGroup(rect);
 
-            // Title
+            // Custom title with larger font and underline effect - matching other dialogs
             Text.Font = GameFont.Medium;
-            Rect titleRect = new Rect(0f, 0f, 200f, 30f);
+            GUI.color = ColorLibrary.Orange;
+            Rect titleRect = new Rect(0f, 0f, 400f, 35f);
             Widgets.Label(titleRect, "Traits Editor");
+
+            // Draw underline
+            Rect underlineRect = new Rect(titleRect.x, titleRect.yMax - 2f, titleRect.width, 2f);
+            Widgets.DrawLineHorizontal(underlineRect.x, underlineRect.y, underlineRect.width);
+
+            Text.Font = GameFont.Small;
+            GUI.color = Color.white;
+
+            // Second row for controls - positioned below the title
+            float controlsY = titleRect.yMax + 5f;
+            float controlsHeight = 30f;
+
+            // Search bar with label - matching other dialogs
+            Rect searchLabelRect = new Rect(0f, controlsY, 80f, controlsHeight);
+            Text.Font = GameFont.Medium; // Medium font for the label
+            Widgets.Label(searchLabelRect, "Search:");
             Text.Font = GameFont.Small;
 
-            // Search bar - align with traits content area
-            Rect searchRect = new Rect(210f, 5f, 250f, 30f);
+            Rect searchRect = new Rect(85f, controlsY, 250f, controlsHeight);
             searchQuery = Widgets.TextField(searchRect, searchQuery);
 
-            // Sort buttons - adjust position to account for wider buttons
-            Rect sortRect = new Rect(470f, 5f, 420f, 30f); // Increased width from 400f to 420f
+            // Sort buttons - adjusted position
+            Rect sortRect = new Rect(345f, controlsY, 420f, controlsHeight);
             DrawSortButtons(sortRect);
 
-            // Action buttons - adjust position
-            Rect actionsRect = new Rect(900f, 5f, 400f, 30f); // Moved right from 880f to 900f
+            // Action buttons - adjusted position
+            Rect actionsRect = new Rect(775f, controlsY, 400f, controlsHeight); // Moved left from 900f to 775f
             DrawActionButtons(actionsRect);
 
             Widgets.EndGroup();

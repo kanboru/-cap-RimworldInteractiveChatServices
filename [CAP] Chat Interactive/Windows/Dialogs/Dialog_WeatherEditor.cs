@@ -4,6 +4,8 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using CAP_ChatInteractive.Incidents;
+using System;
+using CAP_ChatInteractive.Incidents.Weather;
 
 namespace CAP_ChatInteractive
 {
@@ -27,7 +29,7 @@ namespace CAP_ChatInteractive
             doCloseButton = true;
             forcePause = true;
             absorbInputAroundWindow = true;
-            optionalTitle = "Weather Editor";
+            // optionalTitle = "Weather Editor";
 
             BuildModSourceCounts();
             FilterWeather();
@@ -47,27 +49,39 @@ namespace CAP_ChatInteractive
             Rect contentRect = new Rect(0f, 45f, inRect.width, inRect.height - 45f - CloseButSize.y);
             DrawContent(contentRect);
         }
-
         private void DrawHeader(Rect rect)
         {
             Widgets.BeginGroup(rect);
 
-            // Title
+            // Title row
             Text.Font = GameFont.Medium;
+            GUI.color = ColorLibrary.Orange;
             Rect titleRect = new Rect(0f, 0f, 200f, 30f);
             Widgets.Label(titleRect, "Weather Editor");
-            Text.Font = GameFont.Small;
 
-            // Search bar
-            Rect searchRect = new Rect(210f, 5f, 250f, 30f);
+            // Draw underline
+            Rect underlineRect = new Rect(titleRect.x, titleRect.yMax - 2f, titleRect.width, 2f);
+            Widgets.DrawLineHorizontal(underlineRect.x, underlineRect.y, underlineRect.width);
+
+            Text.Font = GameFont.Small;
+            GUI.color = Color.white;
+
+            // Second row for controls - positioned below the title
+            float controlsY = titleRect.yMax + 5f;
+
+            // Search bar with label
+            Rect searchLabelRect = new Rect(0f, controlsY, 60f, 30f);
+            Widgets.Label(searchLabelRect, "Search:");
+
+            Rect searchRect = new Rect(65f, controlsY, 200f, 30f); // Positioned next to label
             searchQuery = Widgets.TextField(searchRect, searchQuery);
 
-            // Sort buttons
-            Rect sortRect = new Rect(470f, 5f, 300f, 30f);
+            // Sort buttons - positioned after search
+            Rect sortRect = new Rect(270f, controlsY, 300f, 30f);
             DrawSortButtons(sortRect);
 
-            // Action buttons
-            Rect actionsRect = new Rect(780f, 5f, 400f, 30f);
+            // Action buttons - positioned after sort
+            Rect actionsRect = new Rect(575f, controlsY, 400f, 30f);
             DrawActionButtons(actionsRect);
 
             Widgets.EndGroup();

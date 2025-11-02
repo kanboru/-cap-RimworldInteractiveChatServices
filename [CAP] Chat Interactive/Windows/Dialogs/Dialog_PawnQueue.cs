@@ -73,7 +73,9 @@ namespace CAP_ChatInteractive
 
             // Search bar on the left with label
             Rect searchLabelRect = new Rect(0f, controlsY, 80f, controlsHeight);
+            Text.Font = GameFont.Medium; // Medium font for the label
             Widgets.Label(searchLabelRect, "Search:");
+            Text.Font = GameFont.Small;
 
             Rect searchRect = new Rect(85f, controlsY, 200f, controlsHeight);
             searchQuery = Widgets.TextField(searchRect, searchQuery);

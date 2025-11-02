@@ -40,7 +40,7 @@ namespace CAP_ChatInteractive
             doCloseButton = true;
             forcePause = true;
             absorbInputAroundWindow = true;
-            optionalTitle = "Viewer Management";
+            // optionalTitle = "Viewer Management";
 
             FilterViewers();
         }
@@ -54,11 +54,11 @@ namespace CAP_ChatInteractive
             }
 
             // Header
-            Rect headerRect = new Rect(0f, 0f, inRect.width, 40f);
+            Rect headerRect = new Rect(0f, 0f, inRect.width, 70f); // Increased from 40f to 70f
             DrawHeader(headerRect);
 
             // Main content area
-            Rect contentRect = new Rect(0f, 45f, inRect.width, inRect.height - 45f - CloseButSize.y);
+            Rect contentRect = new Rect(0f, 75f, inRect.width, inRect.height - 75f - CloseButSize.y);
             DrawContent(contentRect);
 
             // Handle confirmations
@@ -69,38 +69,51 @@ namespace CAP_ChatInteractive
         {
             base.PostClose();
 
-            // Force save any changes made in the viewer manager
-            Logger.Debug("Viewer Manager closed - saving viewer data...");
             Viewers.SaveViewers();
-
-            // Optional: Log how many viewers were saved
-            Logger.Debug($"Saved {Viewers.All.Count} viewers on window close");
         }
 
         private void DrawHeader(Rect rect)
         {
             Widgets.BeginGroup(rect);
 
-            // Title with counts - left aligned
+            // Custom title with larger font and underline effect - matching Store Editor
             Text.Font = GameFont.Medium;
-            Rect titleRect = new Rect(0f, 0f, 200f, 30f);
-            string titleText = $"Viewers ({Viewers.All.Count})";
+            GUI.color = ColorLibrary.Orange;
+            Rect titleRect = new Rect(0f, 0f, 400f, 35f);
+            string titleText = $"Viewer Management - Viewers ({Viewers.All.Count})";
             if (filteredViewers.Count != Viewers.All.Count)
                 titleText += $" - Filtered: {filteredViewers.Count}";
-            Widgets.Label(titleRect, titleText);
-            Text.Font = GameFont.Small ;
 
-            // Search bar - positioned like in TraitsEditor
-            Rect searchRect = new Rect(210f, 5f, 250f, 30f);
+            // Draw title
+            Widgets.Label(titleRect, titleText);
+
+            // Draw underline
+            Rect underlineRect = new Rect(titleRect.x, titleRect.yMax - 2f, titleRect.width, 2f);
+            Widgets.DrawLineHorizontal(underlineRect.x, underlineRect.y, underlineRect.width);
+
+            Text.Font = GameFont.Small;
+            GUI.color = Color.white;
+
+            // Second row for controls - positioned below the title
+            float controlsY = titleRect.yMax + 5f;
+            float controlsHeight = 30f;
+
+            // Search bar with label - matching Store Editor
+            Rect searchLabelRect = new Rect(0f, controlsY, 80f, controlsHeight);
+            Text.Font = GameFont.Medium; // Medium font for the label
+            Widgets.Label(searchLabelRect, "Search:");
+            Text.Font = GameFont.Small;
+
+            Rect searchRect = new Rect(85f, controlsY, 250f, controlsHeight);
             searchQuery = Widgets.TextField(searchRect, searchQuery);
 
-            // Sort buttons - match TraitsEditor width
-            Rect sortRect = new Rect(470f, 5f, 300f, 30f);
+            // Sort buttons - adjusted position
+            Rect sortRect = new Rect(345f, controlsY, 300f, controlsHeight);
             DrawSortButtons(sortRect);
 
-            // Mass action button - right aligned
+            // Mass action button - adjusted position
             float buttonWidth = 110f;
-            Rect actionsRect = new Rect(rect.width - buttonWidth, 5f, buttonWidth, 30f);
+            Rect actionsRect = new Rect(rect.width - buttonWidth, controlsY, buttonWidth, 30f);
             if (Widgets.ButtonText(actionsRect, "Mass Actions →"))
             {
                 ShowMassActionsMenu();
