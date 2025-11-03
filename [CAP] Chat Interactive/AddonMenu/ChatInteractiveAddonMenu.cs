@@ -37,6 +37,8 @@ namespace CAP_ChatInteractive
             Find.WindowStack.Add(new Dialog_TraitsEditor());
         }),
 
+
+
         // Events Management Submenu
         new FloatMenuOption("Events →", () =>
         {
@@ -314,18 +316,10 @@ namespace CAP_ChatInteractive
                 Find.WindowStack.Add(new Dialog_WeatherEditor());
             }));
 
-            // Raids Editor - TODO: Coming in future
-            options.Add(new FloatMenuOption("Raids Editor", () =>
-            {
-                Messages.Message("Raids Editor - Coming Soon!", MessageTypeDefOf.NeutralEvent);
-                // TODO: Find.WindowStack.Add(new Dialog_RaidsEditor());
-            }));
-
             // Events Editor - TODO: Combined editor for animals, traders, etc.
             options.Add(new FloatMenuOption("Events Editor", () =>
             {
-                Messages.Message("Events Editor - Coming Soon!", MessageTypeDefOf.NeutralEvent);
-                // TODO: Find.WindowStack.Add(new Dialog_EventsEditor());
+                Find.WindowStack.Add(new Dialog_EventsEditor());
             }));
 
             // Separator

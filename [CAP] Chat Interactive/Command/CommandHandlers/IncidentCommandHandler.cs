@@ -1,0 +1,420 @@
+﻿// IncidentCommandHandler.cs
+using CAP_ChatInteractive.Commands.Cooldowns;
+using CAP_ChatInteractive.Incidents;
+using CAP_ChatInteractive.Utilities;
+using RimWorld;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Verse;
+
+namespace CAP_ChatInteractive.Commands.CommandHandlers
+{
+    public static class IncidentCommandHandler
+    {
+        public static string HandleIncidentCommand(ChatMessageWrapper user, string incidentType)
+        {
+            try
+            {
+                var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
+                var currencySymbol = settings.CurrencyName?.Trim() ?? "¢";
+
+                // Handle list commands first
+                if (incidentType.Equals("list", StringComparison.OrdinalIgnoreCase))
+                {
+                    return GetIncidentList();
+                }
+                else if (incidentType.StartsWith("list", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (int.TryParse(incidentType.Substring(4), out int page) && page > 0)
+                    {
+                        return GetIncidentListPage(page);
+                    }
+                    return GetIncidentList();
+                }
+
+                // Check if viewer exists
+                var viewer = Viewers.GetViewer(user.Username);
+                if (viewer == null)
+                {
+                    MessageHandler.SendFailureLetter("Incident Failed",
+                        $"Could not find viewer data for {user.Username}");
+                    return "Error: Could not find your viewer data.";
+                }
+
+                // Find the incident by command input
+                var buyableIncident = FindBuyableIncident(incidentType);
+                if (buyableIncident == null)
+                {
+                    var availableTypes = GetAvailableIncidents().Take(5).Select(i => i.Key);
+                    MessageHandler.SendFailureLetter("Incident Failed",
+                        $"{user.Username} tried unknown incident: {incidentType}");
+                    return $"Unknown incident type: {incidentType}. Try !event list";
+                }
+
+                // Check if incident is enabled
+                if (!buyableIncident.Enabled)
+                {
+                    MessageHandler.SendFailureLetter("Incident Failed",
+                        $"{user.Username} tried disabled incident: {buyableIncident.Label}");
+                    return $"{buyableIncident.Label} is currently disabled.";
+                }
+
+                // Check global cooldowns using your existing system
+                var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
+                if (cooldownManager != null)
+                {
+                    string eventType = GetKarmaTypeForIncident(buyableIncident.KarmaType);
+                    if (!cooldownManager.CanUseEvent(eventType, settings))
+                    {
+                        string cooldownMessage = GetCooldownMessage(eventType, settings, cooldownManager);
+                        return cooldownMessage;
+                    }
+                }
+
+                // Check if viewer can afford it
+                int cost = buyableIncident.BaseCost;
+                if (viewer.Coins < cost)
+                {
+                    MessageHandler.SendFailureLetter("Incident Failed",
+                        $"{user.Username} can't afford {buyableIncident.Label}");
+                    return $"You need {cost}{currencySymbol} for {buyableIncident.Label}!";
+                }
+
+                // Try to trigger the incident
+                bool success = TriggerIncident(buyableIncident, user.Username, out string resultMessage);
+
+                // Handle result
+                if (success)
+                {
+                    // Deduct coins and process purchase
+                    viewer.TakeCoins(cost);
+
+                    // Award karma based on purchase
+                    int karmaEarned = cost / 100;
+                    if (karmaEarned > 0)
+                    {
+                        viewer.GiveKarma(karmaEarned);
+                        Logger.Debug($"Awarded {karmaEarned} karma for {cost} coin purchase");
+                    }
+                    else if (karmaEarned < 0)
+                    {
+                        viewer.TakeKarma(Math.Abs(karmaEarned));
+                        Logger.Debug($"Deducted {Math.Abs(karmaEarned)} karma for {cost} coin purchase");
+                    }
+
+                    // Record event usage for cooldowns
+                    if (cooldownManager != null)
+                    {
+                        string eventType = GetKarmaTypeForIncident(buyableIncident.KarmaType);
+                        cooldownManager.RecordEventUse(eventType);
+                    }
+
+                    MessageHandler.SendBlueLetter("Incident Triggered",
+                        $"{user.Username} triggered {buyableIncident.Label} for {cost}{currencySymbol}");
+                    return resultMessage;
+                }
+                else
+                {
+                    MessageHandler.SendFailureLetter("Incident Failed",
+                        $"{user.Username} failed to trigger {buyableIncident.Label}");
+                    return $"{resultMessage} No {currencySymbol} were deducted.";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error handling incident command: {ex}");
+                MessageHandler.SendFailureLetter("Incident Error", $"Error: {ex.Message}");
+                return "Error triggering incident. Please try again.";
+            }
+        }
+
+        // Helper methods for cooldown integration
+        private static string GetKarmaTypeForIncident(string karmaType)
+        {
+            return karmaType?.ToLower() switch
+            {
+                "good" => "good",
+                "bad" => "bad",
+                _ => "neutral"
+            };
+        }
+
+        private static string GetCooldownMessage(string eventType, CAPGlobalChatSettings settings, GlobalCooldownManager cooldownManager)
+        {
+            int maxEvents = eventType switch
+            {
+                "good" => settings.MaxGoodEvents,
+                "bad" => settings.MaxBadEvents,
+                "neutral" => settings.MaxNeutralEvents,
+                _ => 10
+            };
+
+            var record = cooldownManager.data.EventUsage.GetValueOrDefault(eventType);
+            int currentUses = record?.CurrentPeriodUses ?? 0;
+
+            return $"❌ {eventType.ToUpper()} event limit reached! ({currentUses}/{maxEvents} used this period)";
+        }
+
+        private static BuyableIncident FindBuyableIncident(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return null;
+
+            string inputLower = input.ToLower();
+            var allIncidents = GetAvailableIncidents();
+
+            // Exact key match
+            if (allIncidents.TryGetValue(inputLower, out var incident))
+                return incident;
+
+            // Case-insensitive def name match
+            var defNameMatch = allIncidents.Values.FirstOrDefault(i =>
+                i.DefName.Equals(input, StringComparison.OrdinalIgnoreCase));
+            if (defNameMatch != null)
+                return defNameMatch;
+
+            // Label match
+            var labelMatch = allIncidents.Values.FirstOrDefault(i =>
+                i.Label.Equals(input, StringComparison.OrdinalIgnoreCase));
+            if (labelMatch != null)
+                return labelMatch;
+
+            // Partial match
+            var partialMatch = allIncidents.Values.FirstOrDefault(i =>
+                i.DefName.ToLower().Contains(inputLower) ||
+                i.Label.ToLower().Contains(inputLower));
+
+            return partialMatch;
+        }
+
+        public static Dictionary<string, BuyableIncident> GetAvailableIncidents()
+        {
+            return IncidentsManager.AllBuyableIncidents
+                .Where(kvp => IsIncidentSuitableForCommand(kvp.Value))
+                .ToDictionary(kvp => kvp.Key.ToLower(), kvp => kvp.Value);
+        }
+
+        private static bool IsIncidentSuitableForCommand(BuyableIncident incident)
+        {
+            if (!incident.Enabled) return false;
+
+            string defName = incident.DefName.ToLower();
+
+            // Skip most weather incidents (handled by weather command)
+            // BUT include specific dramatic weather events that work as standalone events
+            string[] allowedWeatherEvents = {
+        "heatwave", "coldsnap", "flashstorm", "toxicfallout", "volcanicwinter",
+        "eclipse", "solarflare", "psychicdrone"
+    };
+
+            bool isAllowedWeatherEvent = allowedWeatherEvents.Contains(defName);
+            bool isRegularWeather = (defName.Contains("weather") || incident.IsWeatherIncident) && !isAllowedWeatherEvent;
+
+            if (isRegularWeather)
+                return false;
+
+            // Skip raid incidents (handled by raid command)
+            if (defName.Contains("raid") || incident.IsRaidIncident)
+                return false;
+
+            // Skip specific combat incidents handled by raid system
+            string[] combatIncidents = {
+        "manhunterpack", "infestation", "mechcluster",
+        "fleshmassheart", "shamblerswarm", "ghoulattack",
+        "fleshbeastattack", "gorehulkassault", "devourerassault",
+        "chimeraassault", "psychicritualsiege", "hatechanters"
+    };
+
+            if (combatIncidents.Contains(defName))
+                return false;
+
+            // Skip quest incidents (too complex for simple purchase)
+            if (incident.IsQuestIncident)
+                return false;
+
+            return true;
+        }
+
+        private static bool TriggerIncident(BuyableIncident incident, string username, out string resultMessage)
+        {
+            resultMessage = "";
+            var incidentDef = DefDatabase<IncidentDef>.GetNamedSilentFail(incident.DefName);
+
+            if (incidentDef == null)
+            {
+                resultMessage = $"Incident {incident.Label} not found.";
+                return false;
+            }
+
+            var worker = incidentDef.Worker;
+            if (worker == null)
+            {
+                resultMessage = $"No worker for incident {incident.Label}.";
+                return false;
+            }
+
+            var playerMaps = Current.Game.Maps.Where(map => map.IsPlayerHome).ToList();
+            playerMaps.Shuffle();
+
+            foreach (var map in playerMaps)
+            {
+                var parms = new IncidentParms
+                {
+                    target = map,
+                    forced = true,
+                    points = StorytellerUtility.DefaultThreatPointsNow(map)
+                };
+
+                if (worker.CanFireNow(parms) && !worker.FiredTooRecently(map))
+                {
+                    bool executed = worker.TryExecute(parms);
+                    if (executed)
+                    {
+                        resultMessage = GetIncidentSuccessMessage(incident);
+                        return true;
+                    }
+                }
+            }
+
+            resultMessage = $"{incident.Label} cannot be triggered right now.";
+            return false;
+        }
+
+        private static string GetIncidentSuccessMessage(BuyableIncident incident)
+        {
+            return incident.DefName switch
+            {
+                "ResourcePodCrash" => "A resource pod crashes from the sky!",
+                "PsychicSoothe" => "A calming psychic wave soothes the colonists.",
+                "SelfTame" => "A wild animal decides to join the colony!",
+                "AmbrosiaSprout" => "Ambrosia plants sprout nearby!",
+                "FarmAnimalsWanderIn" => "Farm animals wander into the area.",
+                "WandererJoin" => "A wanderer joins the colony!",
+                "RefugeePodCrash" => "A refugee pod crashes nearby!",
+                "ThrumboPasses" => "Rare thrumbos pass through the area!",
+                "MeteoriteImpact" => "A meteorite crashes nearby!",
+                "HerdMigration" => "A herd of animals migrates through!",
+                "ShortCircuit" => "An electrical short circuit occurs!",
+                "OrbitalTraderArrival" => "An orbital trader arrives!",
+
+                // Weather events that work as dramatic incidents
+                "HeatWave" => "A blistering heat wave settles over the land!",
+                "ColdSnap" => "An icy cold snap freezes the air!",
+                "Flashstorm" => "Dark clouds gather as a flashstorm crackles to life!",
+                "PsychicDrone" => "A disturbing psychic drone affects the colonists!",
+                "ToxicFallout" => "Deadly toxic fallout begins to rain down!",
+                "VolcanicWinter" => "Volcanic ash clouds bring endless winter!",
+                "Eclipse" => "An unnatural darkness falls as the sun is eclipsed!",
+                "SolarFlare" => "A solar flare disrupts all electronics!",
+
+                // Other dramatic events
+                "CropBlight" => "A terrible blight strikes the crops!",
+                "Alphabeavers" => "A pack of alphabeavers arrives to chew everything!",
+                "ShipChunkDrop" => "Ship chunks rain from the sky!",
+
+                // DLC incidents that are great for events
+                "NoxiousHaze" => "Acidic smog blankets the area!",
+                "WastepackInfestation" => "Wastepack insects emerge!",
+                "BloodRain" => "Creepy blood rain starts falling!",
+                "DeathPall" => "A death pall settles over the colony!",
+
+                _ => $"{incident.Label} occurs!"
+            };
+        }
+
+        private static string GetIncidentList()
+        {
+            var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
+            var currencySymbol = settings.CurrencyName?.Trim() ?? "¢";
+            var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
+
+            var availableIncidents = GetAvailableIncidents()
+                .Select(kvp =>
+                {
+                    string status = "✅";
+                    if (cooldownManager != null && settings.KarmaTypeLimitsEnabled)
+                    {
+                        string eventType = GetKarmaTypeForIncident(kvp.Value.KarmaType);
+                        if (!cooldownManager.CanUseEvent(eventType, settings))
+                        {
+                            status = "❌";
+                        }
+                    }
+                    return $"{kvp.Value.Label} ({kvp.Value.BaseCost}{currencySymbol}){status}";
+                })
+                .Take(6)
+                .ToList();
+
+            // Add cooldown summary if limits are enabled
+            string cooldownSummary = "";
+            if (settings.KarmaTypeLimitsEnabled && cooldownManager != null)
+            {
+                cooldownSummary = GetCooldownSummary(settings, cooldownManager);
+            }
+
+            var message = "Available events: " + string.Join(", ", availableIncidents);
+
+            if (!string.IsNullOrEmpty(cooldownSummary))
+            {
+                message += $" | {cooldownSummary}";
+            }
+
+            if (GetAvailableIncidents().Count > 6)
+            {
+                message += "... (see more with !event list2)";
+            }
+
+            return message;
+        }
+
+        private static string GetCooldownSummary(CAPGlobalChatSettings settings, GlobalCooldownManager cooldownManager)
+        {
+            var summaries = new List<string>();
+
+            if (settings.MaxGoodEvents > 0)
+            {
+                var goodRecord = cooldownManager.data.EventUsage.GetValueOrDefault("good");
+                int goodUsed = goodRecord?.CurrentPeriodUses ?? 0;
+                summaries.Add($"Good: {goodUsed}/{settings.MaxGoodEvents}");
+            }
+
+            if (settings.MaxBadEvents > 0)
+            {
+                var badRecord = cooldownManager.data.EventUsage.GetValueOrDefault("bad");
+                int badUsed = badRecord?.CurrentPeriodUses ?? 0;
+                summaries.Add($"Bad: {badUsed}/{settings.MaxBadEvents}");
+            }
+
+            if (settings.MaxNeutralEvents > 0)
+            {
+                var neutralRecord = cooldownManager.data.EventUsage.GetValueOrDefault("neutral");
+                int neutralUsed = neutralRecord?.CurrentPeriodUses ?? 0;
+                summaries.Add($"Neutral: {neutralUsed}/{settings.MaxNeutralEvents}");
+            }
+
+            return string.Join(" | ", summaries);
+        }
+
+        private static string GetIncidentListPage(int page)
+        {
+            var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
+            var currencySymbol = settings.CurrencyName?.Trim() ?? "¢";
+
+            var availableIncidents = GetAvailableIncidents()
+                .Select(kvp => $"{kvp.Value.Label} ({kvp.Value.BaseCost}{currencySymbol})")
+                .ToList();
+
+            int itemsPerPage = 6;
+            int startIndex = (page - 1) * itemsPerPage;
+            int endIndex = Math.Min(startIndex + itemsPerPage, availableIncidents.Count);
+
+            if (startIndex >= availableIncidents.Count)
+                return "No more events to display.";
+
+            var pageItems = availableIncidents.Skip(startIndex).Take(itemsPerPage);
+            return $"Available events (page {page}): " + string.Join(", ", pageItems);
+        }
+
+    }
+}

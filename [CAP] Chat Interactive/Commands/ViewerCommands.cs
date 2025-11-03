@@ -78,83 +78,25 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class Event : ChatCommand
     {
         public override string Name => "event";
-        public override string Description => "Trigger a game event (weather, raid, etc.)";
+        public override string Description => "Trigger various game events";
         public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 0;
-            }
-        }
+        public override int CooldownSeconds => 0; // Using global cooldown system instead
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Check if command is enabled
+            // Check if command is enabled globally
             if (!IsEnabled())
             {
                 return "The Event command is currently disabled.";
             }
 
-            // Get command settings
-            var settingsCommand = GetCommandSettings();
-
             if (args.Length == 0)
             {
-                return "Usage: !event <type> [options]. Types: weather, raid, animal, trader. Example: !event weather rain";
+                return "Usage: !event <event_name> or !event list. Examples: !event resourcepod, !event heatwave, !event psychicsoothe";
             }
 
-            string eventType = args[0].ToLower();
-
-            switch (eventType)
-            {
-                case "weather":
-                    return HandleWeatherEvent(user, args.Skip(1).ToArray());
-                //case "raid":
-                //    return HandleRaidEvent(user, args.Skip(1).ToArray());
-                case "animal":
-                    return HandleAnimalEvent(user, args.Skip(1).ToArray());
-                case "trader":
-                    return HandleTraderEvent(user, args.Skip(1).ToArray());
-                default:
-                    return $"Unknown event type: {eventType}. Available: weather, raid, animal, trader";
-            }
-        }
-
-        private string HandleWeatherEvent(ChatMessageWrapper user, string[] args)
-        {
-            if (args.Length == 0)
-            {
-                return "Usage: !event weather <type>. Types: rain, snow, fog, thunderstorm, clear, list, etc.";
-            }
-
-            string weatherType = args[0].ToLower();
-
-            // Handle list for event command
-            if (weatherType == "list" || weatherType.StartsWith("list"))
-            {
-                // For list commands, let WeatherCommandHandler handle the response directly
-                return WeatherCommandHandler.HandleWeatherCommand(user, weatherType);
-            }
-
-            return WeatherCommandHandler.HandleWeatherCommand(user, weatherType);
-        }
-
-        // Placeholder methods for other event types
-        // private string HandleRaidEvent(ChatMessageWrapper user, string[] args)
-        // {
-        //    return "Raid events coming soon!";
-        // }
-
-        private string HandleAnimalEvent(ChatMessageWrapper user, string[] args)
-        {
-            return "Animal events coming soon!";
-        }
-
-        private string HandleTraderEvent(ChatMessageWrapper user, string[] args)
-        {
-            return "Trader events coming soon!";
+            string incidentType = string.Join(" ", args).Trim();
+            return IncidentCommandHandler.HandleIncidentCommand(user, incidentType);
         }
     }
 
