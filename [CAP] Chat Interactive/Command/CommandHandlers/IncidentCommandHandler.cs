@@ -2,6 +2,7 @@
 using CAP_ChatInteractive.Commands.Cooldowns;
 using CAP_ChatInteractive.Incidents;
 using CAP_ChatInteractive.Utilities;
+using LudeonTK;
 using RimWorld;
 using System;
 using System.Collections.Generic;
@@ -197,43 +198,8 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static bool IsIncidentSuitableForCommand(BuyableIncident incident)
         {
-            if (!incident.Enabled) return false;
-
-            string defName = incident.DefName.ToLower();
-
-            // Skip most weather incidents (handled by weather command)
-            // BUT include specific dramatic weather events that work as standalone events
-            string[] allowedWeatherEvents = {
-        "heatwave", "coldsnap", "flashstorm", "toxicfallout", "volcanicwinter",
-        "eclipse", "solarflare", "psychicdrone"
-    };
-
-            bool isAllowedWeatherEvent = allowedWeatherEvents.Contains(defName);
-            bool isRegularWeather = (defName.Contains("weather") || incident.IsWeatherIncident) && !isAllowedWeatherEvent;
-
-            if (isRegularWeather)
-                return false;
-
-            // Skip raid incidents (handled by raid command)
-            if (defName.Contains("raid") || incident.IsRaidIncident)
-                return false;
-
-            // Skip specific combat incidents handled by raid system
-            string[] combatIncidents = {
-        "manhunterpack", "infestation", "mechcluster",
-        "fleshmassheart", "shamblerswarm", "ghoulattack",
-        "fleshbeastattack", "gorehulkassault", "devourerassault",
-        "chimeraassault", "psychicritualsiege", "hatechanters"
-    };
-
-            if (combatIncidents.Contains(defName))
-                return false;
-
-            // Skip quest incidents (too complex for simple purchase)
-            if (incident.IsQuestIncident)
-                return false;
-
-            return true;
+            // Now just check the properties set during creation
+            return incident.Enabled && incident.IsAvailableForCommands;
         }
 
         private static bool TriggerIncident(BuyableIncident incident, string username, out string resultMessage)
@@ -416,5 +382,23 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             return $"Available events (page {page}): " + string.Join(", ", pageItems);
         }
 
+        [DebugAction("CAP", "List Filtered Incidents", allowedGameStates = AllowedGameStates.Playing)]
+        public static void DebugListFilteredIncidents()
+        {
+            var allIncidents = IncidentsManager.AllBuyableIncidents;
+            var availableIncidents = GetAvailableIncidents();
+
+            Logger.Message($"=== INCIDENT FILTERING REPORT ===");
+            Logger.Message($"Total incidents: {allIncidents.Count}");
+            Logger.Message($"Available for !event command: {availableIncidents.Count}");
+            Logger.Message($"Filtered out: {allIncidents.Count - availableIncidents.Count}");
+
+            foreach (var incident in allIncidents.Values.Where(i => !IsIncidentSuitableForCommand(i)))
+            {
+                Logger.Message($"FILTERED: {incident.DefName} - {incident.Label}");
+            }
+        }
+
     }
+
 }

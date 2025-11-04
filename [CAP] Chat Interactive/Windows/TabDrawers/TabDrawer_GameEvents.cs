@@ -1,4 +1,5 @@
 ﻿// TabDrawer_GameEvents.cs
+using CAP_ChatInteractive.Incidents;
 using CAP_ChatInteractive.Incidents.Weather;
 using CAP_ChatInteractive.Store;
 using CAP_ChatInteractive.Traits;
@@ -15,7 +16,7 @@ namespace CAP_ChatInteractive
         public static void Draw(Rect region)
         {
             var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
-            var view = new Rect(0f, 0f, region.width - 16f, 600f);
+            var view = new Rect(0f, 0f, region.width - 16f, 800f);
 
             Widgets.BeginScrollView(region, ref _scrollPosition, view);
             var listing = new Listing_Standard();
@@ -131,6 +132,8 @@ namespace CAP_ChatInteractive
 
             // Editor buttons row
             DrawEditorButtons(listing);
+
+            listing.Gap(12f); // Add extra space after buttons
         }
 
         private static void DrawStatisticsRow(Listing_Standard listing)
@@ -145,6 +148,10 @@ namespace CAP_ChatInteractive
             int totalWeather = BuyableWeatherManager.AllBuyableWeather.Count;
             int enabledWeather = BuyableWeatherManager.AllBuyableWeather.Values.Count(w => w.Enabled);
 
+            // ADD EVENTS STATISTICS
+            int totalEvents = IncidentsManager.AllBuyableIncidents?.Count ?? 0;
+            int enabledEvents = IncidentsManager.AllBuyableIncidents?.Values.Count(e => e.Enabled) ?? 0;
+
             Text.Font = GameFont.Small;
             listing.Label("Current Statistics:");
             Text.Font = GameFont.Tiny;
@@ -152,6 +159,7 @@ namespace CAP_ChatInteractive
             listing.Label($"  • Store: {enabledStoreItems}/{totalStoreItems} items enabled");
             listing.Label($"  • Traits: {enabledTraits}/{totalTraits} traits enabled");
             listing.Label($"  • Weather: {enabledWeather}/{totalWeather} types enabled");
+            listing.Label($"  • Events: {enabledEvents}/{totalEvents} events enabled"); // ADD THIS LINE
 
             Text.Font = GameFont.Small;
         }
@@ -160,7 +168,7 @@ namespace CAP_ChatInteractive
         {
             // Create a rect for the button row
             Rect buttonRow = listing.GetRect(30f);
-            float buttonWidth = (buttonRow.width - 20f) / 3f;
+            float buttonWidth = (buttonRow.width - 30f) / 4f; // Changed from 20f/3f to 30f/4f for 4 buttons
 
             // Store Editor Button
             Rect storeRect = new Rect(buttonRow.x, buttonRow.y, buttonWidth, 30f);
@@ -181,6 +189,13 @@ namespace CAP_ChatInteractive
             if (Widgets.ButtonText(weatherRect, "Weather Editor"))
             {
                 Find.WindowStack.Add(new Dialog_WeatherEditor());
+            }
+
+            // Events Editor Button - NEW
+            Rect eventsRect = new Rect(buttonRow.x + (buttonWidth + 10f) * 3, buttonRow.y, buttonWidth, 30f);
+            if (Widgets.ButtonText(eventsRect, "Events Editor"))
+            {
+                Find.WindowStack.Add(new Dialog_EventsEditor());
             }
         }
 

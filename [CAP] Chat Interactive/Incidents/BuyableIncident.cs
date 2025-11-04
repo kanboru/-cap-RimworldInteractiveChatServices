@@ -21,6 +21,9 @@ namespace CAP_ChatInteractive.Incidents
         public string KarmaType { get; set; } = "Neutral";
         public int EventCap { get; set; } = 2;
         public bool Enabled { get; set; } = true;
+        public string DisabledReason { get; set; } = "";
+        public bool ShouldBeInStore { get; set; } = true;
+        public bool IsAvailableForCommands { get; set; } = true;
 
         // Additional data
         public string ModSource { get; set; } = "RimWorld";
@@ -37,6 +40,7 @@ namespace CAP_ChatInteractive.Incidents
         public float MinThreatPoints { get; set; }
         public float MaxThreatPoints { get; set; }
 
+
         public BuyableIncident() { }
 
         public BuyableIncident(IncidentDef incidentDef)
@@ -52,11 +56,178 @@ namespace CAP_ChatInteractive.Incidents
             MinThreatPoints = incidentDef.minThreatPoints;
             MaxThreatPoints = incidentDef.maxThreatPoints;
 
-            // Determine incident type
             AnalyzeIncidentType(incidentDef);
             SetDefaultPricing(incidentDef);
 
-            Logger.Debug($"Created incident: {DefName}, Category: {CategoryName}, Worker: {WorkerClassName}");
+            // Determine if this incident should be in store at all
+            ShouldBeInStore = DetermineStoreSuitability(incidentDef);
+
+            // Determine command availability
+            IsAvailableForCommands = DetermineCommandAvailability(incidentDef);
+
+            // Auto-disable if not suitable for store
+            if (!ShouldBeInStore)
+            {
+                Enabled = false;
+                DisabledReason = "Not suitable for store system";
+            }
+            else
+            {
+                // NEW: Auto-disable mod events (non-Core, non-DLC) for safety
+                if (ShouldAutoDisableModEvent(incidentDef))
+                {
+                    Enabled = false;
+                    DisabledReason = "Auto-disabled: Mod event (enable manually if desired)";
+                }
+            }
+
+            Logger.Debug($"Created incident: {DefName}, Store: {ShouldBeInStore}, Commands: {IsAvailableForCommands}, Enabled: {Enabled}");
+        }
+
+        private bool DetermineStoreSuitability(IncidentDef incidentDef)
+        {
+            // Skip incidents without workers
+            if (incidentDef.Worker == null)
+                return false;
+
+            // Skip hidden incidents
+            if (incidentDef.hidden)
+                return false;
+
+            // Skip test/debug incidents
+            string defName = incidentDef.defName.ToLower();
+            if (defName.Contains("test") || defName.Contains("debug"))
+                return false;
+
+            // Skip incidents not suitable for player map
+            if (!IsIncidentSuitableForPlayerMap(incidentDef))
+                return false;
+
+            // Skip specific incident types by defName
+            if (ShouldSkipByDefName(incidentDef))
+                return false;
+
+            // Skip incidents with inappropriate target tags
+            if (ShouldSkipByTargetTags(incidentDef))
+                return false;
+
+            // Skip endgame/story-specific incidents
+            if (ShouldSkipBySpecialCriteria(incidentDef))
+                return false;
+
+            return true;
+        }
+
+        private bool ShouldSkipByDefName(IncidentDef incidentDef)
+        {
+            string[] skipDefNames = {
+        "RaidEnemy", "RaidFriendly", "DeepDrillInfestation", "Infestation",
+        "GiveQuest_EndGame_ShipEscape", "GiveQuest_EndGame_ArchonexusVictory",
+        "ManhunterPack", "ShamblerAssault", "ShamblerSwarmAnimals", "SmallShamblerSwarm",
+        "SightstealerArrival", "CreepJoinerJoin_Metalhorror", "CreepJoinerJoin",
+        "DevourerWaterAssault", "HarbingerTreeProvoked", "GameEndedWanderersJoin"
+    };
+
+            return skipDefNames.Contains(incidentDef.defName);
+        }
+
+        private bool ShouldSkipByTargetTags(IncidentDef incidentDef)
+        {
+            if (incidentDef.targetTags == null)
+                return false;
+
+            string[] skipTargetTags = {
+        "Caravan", "Map_TempIncident", "World", "Site"
+    };
+
+            string[] raidTags = {
+        "Raid"
+    };
+
+            // Skip caravan/world incidents
+            if (incidentDef.targetTags.Any(tag => skipTargetTags.Contains(tag.defName)))
+                return true;
+
+            // Skip raid incidents (handled by !raid command)
+            if (incidentDef.targetTags.Any(tag => raidTags.Contains(tag.defName)))
+                return true;
+
+            return false;
+        }
+
+        private bool ShouldSkipBySpecialCriteria(IncidentDef incidentDef)
+        {
+            // Skip endgame quests
+            if (incidentDef.defName.Contains("EndGame"))
+                return true;
+
+            // Skip incidents that require specific conditions not available via commands
+            if (incidentDef.defName.Contains("Ambush"))
+                return true;
+
+            // Skip ransom demands (too specific)
+            if (incidentDef.defName.Contains("Ransom"))
+                return true;
+
+            // Skip game-over specific incidents
+            if (incidentDef.defName.Contains("GameEnded"))
+                return true;
+
+            // Skip provoked incidents that are duplicates
+            if (incidentDef.defName.Contains("Provoked"))
+                return true;
+
+            return false;
+        }
+
+        private bool DetermineCommandAvailability(IncidentDef incidentDef)
+        {
+            string defName = incidentDef.defName.ToLower();
+
+            // ONLY filter combat incidents that have dedicated commands
+            string[] combatIncidentsToFilter = {
+        "manhunterpack", "infestation", "mechcluster",
+        "fleshmassheart", "shamblerswarm", "ghoulattack",
+        "fleshbeastattack", "gorehulkassault", "devourerassault",
+        "chimeraassault", "psychicritualsiege", "hatechanters"
+    };
+
+            return !combatIncidentsToFilter.Contains(defName);
+        }
+
+        private bool IsIncidentSuitableForPlayerMap(IncidentDef incidentDef)
+        {
+            string defName = incidentDef.defName.ToLower();
+            string workerName = incidentDef.Worker?.GetType().Name.ToLower() ?? "";
+
+            // Skip caravan-specific incidents
+            if (defName.Contains("caravan") || defName.Contains("ambush") ||
+                workerName.Contains("caravan") || workerName.Contains("ambush"))
+            {
+                Logger.Debug($"Skipping caravan/ambush incident: {defName}");
+                return false;
+            }
+
+            // Skip world map only incidents
+            if (incidentDef.targetTags != null)
+            {
+                foreach (var tag in incidentDef.targetTags)
+                {
+                    if (tag.defName.Contains("World") || tag.defName.Contains("Caravan"))
+                    {
+                        Logger.Debug($"Skipping world/caravan target incident: {defName}");
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        public void UpdateCommandAvailability()
+        {
+            // This will be called after the incident is created to set initial availability
+            IsAvailableForCommands = CheckCommandSuitability();
         }
 
         private void AnalyzeIncidentType(IncidentDef incidentDef)
@@ -68,70 +239,202 @@ namespace CAP_ChatInteractive.Incidents
             string categoryName = incidentDef.category?.defName?.ToLower() ?? "";
 
             IsWeatherIncident = workerName.Contains("weather") || defName.Contains("weather") || categoryName.Contains("weather");
-            IsRaidIncident = workerName.Contains("raid") || defName.Contains("raid") || categoryName.Contains("raid");
-            IsDiseaseIncident = workerName.Contains("disease") || defName.Contains("sickness") || categoryName.Contains("disease");
-            IsQuestIncident = workerName.Contains("quest") || defName.Contains("quest") || categoryName.Contains("quest");
+            IsRaidIncident = workerName.Contains("raid") || defName.Contains("raid") || categoryName.Contains("raid") ||
+                            (incidentDef.targetTags?.Any(t => t.defName.Contains("Raid")) == true);
+            IsDiseaseIncident = workerName.Contains("disease") || defName.Contains("sickness") || categoryName.Contains("disease") ||
+                               incidentDef.diseaseIncident != null;
+            IsQuestIncident = workerName.Contains("quest") || defName.Contains("quest") || categoryName.Contains("quest") ||
+                             incidentDef.questScriptDef != null;
 
-            // Additional checks for specific incident types
-            if (incidentDef.diseaseIncident != null)
-                IsDiseaseIncident = true;
+            // Additional specific checks
+            if (defName.Contains("manhunter") || defName.Contains("infestation") || defName.Contains("mechcluster") ||
+                defName.Contains("assault") || defName.Contains("swarm"))
+                IsRaidIncident = true;
 
-            if (incidentDef.questScriptDef != null)
+            if (defName.Contains("quest"))
                 IsQuestIncident = true;
+
+            // Check for threat categories
+            if (categoryName.Contains("threatbig") || categoryName.Contains("threatsmall"))
+                IsRaidIncident = true; // Treat threat categories as raid-like incidents
+        }
+
+        private bool CheckCommandSuitability()
+        {
+            string defName = DefName.ToLower();
+
+            string[] combatIncidentsToFilter = {
+            "manhunterpack", "infestation", "mechcluster",
+            "fleshmassheart", "shamblerswarm", "ghoulattack",
+            "fleshbeastattack", "gorehulkassault", "devourerassault",
+            "chimeraassault", "psychicritualsiege", "hatechanters"
+        };
+
+            if (combatIncidentsToFilter.Contains(defName))
+                return false;
+
+            return true;
+        }
+
+        private string DetermineKarmaType(IncidentDef incidentDef)
+        {
+            // First check for specific defNames that we know are good or bad
+            string[] badDefNames = {
+        "NoxiousHaze", "CropBlight", "LavaEmergence", "LavaFlow", "ShortCircuit"
+    };
+
+            string[] goodDefNames = {
+        "PsychicSoothe"
+    };
+
+            if (badDefNames.Contains(incidentDef.defName))
+                return "Bad";
+
+            if (goodDefNames.Contains(incidentDef.defName))
+                return "Good";
+
+            // Then check letter def for karma hints
+            if (incidentDef.letterDef != null)
+            {
+                string letterDefName = incidentDef.letterDef.defName.ToLower();
+
+                if (letterDefName.Contains("positive") || letterDefName.Contains("good"))
+                    return "Good";
+                else if (letterDefName.Contains("negative") || letterDefName.Contains("bad") ||
+                         letterDefName.Contains("threat"))
+                    return "Bad";
+            }
+
+            // Check category for threat indicators
+            if (incidentDef.category != null)
+            {
+                string categoryName = incidentDef.category.defName.ToLower();
+                if (categoryName.Contains("threatbig") || categoryName.Contains("threatsmall") ||
+                    categoryName.Contains("threat"))
+                {
+                    return "Bad";
+                }
+
+                if (categoryName.Contains("positive") || categoryName.Contains("good") ||
+                    categoryName.Contains("benefit"))
+                {
+                    return "Good";
+                }
+
+                if (categoryName.Contains("neutral") || categoryName.Contains("normal"))
+                {
+                    return "Neutral";
+                }
+            }
+
+            // Fallback to type-based determination
+            if (IsRaidIncident || IsDiseaseIncident)
+                return "Bad";
+            else if (IsQuestIncident)
+                return "Good";
+            else
+                return "Neutral";
+        }
+
+        public string GetUnavailableReason()
+        {
+            var incidentDef = DefDatabase<IncidentDef>.GetNamedSilentFail(DefName);
+            if (incidentDef == null)
+                return "IncidentDef not found";
+
+            if (incidentDef.targetTags?.Any(t => t.defName == "Caravan") == true)
+                return "Caravan incident - not available on player map";
+
+            if (incidentDef.targetTags?.Any(t => t.defName == "Raid") == true)
+                return "Raid incident - use !raid command instead";
+
+            if (incidentDef.defName.Contains("EndGame"))
+                return "Endgame story incident - not suitable for commands";
+
+            if (incidentDef.defName.Contains("Ambush"))
+                return "Ambush incident - caravan specific";
+
+            return "Not suitable for command system";
+        }
+
+        public bool IsKarmaTypeSimilar(string karmaType1, string karmaType2)
+        {
+            // Consider karma types similar if they're in the same category
+            string[] goodTypes = { "Good", "Positive", "Friendly" };
+            string[] badTypes = { "Bad", "Negative", "Hostile" };
+            string[] neutralTypes = { "Neutral", "Normal", "Standard" };
+
+            bool type1IsGood = goodTypes.Contains(karmaType1);
+            bool type1IsBad = badTypes.Contains(karmaType1);
+            bool type1IsNeutral = neutralTypes.Contains(karmaType1) || (!type1IsGood && !type1IsBad);
+
+            bool type2IsGood = goodTypes.Contains(karmaType2);
+            bool type2IsBad = badTypes.Contains(karmaType2);
+            bool type2IsNeutral = neutralTypes.Contains(karmaType2) || (!type2IsGood && !type2IsBad);
+
+            return (type1IsGood && type2IsGood) || (type1IsBad && type2IsBad) || (type1IsNeutral && type2IsNeutral);
+        }
+
+        private bool ShouldAutoDisableModEvent(IncidentDef incidentDef)
+        {
+            // Always enable Core RimWorld incidents
+            if (ModSource == "RimWorld" || ModSource == "Core")
+                return false;
+
+            // Enable official DLCs
+            string[] officialDLCs = {
+        "Royalty", "Ideology", "Biotech", "Anomaly", "Odyssey"
+    };
+
+            if (officialDLCs.Any(dlc => ModSource.Contains(dlc)))
+                return false;
+
+            // Auto-disable all other mod events for safety
+            Logger.Debug($"Auto-disabling mod event: {DefName} from {ModSource}");
+            return true;
         }
 
         private void SetDefaultPricing(IncidentDef incidentDef)
         {
-            int basePrice = 500;
+            int basePrice = 100; // Reduced from 500 to 100
             float impactFactor = 1.0f;
+
+            // Determine karma type first
+            KarmaType = DetermineKarmaType(incidentDef);
 
             // Adjust price based on incident type
             if (IsRaidIncident)
             {
-                impactFactor *= 3.0f;
-                KarmaType = "Bad";
-                EventCap = 1; // Lower cap for raids
+                impactFactor *= 2.0f; // Reduced from 3.0f
+                EventCap = 1;
             }
             else if (IsWeatherIncident)
             {
-                impactFactor *= 1.5f;
-                // Determine if weather is good or bad
-                if (incidentDef.defName.Contains("Toxic") || incidentDef.defName.Contains("Volcanic") ||
-                    incidentDef.defName.Contains("ColdSnap") || incidentDef.defName.Contains("HeatWave"))
-                {
-                    KarmaType = "Bad";
-                    impactFactor *= 2.0f;
-                }
-                else
-                {
-                    KarmaType = "Neutral";
-                }
+                impactFactor *= 1.2f; // Reduced from 1.5f
             }
             else if (IsDiseaseIncident)
             {
-                impactFactor *= 2.0f;
-                KarmaType = "Bad";
+                impactFactor *= 1.5f; // Reduced from 2.0f
             }
             else if (IsQuestIncident)
             {
-                impactFactor *= 1.2f;
-                KarmaType = "Good";
+                impactFactor *= 1.1f; // Reduced from 1.2f
             }
 
             // Adjust based on threat points for scaleable incidents
             if (PointsScaleable && MaxThreatPoints > 0)
             {
-                impactFactor *= (MaxThreatPoints / 1000f);
+                impactFactor *= (MaxThreatPoints / 2000f); // Reduced impact from threat points
             }
 
             // Adjust based on base chance (rarer events = more expensive)
             if (BaseChance > 0)
             {
-                impactFactor *= (1.0f / BaseChance) * 0.1f;
+                impactFactor *= (1.0f / BaseChance) * 0.05f; // Reduced rarity multiplier
             }
 
             BaseCost = (int)(basePrice * impactFactor);
-            BaseCost = Math.Max(100, Math.Min(10000, BaseCost)); // Clamp between 100-10000
+            BaseCost = Math.Max(50, Math.Min(5000, BaseCost)); // Reduced max from 10,000 to 5,000
         }
     }
 }

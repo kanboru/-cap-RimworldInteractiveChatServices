@@ -85,6 +85,9 @@ namespace CAP_ChatInteractive
         public int LastEventTick = 0;
         public int CooldownPeriodStartTick = 0;
 
+        // Event display settings
+        public bool ShowUnavailableEvents = true;
+
         // Pawn queue settings
         public int PawnOfferTimeoutSeconds = 300; // 5 minutes default
 
@@ -130,6 +133,7 @@ namespace CAP_ChatInteractive
             Scribe_Values.Look(ref EventsTriggeredThisPeriod, "eventsTriggeredThisPeriod", 0);
             Scribe_Values.Look(ref LastEventTick, "lastEventTick", 0);
             Scribe_Values.Look(ref CooldownPeriodStartTick, "cooldownPeriodStartTick", 0);
+            Scribe_Values.Look(ref ShowUnavailableEvents, "showUnavailableEvents", true);
 
             Scribe_Values.Look(ref Prefix, "prefix", "!");
             Scribe_Values.Look(ref BuyPrefix, "buyPrefix", "$");
