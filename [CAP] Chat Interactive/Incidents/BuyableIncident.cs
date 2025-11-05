@@ -137,7 +137,7 @@ namespace CAP_ChatInteractive.Incidents
                 return false;
 
             string[] skipTargetTags = {
-        "Caravan", "Map_TempIncident", "World", "Site"
+        "Caravan", "World", "Site"
     };
 
             string[] raidTags = {
@@ -150,6 +150,22 @@ namespace CAP_ChatInteractive.Incidents
 
             // Skip raid incidents (handled by !raid command)
             if (incidentDef.targetTags.Any(tag => raidTags.Contains(tag.defName)))
+                return true;
+
+            // NEW: Allow incidents that target Map_PlayerHome regardless of other map tags
+            if (incidentDef.targetTags.Any(tag => tag.defName == "Map_PlayerHome"))
+                return false;
+
+            // Skip incidents that ONLY target temporary maps (no player home)
+            string[] mapTags = {
+        "Map_PlayerHome", "Map_TempIncident", "Map_Misc", "Map_RaidBeacon"
+    };
+
+            bool hasAnyMapTag = incidentDef.targetTags.Any(tag => mapTags.Contains(tag.defName));
+            bool hasPlayerHomeTag = incidentDef.targetTags.Any(tag => tag.defName == "Map_PlayerHome");
+
+            // If it has any map tag but NO player home tag, skip it
+            if (hasAnyMapTag && !hasPlayerHomeTag)
                 return true;
 
             return false;
@@ -208,9 +224,16 @@ namespace CAP_ChatInteractive.Incidents
                 return false;
             }
 
-            // Skip world map only incidents
+            // NEW: Allow incidents that target Map_PlayerHome regardless of other world/caravan tags
             if (incidentDef.targetTags != null)
             {
+                bool hasPlayerHome = incidentDef.targetTags.Any(tag => tag.defName == "Map_PlayerHome");
+
+                // If it targets player home, allow it even if it has other tags
+                if (hasPlayerHome)
+                    return true;
+
+                // Otherwise, skip world map only incidents
                 foreach (var tag in incidentDef.targetTags)
                 {
                     if (tag.defName.Contains("World") || tag.defName.Contains("Caravan"))
@@ -353,6 +376,19 @@ namespace CAP_ChatInteractive.Incidents
 
             if (incidentDef.defName.Contains("Ambush"))
                 return "Ambush incident - caravan specific";
+
+            // NEW: More specific reason for map targeting
+            if (incidentDef.targetTags != null)
+            {
+                bool hasPlayerHome = incidentDef.targetTags.Any(t => t.defName == "Map_PlayerHome");
+                bool hasMapTag = incidentDef.targetTags.Any(t =>
+                    t.defName == "Map_TempIncident" ||
+                    t.defName == "Map_Misc" ||
+                    t.defName == "Map_RaidBeacon");
+
+                if (hasMapTag && !hasPlayerHome)
+                    return "Incident targets temporary maps but not player home";
+            }
 
             return "Not suitable for command system";
         }
