@@ -22,7 +22,7 @@ namespace CAP_ChatInteractive.Windows
             var listing = new Listing_Standard();
             listing.Begin(inRect);
 
-            listing.Label("CAP Chat Interactive - Quick Menu");
+            listing.Label("RICS - Quick Menu");
             listing.GapLine();
 
             // Logger.Debug($"Found {AddonRegistry.AddonDefs.Count} addon defs");
