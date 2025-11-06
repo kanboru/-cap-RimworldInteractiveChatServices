@@ -113,7 +113,7 @@ public class DefBasedChatCommand : ChatCommand
 
         public override string Name => _def.commandText;
 
-        public override string Description => !string.IsNullOrEmpty(_def.description) ? _def.description : _wrappedCommand.Description;
+        public override string Description => !string.IsNullOrEmpty(_def.commandDescription) ? _def.commandDescription : _wrappedCommand.Description;
 
         public override string PermissionLevel => _def.permissionLevel;
 

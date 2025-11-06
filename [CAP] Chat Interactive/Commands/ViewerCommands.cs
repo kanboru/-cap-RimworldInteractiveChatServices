@@ -15,24 +15,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class CheckBalance : ChatCommand
     {
         public override string Name => "bal";
-        public override string Description => "Check your coin & Karma balance";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 0;
-            }
-        }
+
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Check if command is enabled
-            if (!IsEnabled())
-            {
-                return "The CheckBalance command is currently disabled.";
-            }
-
             // Get command settings
             var settingsCommand = GetCommandSettings();
 
@@ -54,27 +39,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class WhatIsKarma : ChatCommand
     {
         public override string Name => "whatiskarma";
-        public override string Description => "Explain what karma is";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 0;
-            }
-        }
+
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Check if command is enabled
-            if (!IsEnabled())
-            {
-                return "The WhatIsKarma command is currently disabled.";
-            }
-
-            // Get command settings
-            var settingsCommand = GetCommandSettings();
-
             return "Karma affects your coin rewards! Higher karma = more coins per message. Be active and positive to increase your karma!";
         }
     }
@@ -83,18 +50,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class Event : ChatCommand
     {
         public override string Name => "event";
-        public override string Description => "Trigger various game events";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds => 0; // Using global cooldown system instead
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Check if command is enabled globally
-            if (!IsEnabled())
-            {
-                return "The Event command is currently disabled.";
-            }
-
             if (args.Length == 0)
             {
                 return "Usage: !event <event_name> or !event list. Examples: !event resourcepod, !event heatwave, !event psychicsoothe";
@@ -108,27 +66,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class Weather : ChatCommand
     {
         public override string Name => "weather";
-        public override string Description => "Change the weather";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 0;
-            }
-        }
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Check if command is enabled
-            if (!IsEnabled())
-            {
-                return "The Weather command is currently disabled.";
-            }
-
-            // Get command settings
-            var settingsCommand = GetCommandSettings();
 
             if (args.Length == 0)
             {
@@ -143,16 +83,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class ModInfo : ChatCommand
     {
         public override string Name => "modinfo";
-        public override string Description => "Show information about this mod";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 0;
-            }
-        }
+
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
             // Check if command is enabled
@@ -163,64 +94,130 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
             // Get command settings
             // var settingsCommand = GetCommandSettings();
-            return "[CAP] Chat Interactive v1.0 - Twitch & YouTube integration for RimWorld!";
+            return "[CAP] Rimwold Interactive Chat Service v1.0 - Twitch & YouTube integration for RimWorld!";
         }
     }
 
     public class Instructions : ChatCommand
     {
         public override string Name => "help";
-        public override string Description => "Show how to use the mod";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 0;
-            }
-        }
+
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Check if command is enabled
-            if (!IsEnabled())
-            {
-                return "The Instructions is currently disabled.";
-            }
-
-            // Get command settings
-            var settingsCommand = GetCommandSettings();
-
-            return "Available commands: !bal (check coins), !items (see store), !whatiskarma (learn about karma). More commands coming soon!";
+            return "https://github.com/ekudram/-cap-RimworldInteractiveChatServices/wiki";
         }
     }
 
     public class AvailableCommands : ChatCommand
     {
         public override string Name => "commands";
-        public override string Description => "List all available commands";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 0;
-            }
-        }
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            if (!IsEnabled())
-            {
-                return "The Instructions is currently disabled.";
-            }
-
-            // Get command settings
-            var settingsCommand = GetCommandSettings();
-
             var availableCommands = ChatCommandProcessor.GetAvailableCommands(user);
             var commandList = string.Join(", ", availableCommands.Select(cmd => $"!{cmd.Name}"));
             return $"Available commands: {commandList}";
+        }
+    }
+
+    public class LookupCommand : ChatCommand
+    {
+        public override string Name => "lookup";
+
+        public override string Execute(ChatMessageWrapper user, string[] args)
+        {
+            if (args.Length == 0)
+            {
+                return "Usage: !lookup [item|event|weather|trait] <name> - Search specific categories. Example: !lookup item rifle, !lookup event raid, !lookup weather rain, !lookup trait kind";
+            }
+
+            // Parse the category if specified
+            string searchType = args[0].ToLower();
+            string searchTerm;
+
+            if (searchType == "item" || searchType == "event" || searchType == "weather" || searchType == "trait")
+            {
+                if (args.Length < 2)
+                {
+                    return $"Usage: !lookup {searchType} <name> - Search for {searchType}s. Example: !lookup {searchType} {GetExampleForType(searchType)}";
+                }
+                searchTerm = string.Join(" ", args.Skip(1)).ToLower();
+                return LookupCommandHandler.HandleLookupCommand(user, searchTerm, searchType);
+            }
+            else
+            {
+                // No category specified - search all
+                searchTerm = string.Join(" ", args).ToLower();
+                return LookupCommandHandler.HandleLookupCommand(user, searchTerm, "all");
+            }
+        }
+
+        private static string GetExampleForType(string type)
+        {
+            return type switch
+            {
+                "item" => "rifle",
+                "event" => "raid",
+                "weather" => "rain",
+                "trait" => "kind",
+                _ => "search_term"
+            };
+        }
+    }
+
+    public class GiftCoins : ChatCommand
+    {
+        public override string Name => "giftcoins"; // Changed from "givecoins" to match XML
+
+        public override string Execute(ChatMessageWrapper user, string[] args)
+        {
+            // Check if we have enough arguments
+            if (args.Length < 2)
+            {
+                return "Usage: !giftcoins <viewer> <amount>";
+            }
+
+            string targetUsername = args[0];
+
+            // Parse the coin amount
+            if (!int.TryParse(args[1], out int coinAmount) || coinAmount <= 0)
+            {
+                return "Please specify a valid positive number of coins to give.";
+            }
+
+            // Get the sender's viewer data - USING STATIC METHOD
+            Viewer sender = Viewers.GetViewer(user.Username);
+            if (sender == null)
+            {
+                return "Error: Could not find your viewer data.";
+            }
+
+            // Check if sender has enough coins
+            if (sender.GetCoins() < coinAmount)
+            {
+                return $"You don't have enough coins. You have {sender.GetCoins()} coins but tried to give {coinAmount}.";
+            }
+
+            // Get the target viewer - USING STATIC METHOD
+            Viewer target = Viewers.GetViewer(targetUsername);
+            if (target == null)
+            {
+                return $"Viewer '{targetUsername}' not found.";
+            }
+
+            // Cannot give coins to yourself
+            if (sender.Username.Equals(target.Username, StringComparison.OrdinalIgnoreCase))
+            {
+                return "You cannot give coins to yourself.";
+            }
+
+            // Transfer coins
+            sender.TakeCoins(coinAmount);
+            target.GiveCoins(coinAmount);
+
+            // Save the changes - USING STATIC METHOD
+            Viewers.SaveViewers();
+
+            return $"Successfully gave {coinAmount} coins to {target.DisplayName}. You now have {sender.GetCoins()} coins remaining.";
         }
     }
 }

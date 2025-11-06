@@ -97,6 +97,12 @@ namespace CAP_ChatInteractive
                 return;
             }
 
+            // NEW: Fast exit: Command disabled
+            if (!command.IsEnabled())
+            {
+                SendMessageToUser(message, $"Command {commandText} is currently disabled.");
+                return;
+            }
             // NEW: Global Cooldown Check (before individual user checks)
             var cooldownManager = GetCooldownManager();
             var commandSettings = command.GetCommandSettings();

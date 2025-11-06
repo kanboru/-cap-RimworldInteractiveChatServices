@@ -16,24 +16,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class Pawn : ChatCommand
     {
         public override string Name => "pawn";
-        public override string Description => "Purchase a pawn to join the colony";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 0;
-            }
-        }
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            if (!IsEnabled())
-            {
-                return "The Pawn command is currently disabled.";
-            }
-
             Logger.Debug($"Pawn command executed by {user.Username} with args: [{string.Join(", ", args)}]");
 
             // Handle different argument patterns
@@ -214,25 +199,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class MyPawn : ChatCommand
     {
         public override string Name => "mypawn";
-        public override string Description => "Show information about your pawn and manage it";
-        public override string PermissionLevel => "everyone";
-
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 0;
-            }
-        }
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            if (!IsEnabled())
-            {
-                return "The MyPawn command is currently disabled.";
-            }
-
             // Get command settings
             var settingsCommand = GetCommandSettings();
 
@@ -257,24 +226,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class TraitCommand : ChatCommand
     {
         public override string Name => "trait";
-        public override string Description => "Look up information about a trait";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 5;
-            }
-        }
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            if (!IsEnabled())
-            {
-                return "The Trait command is currently disabled.";
-            }
-
             return TraitsCommandHandler.HandleLookupTraitCommand(user, args);
         }
     }
@@ -282,24 +236,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class AddTraitCommand : ChatCommand
     {
         public override string Name => "addtrait";
-        public override string Description => "Add a trait to your pawn";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 5;
-            }
-        }
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            if (!IsEnabled())
-            {
-                return "The AddTrait command is currently disabled.";
-            }
-
             return TraitsCommandHandler.HandleAddTraitCommand(user, args);
         }
     }
@@ -307,79 +246,19 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class RemoveTraitCommand : ChatCommand
     {
         public override string Name => "removetrait";
-        public override string Description => "Remove a trait from your pawn";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 5;
-            }
-        }
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            if (!IsEnabled())
-            {
-                return "The RemoveTrait command is currently disabled.";
-            }
-
             return TraitsCommandHandler.HandleRemoveTraitCommand(user, args);
-        }
-    }
-
-    public class LookupTraitCommand : ChatCommand
-    {
-        public override string Name => "lookuptrait";
-        public override string Description => "Look up trait prices";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 5;
-            }
-        }
-
-        public override string Execute(ChatMessageWrapper user, string[] args)
-        {
-            if (!IsEnabled())
-            {
-                return "The LookupTrait command is currently disabled.";
-            }
-
-            if (args.Length == 0)
-            {
-                return "Usage: !lookuptrait <trait_name> - Look up trait prices.";
-            }
-
-            return TraitsCommandHandler.HandleLookupTraitCommand(user, args);
         }
     }
 
     public class ListTraitsCommand : ChatCommand
     {
         public override string Name => "traits";
-        public override string Description => "List all available traits";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 10;
-            }
-        }
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            if (!IsEnabled())
-            {
-                return "The Traits command is currently disabled.";
-            }
-
             return TraitsCommandHandler.HandleListTraitsCommand(user, args);
         }
     }
@@ -387,16 +266,6 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class LeaveCommand : ChatCommand
     {
         public override string Name => "leave";
-        public override string Description => "Release your pawn from assignment";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 0;
-            }
-        }
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
@@ -475,39 +344,19 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         }
     }
 
-    // UPDATE in PawnCommands.cs
     public class JoinQueue : ChatCommand
     {
         public override string Name => "join";
-        public override string Description => "Join the pawn queue";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 30; // 30 second cooldown
-            }
-        }
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            if (!IsEnabled())
-            {
-                return "The pawn queue is currently disabled.";
-            }
-
             return PawnQueueCommandHandler.HandleJoinQueueCommand(user);
         }
     }
 
-    // ADD these new commands to PawnCommands.cs
     public class LeaveQueue : ChatCommand
     {
         public override string Name => "leavequeue";
-        public override string Description => "Leave the pawn queue";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds => 10;
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
@@ -518,9 +367,6 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class QueueStatus : ChatCommand
     {
         public override string Name => "queuestatus";
-        public override string Description => "Check your position in the pawn queue";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds => 10;
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
@@ -531,9 +377,6 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class AcceptPawn : ChatCommand
     {
         public override string Name => "acceptpawn";
-        public override string Description => "Accept a pawn offer";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds => 10;
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
@@ -544,16 +387,6 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class RevivePawn : ChatCommand
     {
         public override string Name => "revive pawn";
-        public override string Description => "Revives a pawn - self, specific user, or all dead pawns";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 0;
-            }
-        }
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
@@ -568,23 +401,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class HealPawn : ChatCommand
     {
         public override string Name => "heal pawn";
-        public override string Description => "Heals a pawn - self, specific user, or all pawns with optional quantity";
-        public override string PermissionLevel => "everyone";
-        public override int CooldownSeconds
-        {
-            get
-            {
-                var settings = GetCommandSettings();
-                return settings?.CooldownSeconds ?? 0;
-            }
-        }
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            if (!IsEnabled())
-            {
-                return "The Healpawn command is currently disabled.";
-            }
             return HealPawnCommandHandler.HandleHealPawn(user, args);
         }
     }

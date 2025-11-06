@@ -42,6 +42,7 @@ namespace CAP_ChatInteractive.Store
         public StoreItem(ThingDef thingDef)
         {
             DefName = thingDef.defName;
+            CustomName = thingDef.label.CapitalizeFirst();
             BasePrice = CalculateBasePrice(thingDef);
             Category = GetCategoryFromThingDef(thingDef);  // This needs fixing
             ModSource = thingDef.modContentPack?.Name ?? "RimWorld";
@@ -77,16 +78,6 @@ namespace CAP_ChatInteractive.Store
                    thingDef.defName.Contains("Serum") ||
                    thingDef.defName.Contains("Pack");
         }
-
-        // New helper method for special usable items  
-        private bool IsUtilityItem(ThingDef thingDef)
-        {
-            // Items that can be equipped but aren't weapons (shields, tools, etc.)
-            return thingDef.equipmentType != EquipmentType.None &&
-                   !thingDef.IsWeapon &&
-                   thingDef.HasComp(typeof(CompEquippable));
-        }
-
 
         private int CalculateBasePrice(ThingDef thingDef)
         {

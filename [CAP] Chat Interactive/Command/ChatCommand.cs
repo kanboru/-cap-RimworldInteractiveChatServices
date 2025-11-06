@@ -18,7 +18,15 @@ namespace CAP_ChatInteractive
         public abstract string Name { get; }
         public virtual string[] Aliases => Array.Empty<string>();
         public virtual string Description => "No description available";
-        public virtual string PermissionLevel => "everyone";
+        // Make PermissionLevel virtual so it can use settings
+        public virtual string PermissionLevel
+        {
+            get
+            {
+                var settings = GetCommandSettings();
+                return settings?.CustomPermission ?? "everyone"; // Using CustomPermission field for override
+            }
+        }
         public virtual int CooldownSeconds => 0;
 
         public abstract string Execute(ChatMessageWrapper user, string[] args);
@@ -77,7 +85,6 @@ namespace CAP_ChatInteractive
     }
 
     // Add this static class to manage command settings
-    // In ChatCommand.cs - Update the CommandSettingsManager class
     public static class CommandSettingsManager
     {
         public static CommandSettings GetSettings(string commandName)
@@ -137,20 +144,6 @@ namespace CAP_ChatInteractive
             var commandList = string.Join(", ", availableCommands.Select(cmd => $"!{cmd.Name}"));
 
             return $"Available commands: {commandList}. Use !help <command> for more info.";
-        }
-    }
-
-    public class PointsCommand : ChatCommand
-    {
-        public override string Name => "points";
-        public override string[] Aliases => new[] { "balance", "coins" };
-        public override string Description => "Check your point balance";
-
-        public override string Execute(ChatMessageWrapper user, string[] args)
-        {
-            // TODO: Integrate with points system
-            var points = 100; // Placeholder
-            return $"You have {points} points!";
         }
     }
 }
