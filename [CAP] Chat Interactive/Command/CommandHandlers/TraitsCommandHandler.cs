@@ -290,45 +290,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     trait.DefName.ToLower().Contains(searchTerm));
         }
 
-        private static string FormatTraitInfo(BuyableTrait buyableTrait)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine($"📖 {buyableTrait.Name}");
-
-            // Description
-            if (!string.IsNullOrEmpty(buyableTrait.Description))
-            {
-                sb.AppendLine($"📝 {buyableTrait.Description}");
-            }
-
-            // Costs
-            sb.AppendLine($"💰 Add Cost: {buyableTrait.AddPrice} coins");
-            sb.AppendLine($"💰 Remove Cost: {buyableTrait.RemovePrice} coins");
-
-            // Availability
-            sb.Append($"🔄 Can Add: {(buyableTrait.CanAdd ? "✅" : "❌")}");
-            sb.AppendLine($" | Can Remove: {(buyableTrait.CanRemove ? "✅" : "❌")}");
-
-            // Common conflicts
-            var commonConflicts = GetCommonConflicts(buyableTrait.DefName);
-            if (commonConflicts.Any())
-            {
-                sb.AppendLine($"⚔️ Conflicts with: {string.Join(", ", commonConflicts)}");
-            }
-
-            // Skill effects
-            var skillEffects = GetSkillEffects(buyableTrait);
-            if (!string.IsNullOrEmpty(skillEffects))
-            {
-                sb.AppendLine($"🎯 {skillEffects}");
-            }
-
-            // Mod source
-            sb.AppendLine($"📦 Source: {buyableTrait.ModSource}");
-
-            return sb.ToString();
-        }
-
         private static string CheckTraitConflicts(Pawn pawn, BuyableTrait newTrait)
         {
             // Get the TraitDef from the DefName
@@ -357,35 +318,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             // RimWorld automatically removes skill effects when traits are removed
             // No need for manual skill adjustment - the trait system handles this
             Logger.Debug($"Trait {buyableTrait.Name} removed from {pawn.Name} - skill effects removed automatically by RimWorld");
-        }
-
-        private static IEnumerable<string> GetCommonConflicts(string traitDefName)
-        {
-            // Get the TraitDef from the DefName
-            TraitDef traitDef = DefDatabase<TraitDef>.GetNamedSilentFail(traitDefName);
-            if (traitDef == null) return Enumerable.Empty<string>();
-
-            // Get a few common conflicts to show users
-            return DefDatabase<TraitDef>.AllDefs
-                .Where(other => other.ConflictsWith(traitDef) || traitDef.ConflictsWith(other))
-                .Select(conflict => conflict.LabelCap.RawText) // Convert TaggedString to string
-                .Take(3);
-        }
-
-        private static string GetSkillEffects(BuyableTrait buyableTrait)
-        {
-            // Get the TraitDef from the DefName
-            TraitDef traitDef = DefDatabase<TraitDef>.GetNamedSilentFail(buyableTrait.DefName);
-            if (traitDef == null) return "";
-
-            var traitData = traitDef.DataAtDegree(buyableTrait.Degree);
-            if (traitData?.skillGains == null || !traitData.skillGains.Any())
-                return "";
-
-            var effects = traitData.skillGains.Select(skillGain =>
-                $"{skillGain.skill.LabelCap.RawText}: +{skillGain.amount}");
-
-            return $"Skill effects: {string.Join(", ", effects)}";
         }
     }
 }

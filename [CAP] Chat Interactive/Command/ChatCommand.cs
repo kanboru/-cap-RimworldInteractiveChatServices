@@ -136,14 +136,13 @@ namespace CAP_ChatInteractive
     public class HelpCommand : ChatCommand
     {
         public override string Name => "help";
-        public override string Description => "Shows available commands";
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
             var availableCommands = ChatCommandProcessor.GetAvailableCommands(user);
             var commandList = string.Join(", ", availableCommands.Select(cmd => $"!{cmd.Name}"));
 
-            return $"Available commands: {commandList}. Use !help <command> for more info.";
+            return $"Github Wiki: https://github.com/ekudram/-cap-RimworldInteractiveChatServices/wiki";
         }
     }
 }
