@@ -416,10 +416,10 @@ namespace CAP_ChatInteractive
                 return allSettings[raceDefName];
             }
 
-            // Return default settings if not found - but mark as disabled by default for safety
+            // Return default settings if not found - enable by default for new races
             return new RaceSettings
             {
-                Enabled = false, // Default to disabled until properly configured
+                Enabled = true, // Changed from false to true - new races should be enabled by default
                 BasePrice = 1000,
                 MinAge = 16,
                 MaxAge = 65,
@@ -428,7 +428,5 @@ namespace CAP_ChatInteractive
                 EnabledXenotypes = new Dictionary<string, bool>()
             };
         }
-
-
     }
 }

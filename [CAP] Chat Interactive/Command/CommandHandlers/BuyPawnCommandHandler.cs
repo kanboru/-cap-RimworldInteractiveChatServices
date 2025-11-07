@@ -16,7 +16,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 {
     public static class BuyPawnCommandHandler
     {
-        public static string HandleBuyPawnCommand(ChatMessageWrapper user, string raceName, string xenotypeName = "Baseliner", string genderName = "Random", string ageString = "Random")
+        private static string HandleBuyPawnCommandInternal(ChatMessageWrapper user, string raceName, string xenotypeName = "Baseliner", string genderName = "Random", string ageString = "Random")
         {
             try
             {
@@ -66,8 +66,8 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     return $"Age must be between {raceSettings.MinAge} and {raceSettings.MaxAge} for {raceName}.";
                 }
 
-                // Validate xenotype if applicable
-                if (!string.IsNullOrEmpty(xenotypeName) && xenotypeName != "Baseliner" && ModsConfig.BiotechActive)
+                // Validate xenotype if applicable - FIXED: Added null check for raceSettings
+                if (!string.IsNullOrEmpty(xenotypeName) && xenotypeName != "Baseliner" && ModsConfig.BiotechActive && raceSettings != null)
                 {
                     // Check if xenotype is enabled (using your new EnabledXenotypes dictionary)
                     if (raceSettings.EnabledXenotypes != null &&
@@ -245,27 +245,115 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
         }
 
-        private static PawnKindDef GetPawnKindDefForRace(string raceName)
+        public static PawnKindDef GetPawnKindDefForRace(string raceName)
         {
             // Use centralized race lookup
             var raceDef = RaceUtils.FindRaceByName(raceName);
-            if (raceDef != null)
+            if (raceDef == null)
             {
-                // Find a pawn kind def that uses this race
-                var pawnKindDef = DefDatabase<PawnKindDef>.AllDefs.FirstOrDefault(
-                    pk => pk.race == raceDef && pk.defaultFactionDef == FactionDefOf.PlayerColony);
-
-                if (pawnKindDef != null)
-                    return pawnKindDef;
-
-                // Fallback to any pawn kind def for this race
-                pawnKindDef = DefDatabase<PawnKindDef>.AllDefs.FirstOrDefault(
-                    pk => pk.race == raceDef);
-
-                return pawnKindDef ?? PawnKindDefOf.Colonist;
+                Logger.Warning($"Race not found: {raceName}");
+                return PawnKindDefOf.Colonist;
             }
 
+            Logger.Debug($"Looking for pawn kind def for race: {raceDef.defName}");
+
+            // Strategy 1: Look for player faction pawn kinds for this race
+            var playerPawnKinds = DefDatabase<PawnKindDef>.AllDefs
+                .Where(pk => pk.race == raceDef)
+                .Where(pk => IsPlayerFactionPawnKind(pk))
+                .ToList();
+
+            if (playerPawnKinds.Any())
+            {
+                var bestMatch = playerPawnKinds.FirstOrDefault(pk => pk.defName.Contains("Colonist") || pk.defName.Contains("Player"));
+                if (bestMatch != null)
+                {
+                    Logger.Debug($"Found player faction pawn kind: {bestMatch.defName}");
+                    return bestMatch;
+                }
+
+                Logger.Debug($"Using first player faction pawn kind: {playerPawnKinds[0].defName}");
+                return playerPawnKinds[0];
+            }
+
+            // Strategy 2: Look for any pawn kind with this race that has isPlayer=true in its faction
+            var factionPlayerPawnKinds = DefDatabase<PawnKindDef>.AllDefs
+                .Where(pk => pk.race == raceDef && pk.defaultFactionDef != null)
+                .Where(pk => pk.defaultFactionDef.isPlayer)
+                .ToList();
+
+            if (factionPlayerPawnKinds.Any())
+            {
+                Logger.Debug($"Found pawn kind with player faction: {factionPlayerPawnKinds[0].defName}");
+                return factionPlayerPawnKinds[0];
+            }
+
+            // Strategy 3: Look for pawn kinds with player-like names
+            var namedPlayerPawnKinds = DefDatabase<PawnKindDef>.AllDefs
+                .Where(pk => pk.race == raceDef)
+                .Where(pk => IsLikelyPlayerPawnKind(pk))
+                .ToList();
+
+            if (namedPlayerPawnKinds.Any())
+            {
+                Logger.Debug($"Found likely player pawn kind: {namedPlayerPawnKinds[0].defName}");
+                return namedPlayerPawnKinds[0];
+            }
+
+            // Strategy 4: Fallback to any pawn kind for this race
+            var anyPawnKind = DefDatabase<PawnKindDef>.AllDefs.FirstOrDefault(pk => pk.race == raceDef);
+            if (anyPawnKind != null)
+            {
+                Logger.Debug($"Using fallback pawn kind: {anyPawnKind.defName}");
+                return anyPawnKind;
+            }
+
+            // Final fallback
+            Logger.Warning($"No pawn kind found for race: {raceDef.defName}, using default Colonist");
             return PawnKindDefOf.Colonist;
+        }
+
+        private static bool IsPlayerFactionPawnKind(PawnKindDef pawnKind)
+        {
+            if (pawnKind == null) return false;
+
+            // Check if it uses PlayerColony faction (core RimWorld)
+            if (pawnKind.defaultFactionDef == FactionDefOf.PlayerColony)
+                return true;
+
+            // Check if the faction def has isPlayer = true
+            if (pawnKind.defaultFactionDef?.isPlayer == true)
+                return true;
+
+            // Check for player colony faction in the defName
+            if (pawnKind.defaultFactionDef?.defName?.ToLower().Contains("player") == true ||
+                pawnKind.defaultFactionDef?.defName?.ToLower().Contains("colony") == true)
+                return true;
+
+            return false;
+        }
+
+        private static bool IsLikelyPlayerPawnKind(PawnKindDef pawnKind)
+        {
+            if (pawnKind == null) return false;
+
+            string defNameLower = pawnKind.defName.ToLower();
+
+            // Look for player/colonist naming patterns
+            var playerKeywords = new[] { "colonist", "player", "settler", "civilian", "neutral" };
+            if (playerKeywords.Any(keyword => defNameLower.Contains(keyword)))
+                return true;
+
+            // Exclude obviously hostile/non-player pawn kinds
+            var hostileKeywords = new[] { "raider", "pirate", "savage", "hostile", "enemy", "animal", "wild" };
+            if (hostileKeywords.Any(keyword => defNameLower.Contains(keyword)))
+                return false;
+
+            // Check if it has low combat power (typical for colonists)
+            if (pawnKind.combatPower > 0 && pawnKind.combatPower < 100)
+                return true;
+
+            return false;
         }
 
         private static bool IsValidPawnRequest(string raceDefName, string xenotypeName, out RaceSettings raceSettings)
@@ -279,8 +367,12 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 Logger.Warning($"Race not found: {raceDefName}");
                 return false;
             }
+
+            // Get race settings - this will never return null now
+            raceSettings = JsonFileManager.GetRaceSettings(raceDef.defName);
+
             // Check if race is enabled using centralized logic
-            if (!RaceUtils.IsRaceEnabled(raceDef.defName))
+            if (!raceSettings.Enabled)
             {
                 Logger.Debug($"Race disabled: {raceDef.defName}");
                 return false;
@@ -302,9 +394,45 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static bool IsXenotypeAllowed(RaceSettings raceSettings, string xenotypeName)
         {
-            // Check if xenotype is explicitly disabled in EnabledXenotypes
-            if (raceSettings.EnabledXenotypes.ContainsKey(xenotypeName) && !raceSettings.EnabledXenotypes[xenotypeName])
-                return false;
+            Logger.Debug($"Checking xenotype '{xenotypeName}' for race settings:");
+            Logger.Debug($"  EnabledXenotypes count: {raceSettings.EnabledXenotypes?.Count ?? 0}");
+            Logger.Debug($"  AllowCustomXenotypes: {raceSettings.AllowCustomXenotypes}");
+
+            if (raceSettings.EnabledXenotypes != null)
+            {
+                foreach (var kvp in raceSettings.EnabledXenotypes)
+                {
+                    Logger.Debug($"    {kvp.Key} = {kvp.Value}");
+                }
+
+                // Check exact match first
+                if (raceSettings.EnabledXenotypes.ContainsKey(xenotypeName))
+                {
+                    bool result = raceSettings.EnabledXenotypes[xenotypeName];
+                    Logger.Debug($"  Exact match found: {result}");
+                    return result;
+                }
+
+                // Check case insensitive match
+                var caseInsensitiveMatch = raceSettings.EnabledXenotypes.Keys
+                    .FirstOrDefault(k => k.Equals(xenotypeName, StringComparison.OrdinalIgnoreCase));
+
+                if (caseInsensitiveMatch != null)
+                {
+                    bool result = raceSettings.EnabledXenotypes[caseInsensitiveMatch];
+                    Logger.Debug($"  Case-insensitive match '{caseInsensitiveMatch}': {result}");
+                    return result;
+                }
+            }
+
+            Logger.Debug($"  No match found, using default logic");
+
+            // Rest of the existing logic...
+            // Ensure dictionaries are initialized
+            if (raceSettings.EnabledXenotypes == null)
+                raceSettings.EnabledXenotypes = new Dictionary<string, bool>();
+            if (raceSettings.XenotypePrices == null)
+                raceSettings.XenotypePrices = new Dictionary<string, float>();
 
             // If we have specific xenotype settings, only allow enabled ones
             if (raceSettings.EnabledXenotypes.Count > 0)
@@ -342,6 +470,10 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         {
             if (xenotypeName == "Baseliner" || string.IsNullOrEmpty(xenotypeName))
                 return 1.0f;
+
+            // Ensure dictionary is initialized
+            if (raceSettings.XenotypePrices == null)
+                raceSettings.XenotypePrices = new Dictionary<string, float>();
 
             if (raceSettings.XenotypePrices.TryGetValue(xenotypeName, out float multiplier))
             {
@@ -429,10 +561,12 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static Gender? ParseGender(string genderName)
         {
+            if (string.IsNullOrEmpty(genderName)) return null;
+
             return genderName.ToLowerInvariant() switch
             {
-                "male" => Gender.Male,
-                "female" => Gender.Female,
+                "male" or "m" => Gender.Male,
+                "female" or "f" => Gender.Female,
                 _ => null // Random gender
             };
         }
@@ -453,6 +587,191 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             Viewers.SaveViewers();
         }
 
+        // New method to handle the command with argument parsing
+        public static string HandleBuyPawnCommand(ChatMessageWrapper user, string[] args)
+        {
+            try
+            {
+                // Parse arguments
+                ParsePawnParameters(args, out string raceName, out string xenotypeName, out string genderName, out string ageString);
+
+                Logger.Debug($"Parsed - Race: {raceName}, Xenotype: {xenotypeName}, Gender: {genderName}, Age: {ageString}");
+
+                // Validate that we have at least a race name
+                if (string.IsNullOrEmpty(raceName))
+                {
+                    return "You must specify a race. Usage: !pawn <race> [xenotype] [gender] [age]";
+                }
+
+                // Call the existing handler with parsed parameters
+                return HandleBuyPawnCommandInternal(user, raceName, xenotypeName, genderName, ageString);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error parsing pawn command: {ex}");
+                return "Error parsing command. Usage: !pawn <race> [xenotype] [gender] [age]";
+            }
+        }
+
+        // Smart parameter parsing
+        private static void ParsePawnParameters(string[] args, out string raceName, out string xenotypeName, out string genderName, out string ageString)
+        {
+            raceName = "";
+            xenotypeName = "Baseliner";
+            genderName = "Random";
+            ageString = "Random";
+
+            if (args.Length == 0) return;
+
+            raceName = args[0];
+
+            // Track what we've assigned
+            bool hasXenotype = false;
+            bool hasGender = false;
+            bool hasAge = false;
+
+            for (int i = 1; i < args.Length; i++)
+            {
+                string arg = args[i].ToLower();
+
+                // Check for gender (highest priority - unambiguous)
+                if (!hasGender && (arg == "male" || arg == "female" || arg == "m" || arg == "f"))
+                {
+                    genderName = args[i];
+                    hasGender = true;
+                    continue;
+                }
+
+                // Check for age (also unambiguous if it's a number)
+                if (!hasAge && (int.TryParse(arg, out int age) || arg == "random"))
+                {
+                    ageString = args[i];
+                    hasAge = true;
+                    continue;
+                }
+
+                // If we get here and don't have a xenotype yet, assume it's a xenotype
+                if (!hasXenotype)
+                {
+                    xenotypeName = args[i];
+                    hasXenotype = true;
+                }
+            }
+        }
+
+        // List methods
+        public static string ListAvailableRaces()
+        {
+            var availableRaces = RaceUtils.GetEnabledRaces();
+            if (availableRaces.Count == 0)
+            {
+                return "No races available for purchase.";
+            }
+
+            var raceList = availableRaces.Select(r => r.LabelCap.RawText);
+            return $"Available races: {string.Join(", ", raceList.Take(10))}" +
+                   (raceList.Count() > 10 ? " (and more...)" : "");
+        }
+
+        public static string ListAvailableXenotypes(string raceName = null)
+        {
+            if (!ModsConfig.BiotechActive)
+            {
+                return "Biotech DLC not active - only baseliners available.";
+            }
+
+            try
+            {
+                // If a race is specified, show xenotypes available for that race
+                if (!string.IsNullOrEmpty(raceName))
+                {
+                    var raceDef = RaceUtils.FindRaceByName(raceName);
+                    if (raceDef != null)
+                    {
+                        var raceSettings = JsonFileManager.GetRaceSettings(raceDef.defName);
+                        var allowedXenotypes = GetAllowedXenotypesForRace(raceDef);
+
+                        if (allowedXenotypes.Any())
+                        {
+                            var enabledXenotypes = allowedXenotypes
+                                .Where(x => !raceSettings.EnabledXenotypes.ContainsKey(x) || raceSettings.EnabledXenotypes[x])
+                                .OrderBy(x => x)
+                                .Take(12)
+                                .ToList();
+
+                            return $"Xenotypes available for {raceDef.LabelCap}: {string.Join(", ", enabledXenotypes)}" +
+                                   (allowedXenotypes.Count > 12 ? $" (... {allowedXenotypes.Count - 12} more)" : "");
+                        }
+                    }
+                }
+
+                // General xenotype list (fallback)
+                var allXenotypes = DefDatabase<XenotypeDef>.AllDefs
+                    .Where(x => x != XenotypeDefOf.Baseliner &&
+                               !string.IsNullOrEmpty(x.defName) &&
+                               x.inheritable) // Only inheritable xenotypes (most player-facing ones)
+                    .Select(x => x.defName)
+                    .OrderBy(x => x)
+                    .Take(15)
+                    .ToList();
+
+                if (!allXenotypes.Any())
+                {
+                    return "No xenotypes found (except Baseliner).";
+                }
+
+                return $"Common xenotypes: {string.Join(", ", allXenotypes)}" +
+                       (allXenotypes.Count >= 15 ? " (and many more - try !pawn <race> to see race-specific xenotypes)" : "");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error listing xenotypes: {ex}");
+                return "Error retrieving xenotype list. You can still use custom xenotype names.";
+            }
+        }
+
+        private static List<string> GetAllowedXenotypesForRace(ThingDef raceDef)
+        {
+            // Use the same logic as in Dialog_PawnSettings
+            if (CAPChatInteractiveMod.Instance?.AlienProvider != null)
+            {
+                return CAPChatInteractiveMod.Instance.AlienProvider.GetAllowedXenotypes(raceDef);
+            }
+
+            // Fallback: return all xenotypes if no restrictions
+            if (ModsConfig.BiotechActive)
+            {
+                return DefDatabase<XenotypeDef>.AllDefs
+                    .Where(x => x != XenotypeDefOf.Baseliner)
+                    .Select(x => x.defName)
+                    .ToList();
+            }
+
+            return new List<string>();
+        }
+
+        // MyPawn command
+        public static string HandleMyPawnCommand(ChatMessageWrapper user)
+        {
+            var assignmentManager = CAPChatInteractiveMod.GetPawnAssignmentManager();
+            var pawn = assignmentManager?.GetAssignedPawn(user.Username);
+
+            if (pawn != null)  // Found assigned pawn even pawn.Dead 
+            {
+                string status = pawn.Spawned ? "alive and in colony" : "alive but not in colony";
+                string health = pawn.health.summaryHealth.SummaryHealthPercent.ToStringPercent();
+                int traitCount = pawn.story?.traits?.allTraits?.Count ?? 0;
+                var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
+                int maxTraits = settings?.MaxTraits ?? 4;
+
+                return $"Your pawn {pawn.Name} is {status}. Health: {health}, Age: {pawn.ageTracker.AgeBiologicalYears}, Traits: {traitCount}/{maxTraits}";
+            }
+            else
+            {
+                return "You don't have an active pawn in the colony. Use !pawn to purchase one!";
+            }
+        }
+
         public static string DebugRaceSettings(string raceName)
         {
             var raceDef = DefDatabase<ThingDef>.AllDefs.FirstOrDefault(
@@ -467,6 +786,45 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
             return $"Race: {raceDef.defName}, Enabled: {settings.Enabled}, Price: {settings.BasePrice}, " +
                    $"MinAge: {settings.MinAge}, MaxAge: {settings.MaxAge}";
+        }
+
+        // Add this debug method to help troubleshoot
+        private static string DebugPawnKindsForRace(string raceName)
+        {
+            var raceDef = RaceUtils.FindRaceByName(raceName);
+            if (raceDef == null) return $"Race not found: {raceName}";
+
+            var allPawnKinds = DefDatabase<PawnKindDef>.AllDefs
+                .Where(pk => pk.race == raceDef)
+                .OrderBy(pk => pk.defName)
+                .ToList();
+
+            var results = new List<string>();
+            results.Add($"Pawn kinds for {raceDef.defName}:");
+
+            foreach (var pk in allPawnKinds)
+            {
+                string factionInfo = pk.defaultFactionDef != null
+                    ? $"{pk.defaultFactionDef.defName} (isPlayer: {pk.defaultFactionDef.isPlayer})"
+                    : "No faction def";
+
+                results.Add($"  {pk.defName}: {factionInfo}, CombatPower: {pk.combatPower}, isFighter: {pk.isFighter}");
+            }
+
+            return string.Join("\n", results);
+        }
+        public static string TestPawnKindSelection(string raceName)
+        {
+            var raceDef = RaceUtils.FindRaceByName(raceName);
+            if (raceDef == null) return $"Race not found: {raceName}";
+
+            var selectedPawnKind = GetPawnKindDefForRace(raceName);
+            if (selectedPawnKind != null)
+            {
+                return $"Selected pawn kind for {raceName}: {selectedPawnKind.defName} (Faction: {selectedPawnKind.defaultFactionDef?.defName ?? "None"}, isPlayer: {selectedPawnKind.defaultFactionDef?.isPlayer ?? false})";
+            }
+
+            return $"No pawn kind found for {raceName}, using default Colonist";
         }
     }
 

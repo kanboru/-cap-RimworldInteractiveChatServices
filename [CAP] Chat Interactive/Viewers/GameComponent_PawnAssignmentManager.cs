@@ -50,7 +50,6 @@ namespace CAP_ChatInteractive
                 expiredOffers = new List<string>();
         }
 
-
         public override void GameComponentTick()
         {
             base.GameComponentTick();
@@ -59,6 +58,21 @@ namespace CAP_ChatInteractive
             if (Find.TickManager.TicksGame % 60 == 0)
             {
                 CheckExpiredOffers();
+            }
+        }
+
+        public override void LoadedGame()
+        {
+            base.LoadedGame();
+
+            // Ensure race settings are initialized
+            var raceSettings = JsonFileManager.LoadRaceSettings();
+            if (raceSettings.Count == 0)
+            {
+                Logger.Debug("No race settings found, initializing defaults...");
+                // This will trigger the initialization in Dialog_PawnSettings.LoadRaceSettings
+                var dialog = new Dialog_PawnSettings();
+                // Just creating the dialog will initialize the settings
             }
         }
 

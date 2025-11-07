@@ -36,20 +36,19 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return HandleListCommand(user, args);
             }
 
-            // Handle purchase
-            return HandlePawnPurchase(user, args);
+            // Handle mypawn command
+            if (firstArg == "mypawn")
+            {
+                return HandleMyPawnCommand(user);
+            }
+
+            // Handle purchase - delegate ALL parsing to BuyPawnCommandHandler
+            return BuyPawnCommandHandler.HandleBuyPawnCommand(user, args);
         }
 
         private string ShowPawnHelp()
         {
-            return "Usage: !pawn <race> [xenotype] [gender] [age] OR !pawn list <races|xenotypes> OR !pawn mypawn\n" +
-                   "Examples:\n" +
-                   "!pawn human\n" +
-                   "!pawn human hussar\n" +
-                   "!pawn human baseliner female\n" +
-                   "!pawn human genie male 25\n" +
-                   "!pawn list races\n" +
-                   "!pawn mypawn";
+            return "Usage: !pawn <race> [xenotype] [gender] [age] OR !pawn list <races|xenotypes> OR !pawn mypawn";
         }
 
         private string HandleListCommand(ChatMessageWrapper user, string[] args)
@@ -60,140 +59,22 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 switch (listType)
                 {
                     case "races":
-                        return ListAvailableRaces();
+                        return BuyPawnCommandHandler.ListAvailableRaces();
                     case "xenotypes":
-                        return ListAvailableXenotypes();
+                        // Support: !pawn list xenotypes human
+                        string raceName = args.Length > 2 ? args[2] : null;
+                        return BuyPawnCommandHandler.ListAvailableXenotypes(raceName);
                     default:
                         return $"Unknown list type: {listType}. Use: races, xenotypes";
                 }
             }
 
-            return "List types: races, xenotypes. Example: !pawn list races";
-        }
-
-        private string ListAvailableRaces()
-        {
-            var availableRaces = GetEnabledRaces();
-            if (availableRaces.Count == 0)
-            {
-                return "No races available for purchase.";
-            }
-
-            var raceList = availableRaces.Select(r => r.LabelCap.RawText);
-            return $"Available races: {string.Join(", ", raceList)}";
-        }
-
-        private string ListAvailableXenotypes()
-        {
-            if (!ModsConfig.BiotechActive)
-            {
-                return "Biotech DLC not active - only baseliners available.";
-            }
-
-            var xenotypes = DefDatabase<XenotypeDef>.AllDefs.Where(x => x != XenotypeDefOf.Baseliner);
-            var xenotypeList = xenotypes.Select(x => x.defName);
-            return $"Available xenotypes: {string.Join(", ", xenotypeList)}";
-        }
-
-        private string HandlePawnPurchase(ChatMessageWrapper user, string[] args)
-        {
-            // Handle "mypawn" subcommand
-            if (args.Length > 0 && args[0].ToLower() == "mypawn")
-            {
-                return HandleMyPawnCommand(user);
-            }
-
-            // Parse arguments with better logic
-            string raceName = "";
-            string xenotypeName = "Baseliner";
-            string genderName = "Random";
-            string ageString = "Random";
-
-            if (args.Length > 0)
-            {
-                raceName = args[0];
-
-                // Process remaining arguments
-                for (int i = 1; i < args.Length; i++)
-                {
-                    string arg = args[i].ToLower();
-
-                    // Check if argument is a gender
-                    if (arg == "male" || arg == "female")
-                    {
-                        genderName = arg;
-                    }
-                    // Check if argument is an age (numeric)
-                    else if (int.TryParse(arg, out int age))
-                    {
-                        ageString = age.ToString();
-                    }
-                    // Check if argument is "random" for age
-                    else if (arg == "random")
-                    {
-                        ageString = "Random";
-                    }
-                    // Otherwise, assume it's a xenotype
-                    else
-                    {
-                        xenotypeName = args[i]; // Keep original casing for xenotype lookup
-                    }
-                }
-            }
-            else
-            {
-                return ShowPawnHelp();
-            }
-
-            Logger.Debug($"Parsed - Race: {raceName}, Xenotype: {xenotypeName}, Gender: {genderName}, Age: {ageString}");
-
-            // Validate that we have at least a race name
-            if (string.IsNullOrEmpty(raceName))
-            {
-                return "You must specify a race. Usage: !pawn <race> [xenotype] [gender] [age]";
-            }
-
-            // Call the command handler
-            return BuyPawnCommandHandler.HandleBuyPawnCommand(user, raceName, xenotypeName, genderName, ageString);
+            return "List types: races, xenotypes [race]. Examples: !pawn list races, !pawn list xenotypes human";
         }
 
         private string HandleMyPawnCommand(ChatMessageWrapper user)
         {
-            var assignmentManager = CAPChatInteractiveMod.GetPawnAssignmentManager();
-            var pawn = assignmentManager.GetAssignedPawn(user.Username);
-
-            if (pawn != null && !pawn.Dead)
-            {
-                string status = pawn.Spawned ? "alive and in colony" : "alive but not in colony";
-                string health = pawn.health.summaryHealth.SummaryHealthPercent.ToStringPercent();
-                int traitCount = pawn.story.traits.allTraits.Count;
-                var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
-                int maxTraits = settings?.MaxTraits ?? 4;
-
-                return $"Your pawn {pawn.Name} is {status}. Health: {health}, Age: {pawn.ageTracker.AgeBiologicalYears}, Traits: {traitCount}/{maxTraits}";
-            }
-            else
-            {
-                // Clear the assignment if pawn is dead
-                // assignmentManager.UnassignPawn(user.Username); lets not do this automatically to preserve history
-                return "You don't have an active pawn in the colony. Use !pawn to purchase one!";
-            }
-        }
-
-        private List<ThingDef> GetEnabledRaces()
-        {
-            // Get races from your race settings that are enabled
-            var pawnSettings = Find.WindowStack.WindowOfType<Dialog_PawnSettings>();
-            if (pawnSettings != null)
-            {
-                // Access the race settings from your dialog
-                // This will need to be implemented based on your data structure
-            }
-
-            // Fallback: all humanlike races
-            return DefDatabase<ThingDef>.AllDefs
-                .Where(d => d.race?.Humanlike ?? false)
-                .ToList();
+            return BuyPawnCommandHandler.HandleMyPawnCommand(user);
         }
     }
 
