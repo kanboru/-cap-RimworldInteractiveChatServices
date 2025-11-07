@@ -71,7 +71,7 @@ namespace CAP_ChatInteractive.Store
                    thingDef.IsPleasureDrug ||
                    thingDef.defName.Contains("Neurotrainer") ||
                    thingDef.defName.Contains("Psytrainer") ||
-                   thingDef.defName.Contains("Neuroformer") ||
+                   thingDef.defName.Contains("PsychicAmplifier") ||
                    thingDef.defName.Contains("Serum") ||
                    thingDef.defName.Contains("Pack");
         }
