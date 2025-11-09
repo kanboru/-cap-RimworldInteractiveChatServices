@@ -14,7 +14,19 @@ namespace CAP_ChatInteractive
         private int tickCounter = 0;
         private const int TICKS_PER_REWARD = 120 * 60; // 2 minutes in ticks (60 ticks/sec * 120 sec)
 
-        public CAPChatInteractive_GameComponent(Game game) { }
+        public CAPChatInteractive_GameComponent(Game game)
+        {
+            // Ensure lootbox component exists when this game component is created
+            if (game != null && game.components != null)
+            {
+                var existingLootboxComponent = game.GetComponent<LootBoxComponent>();
+                if (existingLootboxComponent == null)
+                {
+                    game.components.Add(new LootBoxComponent(game));
+                    Logger.Debug("LootBoxComponent created by GameComponent");
+                }
+            }
+        }
 
         public override void GameComponentTick()
         {
@@ -29,6 +41,7 @@ namespace CAP_ChatInteractive
             }
             StorytellerTick();
         }
+
         private void StorytellerTick()
         {
             // Your custom storyteller logic here

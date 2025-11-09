@@ -107,6 +107,12 @@ namespace CAP_ChatInteractive
         public string Prefix = "!";
         public string BuyPrefix = "$";
 
+        // Lootbox settings
+        public IntRange LootBoxRandomCoinRange = new IntRange(1, 10000);
+        public int LootBoxesPerDay = 1;
+        public bool LootBoxShowWelcomeMessage = true;
+        public bool LootBoxForceOpenAllAtOnce = false;
+
         public void ExposeData()
         {
             Scribe_Values.Look(ref EnableDebugLogging, "enableDebugLogging", false);
@@ -143,6 +149,12 @@ namespace CAP_ChatInteractive
 
             Scribe_Values.Look(ref Prefix, "prefix", "!");
             Scribe_Values.Look(ref BuyPrefix, "buyPrefix", "$");
+
+            // New lootbox settings
+            Scribe_Values.Look(ref LootBoxRandomCoinRange, "lootBoxRandomCoinRange", new IntRange(250, 750));
+            Scribe_Values.Look(ref LootBoxesPerDay, "lootBoxesPerDay", 1);
+            Scribe_Values.Look(ref LootBoxShowWelcomeMessage, "lootBoxShowWelcomeMessage", true);
+            Scribe_Values.Look(ref LootBoxForceOpenAllAtOnce, "lootBoxForceOpenAllAtOnce", false);
         }
     }
 

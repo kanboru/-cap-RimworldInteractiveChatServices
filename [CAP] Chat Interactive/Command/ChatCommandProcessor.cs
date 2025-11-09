@@ -26,6 +26,10 @@ namespace CAP_ChatInteractive
             Logger.Debug($"Processing message from {message.Username} on {message.Platform}: {message.Message}");
             try
             {
+                // Process lootbox welcome for ALL messages (commands and regular chat)
+                // This ensures viewers get daily lootboxes when they first chat each day
+                ProcessLootboxWelcome(message);
+
                 // Check if it's a command
                 if (IsCommand(message.Message))
                 {
@@ -42,6 +46,26 @@ namespace CAP_ChatInteractive
             catch (Exception ex)
             {
                 Logger.Error($"Error processing chat message: {ex.Message}");
+            }
+        }
+
+        private static void ProcessLootboxWelcome(ChatMessageWrapper message)
+        {
+            try
+            {
+                var lootboxComponent = Current.Game?.GetComponent<LootBoxComponent>();
+                if (lootboxComponent == null) return;
+
+                // Check if the openlootbox command is enabled before processing
+                if (_commands.TryGetValue("openlootbox", out var lootboxCommand) && lootboxCommand.IsEnabled())
+                {
+                    // Process viewer message to check for daily lootboxes
+                    lootboxComponent.ProcessViewerMessage(message.Username);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error processing lootbox welcome: {ex.Message}");
             }
         }
 

@@ -220,4 +220,14 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             return $"Successfully gave {coinAmount} coins to {target.DisplayName}. You now have {sender.GetCoins()} coins remaining.";
         }
     }
+
+    public class OpenLootBox : ChatCommand
+    {
+        public override string Name => "openlootbox";
+
+        public override string Execute(ChatMessageWrapper user, string[] args)
+        {
+            return LootBoxCommandHandler.HandleLootboxCommand(user, args); // args are passed for potential future use
+        }
+    }
 }

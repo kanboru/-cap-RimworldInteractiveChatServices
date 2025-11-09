@@ -43,6 +43,11 @@ public class CommandSettings
     public int MinMilitaryAidWager = 1000;
     public int MaxMilitaryAidWager = 10000;
 
+    // Lootbox settings
+    public int DefaultLootBoxSize = 1;
+    public int MinLootBoxSize = 1;
+    public int MaxLootBoxSize = 10;
+
     // Command-specific data storage
     public string CustomData = "";
 

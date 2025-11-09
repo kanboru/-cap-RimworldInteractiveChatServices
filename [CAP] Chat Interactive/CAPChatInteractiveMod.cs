@@ -49,6 +49,8 @@ namespace CAP_ChatInteractive
             }
 
             Logger.Message("[CAP] RICS mod loaded successfully!");
+
+
             // Force viewer loading by accessing the All property
             var viewerCount = Viewers.All.Count; // This triggers static constructor
             Logger.Debug($"Pre-loaded {viewerCount} viewers");

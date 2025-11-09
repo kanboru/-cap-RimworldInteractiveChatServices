@@ -583,6 +583,55 @@ namespace CAP_ChatInteractive
                     y += sectionHeight;
                 }
 
+                // LOOTBOX-SPECIFIC SETTINGS - Only show for openlootboxes command
+                if (selectedCommand.commandText.ToLower() == "openlootbox")
+                {
+                    y += 10f; // Extra spacing
+
+                    Rect lootboxHeaderRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
+                    Widgets.Label(lootboxHeaderRect, "Loot Box Global Settings:");
+                    y += sectionHeight;
+
+                    // Get global settings
+                    // var globalSettings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
+
+                    // Coin range
+                    Rect coinRangeRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
+                    Widgets.Label(coinRangeRect, "Coin Range (1-10000):");
+                    y += sectionHeight;
+
+                    Rect coinMinRect = new Rect(leftPadding + 20f, y, 80f, sectionHeight);
+                    Widgets.Label(coinMinRect, "Min:");
+                    Rect coinMinInputRect = new Rect(leftPadding + 60f, y, 60f, sectionHeight);
+                    string coinMinBuffer = globalSettings.LootBoxRandomCoinRange.min.ToString();
+                    Widgets.TextFieldNumeric(coinMinInputRect, ref globalSettings.LootBoxRandomCoinRange.min, ref coinMinBuffer, 1, 10000);
+
+                    Rect coinMaxRect = new Rect(leftPadding + 140f, y, 80f, sectionHeight);
+                    Widgets.Label(coinMaxRect, "Max:");
+                    Rect coinMaxInputRect = new Rect(leftPadding + 180f, y, 60f, sectionHeight);
+                    string coinMaxBuffer = globalSettings.LootBoxRandomCoinRange.max.ToString();
+                    Widgets.TextFieldNumeric(coinMaxInputRect, ref globalSettings.LootBoxRandomCoinRange.max, ref coinMaxBuffer, 1, 10000);
+                    y += sectionHeight;
+
+                    // Lootboxes per day
+                    Rect perDayRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
+                    Widgets.Label(perDayRect, "Lootboxes Per Day:");
+                    Rect perDayInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
+                    string perDayBuffer = globalSettings.LootBoxesPerDay.ToString();
+                    Widgets.TextFieldNumeric(perDayInputRect, ref globalSettings.LootBoxesPerDay, ref perDayBuffer, 1, 20);
+                    y += sectionHeight;
+
+                    // Show welcome message
+                    Rect welcomeRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
+                    Widgets.CheckboxLabeled(welcomeRect, "Show Welcome Message", ref globalSettings.LootBoxShowWelcomeMessage);
+                    y += sectionHeight;
+
+                    // Force open all at once
+                    Rect forceOpenRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
+                    Widgets.CheckboxLabeled(forceOpenRect, "Force Open All At Once", ref globalSettings.LootBoxForceOpenAllAtOnce);
+                    y += sectionHeight;
+                }
+
             }
             Widgets.EndScrollView();
         }
@@ -640,6 +689,19 @@ namespace CAP_ChatInteractive
                 height += 28f; // Default wager
                 height += 28f; // Min wager
                 height += 28f; // Max wager
+                height += 28f; // Extra spacing
+            }
+
+            // LOOTBOX-SPECIFIC SETTINGS HEIGHT
+            if (selectedCommand != null && selectedCommand.commandText.ToLower() == "openlootbox")
+            {
+                height += 10f; // Extra spacing
+                height += 28f; // Lootbox header
+                height += 28f; // Coin range label
+                height += 28f; // Coin range inputs
+                height += 28f; // Lootboxes per day
+                height += 28f; // Show welcome message
+                height += 28f; // Force open all
                 height += 28f; // Extra spacing
             }
 
