@@ -1126,6 +1126,36 @@ namespace CAP_ChatInteractive
 
             sb.AppendLine($"");
 
+            // List comps if the thing has them
+            // List comps if the thing has them
+            if (thingDef.comps != null && thingDef.comps.Count > 0)
+            {
+                sb.AppendLine($"--- Comp Properties ({thingDef.comps.Count}) ---");
+                foreach (var compProps in thingDef.comps)
+                {
+                    sb.AppendLine($"• {compProps.compClass?.Name ?? "null"}");
+
+                    // Show detailed CompProperties_UseEffect information
+                    if (compProps is CompProperties_UseEffect compUseEffect)
+                    {
+                        sb.AppendLine($"  - UseEffect Type: {compUseEffect.GetType().Name}");
+                        if (compUseEffect.doCameraShake) sb.AppendLine($"  - Camera Shake: Yes");
+                        if (compUseEffect.moteOnUsed != null) sb.AppendLine($"  - Mote On Used: {compUseEffect.moteOnUsed.defName}");
+                        if (compUseEffect.moteOnUsedScale != 1f) sb.AppendLine($"  - Mote Scale: {compUseEffect.moteOnUsedScale}");
+                        if (compUseEffect.fleckOnUsed != null) sb.AppendLine($"  - Fleck On Used: {compUseEffect.fleckOnUsed.defName}");
+                        if (compUseEffect.fleckOnUsedScale != 1f) sb.AppendLine($"  - Fleck Scale: {compUseEffect.fleckOnUsedScale}");
+                        if (compUseEffect.effecterOnUsed != null) sb.AppendLine($"  - Effecter On Used: {compUseEffect.effecterOnUsed.defName}");
+                        if (compUseEffect.warmupEffecter != null) sb.AppendLine($"  - Warmup Effecter: {compUseEffect.warmupEffecter.defName}");
+                    }
+                    else if (compProps is CompProperties_FoodPoisonable compFoodPoison)
+                    {
+                        sb.AppendLine($"  - FoodPoisonable");
+                    }
+                    // Add more comp type checks as needed
+                }
+                sb.AppendLine($"");
+            }
+
             // Ingestible properties if exists
             if (thingDef.ingestible != null)
             {
@@ -1142,6 +1172,14 @@ namespace CAP_ChatInteractive
                 sb.AppendLine($"--- Apparel Properties ---");
                 sb.AppendLine($"Layers: {string.Join(", ", thingDef.apparel.layers)}");
                 sb.AppendLine($"BodyPartGroups: {string.Join(", ", thingDef.apparel.bodyPartGroups?.Select(g => g.defName) ?? new List<string>())}");
+                sb.AppendLine($"");
+            }
+
+            // Weapon properties if exists
+            if (thingDef.weaponTags != null && thingDef.weaponTags.Count > 0)
+            {
+                sb.AppendLine($"--- Weapon Properties ---");
+                sb.AppendLine($"WeaponTags: {string.Join(", ", thingDef.weaponTags)}");
                 sb.AppendLine($"");
             }
 

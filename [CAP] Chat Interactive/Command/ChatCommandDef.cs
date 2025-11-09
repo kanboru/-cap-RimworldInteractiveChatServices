@@ -161,18 +161,6 @@ public class DefBasedChatCommand : ChatCommand
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Check permissions from Def first
-            var viewer = Viewers.GetViewer(user.Username);
-            if (viewer == null)
-                return "Error: Could not find viewer data";
-
-            if (_def.requiresBroadcaster && !viewer.IsBroadcaster)
-                return "This command requires broadcaster privileges";
-
-            if (_def.requiresMod && !viewer.IsModerator && !viewer.IsBroadcaster)
-                return "This command requires moderator privileges";
-
-            // Execute the wrapped command
             return _wrappedCommand.Execute(user, args);
         }
 

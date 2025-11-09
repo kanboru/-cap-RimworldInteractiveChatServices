@@ -167,6 +167,7 @@ namespace CAP_ChatInteractive
             // Fast exit: Permissions
             if (!command.CanExecute(message))
             {
+                Logger.Debug($"Permission denied for {message.Username} on command {command.Name}. Required: {command.PermissionLevel}");
                 SendPermissionDeniedMessage(message, command);
                 return;
             }

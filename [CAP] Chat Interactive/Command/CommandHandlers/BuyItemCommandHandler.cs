@@ -289,9 +289,44 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 var currencySymbol = settings.CurrencyName?.Trim() ?? "¢";
                 var viewer = Viewers.GetViewer(user.Username);
 
-                // Parse arguments
-                string itemName = args[0];
-                string quantityStr = args.Length > 1 ? args[1] : "1";
+                // Parse arguments - handle multi-word item names like "skilltrainer (melee)"
+                string itemName;
+                string quantityStr = "1";
+
+                if (args.Length >= 1)
+                {
+                    // Try to find the item name by combining arguments until we hit quantity
+                    var itemNameParts = new List<string>();
+
+                    for (int i = 0; i < args.Length; i++)
+                    {
+                        string arg = args[i];
+
+                        // Check if this argument could be a quantity
+                        if (itemNameParts.Count > 0 && int.TryParse(arg, out _))
+                        {
+                            // We've hit a quantity argument, stop collecting
+                            break;
+                        }
+
+                        itemNameParts.Add(args[i]);
+                    }
+
+                    itemName = string.Join(" ", itemNameParts);
+
+                    // Parse remaining arguments for quantity
+                    int currentIndex = itemNameParts.Count;
+                    if (args.Length > currentIndex && int.TryParse(args[currentIndex], out _))
+                    {
+                        quantityStr = args[currentIndex];
+                    }
+
+                    Logger.Debug($"Parsed - Item: '{itemName}', Quantity: '{quantityStr}'");
+                }
+                else
+                {
+                    return "Usage: !use <item> [quantity]";
+                }
 
                 // Get store item
                 var storeItem = StoreCommandHelper.GetStoreItemByName(itemName);
@@ -431,7 +466,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 {
                     return $"Used {quantity}x {itemName} for {StoreCommandHelper.FormatCurrencyMessage(finalPrice, currencySymbol)}! Remaining: {StoreCommandHelper.FormatCurrencyMessage(viewer.Coins, currencySymbol)}.";
                 }
-
             }
             catch (Exception ex)
             {
@@ -784,18 +818,35 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 // Handle different types of usable items with appropriate sounds
                 if (thingDef.IsIngestible && thingDef.ingestible != null)
                 {
-                    float nutritionWanted = pawn.needs.food?.NutritionWanted ?? 0f;
-                    thing.Ingested(pawn, nutritionWanted);
+                    // DEBUG: Log nutrition before ingestion
+                    float nutritionBefore = pawn.needs.food?.CurLevel ?? 0f;
+                    Logger.Debug($"Nutrition before ingestion: {nutritionBefore}");
 
-                    // Use the ingest sound defined in the ingestible properties if available
-                    if (thingDef.ingestible.ingestSound != null)
+                    // SPAWN THE ITEM FIRST so ingestion works properly
+                    GenSpawn.Spawn(thing, pawn.Position, pawn.Map);
+
+                    // Now ingest the spawned item and APPLY the nutrition
+                    float nutritionWanted = pawn.needs.food?.NutritionWanted ?? 0f;
+                    Logger.Debug($"Nutrition wanted: {nutritionWanted}");
+
+                    // Ingest returns the nutrition gained - we need to apply it to the pawn
+                    float nutritionGained = thing.Ingested(pawn, nutritionWanted);
+                    Logger.Debug($"Nutrition gained from ingestion: {nutritionGained}");
+
+                    // Apply the nutrition to the pawn's food need
+                    if (pawn.needs.food != null)
                     {
-                        thingDef.ingestible.ingestSound.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                        pawn.needs.food.CurLevel += nutritionGained;
+                        Logger.Debug($"Nutrition after manual application: {pawn.needs.food.CurLevel}");
                     }
-                    else
+
+                    // Play appropriate sound - use safe sound playing method
+                    PlayIngestSoundSafely(thingDef, pawn);
+
+                    // Clean up - the item should be consumed/destroyed by Ingested(), but ensure it's gone
+                    if (thing.Spawned)
                     {
-                        // Fallback to our custom logic if no ingestSound is defined
-                        PlayFallbackIngestSound(thingDef, pawn);
+                        thing.Destroy();
                     }
                 }
                 else if (thingDef.IsMedicine)
@@ -807,9 +858,14 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     }
                     SoundDefOf.Interact_Tend.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
                 }
-                else if (thingDef.defName.Contains("Psytrainer") || thingDef.defName.Contains("Neuroformer"))
+                else if (thingDef.defName.Contains("Psytrainer") || thingDef.defName.Contains("Neurotrainer") || thingDef.defName == "PsychicAmplifier")
                 {
-                    // Psy trainers and neuroformers - add to inventory
+                    // FIX: Actually use psy trainers and neurotrainers instead of just adding to inventory
+                    UseCompUseEffectItem(thing, pawn);
+                }
+                else if (thingDef.defName.Contains("Neuroformer"))
+                {
+                    // Neuroformers - add to inventory (these are typically used via right-click)
                     if (!pawn.inventory.innerContainer.TryAdd(thing))
                     {
                         GenPlace.TryPlaceThing(thing, pawn.Position, pawn.Map, ThingPlaceMode.Near);
@@ -839,41 +895,269 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
         }
 
-        private static void PlayFallbackIngestSound(ThingDef thingDef, Verse.Pawn pawn)
+        private static void PlayIngestSoundSafely(ThingDef thingDef, Verse.Pawn pawn)
         {
-            if (thingDef.IsDrug)
+            try
             {
-                // Use specific drug sounds based on drug type
-                if (thingDef.ingestible.drugCategory == DrugCategory.Social || thingDef.defName.Contains("Smoke"))
+                // Try to use the ingest sound from the thing definition first
+                if (thingDef.ingestible.ingestSound != null)
                 {
-                    DefDatabase<SoundDef>.GetNamed("Ingest_Smoke").PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
-                }
-                else if (thingDef.ingestible.drugCategory == DrugCategory.Hard)
-                {
-                    DefDatabase<SoundDef>.GetNamed("Ingest_Snort").PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                    // Check if this is a sustainer sound that shouldn't be played as one-shot
+                    string soundName = thingDef.ingestible.ingestSound.defName;
+                    if (IsSustainerSound(soundName))
+                    {
+                        Logger.Debug($"Skipping sustainer sound: {soundName}, using fallback");
+                        PlayFallbackIngestSound(thingDef, pawn);
+                    }
+                    else
+                    {
+                        // It's safe to play as one-shot
+                        thingDef.ingestible.ingestSound.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                    }
                 }
                 else
                 {
-                    DefDatabase<SoundDef>.GetNamed("Ingest_Pill").PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                    // No specific ingest sound defined, use fallback
+                    PlayFallbackIngestSound(thingDef, pawn);
                 }
             }
-            else if (thingDef.ingestible.IsMeal)
+            catch (Exception ex)
             {
-                DefDatabase<SoundDef>.GetNamed("Meal_Eat").PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                Logger.Debug($"Error playing ingest sound for {thingDef.defName}: {ex.Message}");
+                PlayFallbackIngestSound(thingDef, pawn);
             }
-            else if (thingDef.IsCorpse || thingDef.defName.Contains("Meat"))
+        }
+
+        private static bool IsSustainerSound(string soundDefName)
+        {
+            if (string.IsNullOrEmpty(soundDefName)) return false;
+
+            // Common sustainer sound names that shouldn't be played as one-shot
+            string[] sustainerKeywords = {
+        "Sustain", "Loop", "Ambient", "Meal_Eat", "Ingest_", "Burning",
+        "Wind", "Engine", "Working", "Charging", "Ritual"
+    };
+
+            foreach (string keyword in sustainerKeywords)
             {
-                SoundDefOf.RawMeat_Eat.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                if (soundDefName.Contains(keyword))
+                    return true;
             }
-            else if (thingDef.IsIngestible && thingDef.ingestible != null &&
-                     (thingDef.ingestible.foodType & FoodTypeFlags.Liquor) != 0)
+
+            return false;
+        }
+
+        private static bool IsSustainerSound(SoundDef soundDef)
+        {
+            if (soundDef == null) return false;
+
+            // Common sustainer sound names that shouldn't be played as one-shot
+            string[] sustainerKeywords = { "Sustain", "Loop", "Ambient", "Meal_Eat", "Ingest_" };
+
+            foreach (string keyword in sustainerKeywords)
             {
-                DefDatabase<SoundDef>.GetNamed("Ingest_Beer").PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                if (soundDef.defName.Contains(keyword))
+                    return true;
             }
-            else
+
+            return false;
+        }
+
+        private static void UseCompUseEffectItem(Thing thing, Verse.Pawn pawn)
+        {
+            try
             {
-                // Default for vegetables, fruits, etc.
-                DefDatabase<SoundDef>.GetNamed("RawVegetable_Eat").PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                Logger.Debug($"Attempting to use item: {thing.def.defName} on pawn {pawn.Name}");
+
+                // Spawn the item temporarily so comps can initialize
+                GenSpawn.Spawn(thing, pawn.Position, pawn.Map);
+
+                List<CompUseEffect> compUseEffects = new List<CompUseEffect>();
+
+                // Get ALL CompUseEffect components, not just the first one
+                if (thing is ThingWithComps thingWithComps)
+                {
+                    foreach (var comp in thingWithComps.AllComps)
+                    {
+                        if (comp is CompUseEffect compUseEffect)
+                        {
+                            compUseEffects.Add(compUseEffect);
+                        }
+                    }
+                }
+
+                Logger.Debug($"Found {compUseEffects.Count} CompUseEffect components");
+
+                bool anyEffectApplied = false;
+
+                if (thing.def.defName.Contains("Psytrainer") && !HasPsylink(pawn))
+                {
+                    Logger.Debug($"Pawn {pawn.Name} does not have psylink, cannot use psy trainer");
+                    // Add to inventory instead of using
+                    if (thing.Spawned)
+                    {
+                        thing.DeSpawn();
+                    }
+                    if (!pawn.inventory.innerContainer.TryAdd(thing))
+                    {
+                        GenPlace.TryPlaceThing(thing, pawn.Position, pawn.Map, ThingPlaceMode.Near);
+                    }
+                    return;
+                }
+
+                foreach (var compUseEffect in compUseEffects)
+                {
+                    Logger.Debug($"Processing CompUseEffect: {compUseEffect.GetType().FullName}");
+
+                    AcceptanceReport acceptance = compUseEffect.CanBeUsedBy(pawn);
+                    Logger.Debug($"CanBeUsedBy result for {compUseEffect.GetType().Name}: Accepted={acceptance.Accepted}, Reason={acceptance.Reason}");
+
+                    if (acceptance.Accepted)
+                    {
+                        Logger.Debug($"Calling DoEffect on {compUseEffect.GetType().Name}...");
+                        compUseEffect.DoEffect(pawn);
+                        Logger.Debug($"DoEffect completed on {compUseEffect.GetType().Name}");
+                        anyEffectApplied = true;
+
+                        // Try SelectedUseOption as well
+                        try
+                        {
+                            Logger.Debug($"Calling SelectedUseOption on {compUseEffect.GetType().Name}...");
+                            bool selectedResult = compUseEffect.SelectedUseOption(pawn);
+                            Logger.Debug($"SelectedUseOption result on {compUseEffect.GetType().Name}: {selectedResult}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Debug($"SelectedUseOption failed on {compUseEffect.GetType().Name} (may be normal): {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        Logger.Warning($"Cannot use {compUseEffect.GetType().Name} on pawn {pawn.Name}: {acceptance.Reason}");
+                    }
+                }
+
+                if (!anyEffectApplied)
+                {
+                    Logger.Warning("No CompUseEffect components could be applied to pawn");
+                }
+
+                // Despawn the item after use (it's consumed)
+                if (thing.Spawned)
+                {
+                    thing.DeSpawn();
+                }
+
+                SoundDefOf.PsychicPulseGlobal.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+
+                // Log skill levels for debugging
+                if (thing.def.defName.Contains("Neurotrainer"))
+                {
+                    var skillDef = GetSkillDefFromNeurotrainer(thing.def.defName);
+                    if (skillDef != null)
+                    {
+                        int skillLevel = pawn.skills.GetSkill(skillDef).Level;
+                        Logger.Debug($"Pawn {pawn.Name} {skillDef.defName} skill level after use: {skillLevel}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error using item {thing.def.defName}: {ex}");
+                // Fallback: add to inventory if usage fails
+                if (thing.Spawned)
+                {
+                    thing.DeSpawn();
+                }
+                if (!pawn.inventory.innerContainer.TryAdd(thing))
+                {
+                    GenPlace.TryPlaceThing(thing, pawn.Position, pawn.Map, ThingPlaceMode.Near);
+                }
+            }
+        }
+
+        private static bool HasPsylink(Verse.Pawn pawn)
+        {
+            if (pawn?.health?.hediffSet?.hediffs == null)
+                return false;
+
+            // Check for any psylink hediff
+            return pawn.health.hediffSet.hediffs.Any(hediff =>
+                hediff.def?.defName?.Contains("Psylink") == true ||
+                hediff.def?.defName?.Contains("Psychic") == true);
+        }
+
+        private static SkillDef GetSkillDefFromNeurotrainer(string defName)
+        {
+            return defName.ToLower() switch
+            {
+                string s when s.Contains("melee") => SkillDefOf.Melee,
+                string s when s.Contains("shooting") => SkillDefOf.Shooting,
+                string s when s.Contains("construction") => SkillDefOf.Construction,
+                string s when s.Contains("mining") => SkillDefOf.Mining,
+                string s when s.Contains("cooking") => SkillDefOf.Cooking,
+                string s when s.Contains("plants") => SkillDefOf.Plants,
+                string s when s.Contains("animals") => SkillDefOf.Animals,
+                string s when s.Contains("crafting") => SkillDefOf.Crafting,
+                string s when s.Contains("artistic") => SkillDefOf.Artistic,
+                string s when s.Contains("medical") => SkillDefOf.Medicine,
+                string s when s.Contains("social") => SkillDefOf.Social,
+                string s when s.Contains("intellectual") => SkillDefOf.Intellectual,
+                _ => null
+            };
+        }
+
+        private static void PlayFallbackIngestSound(ThingDef thingDef, Verse.Pawn pawn)
+        {
+            try
+            {
+                if (thingDef.IsDrug)
+                {
+                    // Use specific drug sounds based on drug type
+                    if (thingDef.ingestible.drugCategory == DrugCategory.Social || thingDef.defName.Contains("Smoke"))
+                    {
+                        SoundDefOf.Interact_Ignite.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                    }
+                    else if (thingDef.ingestible.drugCategory == DrugCategory.Hard)
+                    {
+                        SoundDefOf.Crunch.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                    }
+                    else
+                    {
+                        SoundDefOf.Click.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                    }
+                }
+                else if (thingDef.ingestible.IsMeal)
+                {
+                    // Use crunch sound for meals (eating sound)
+                    SoundDefOf.Crunch.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                }
+                else if (thingDef.IsCorpse || thingDef.defName.Contains("Meat"))
+                {
+                    SoundDefOf.RawMeat_Eat.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                }
+                else if (thingDef.IsIngestible && thingDef.ingestible != null &&
+                         (thingDef.ingestible.foodType & FoodTypeFlags.Liquor) != 0)
+                {
+                    // For beer and other liquor, use a liquid sound
+                    SoundDefOf.HissSmall.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                }
+                else if (thingDef.defName.Contains("Berry") || thingDef.defName.Contains("Fruit"))
+                {
+                    // For fruits/berries, use raw vegetable eat sound
+                    SoundDefOf.RawMeat_Eat.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                }
+                else
+                {
+                    // Default for vegetables and other foods
+                    SoundDefOf.Crunch.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug($"Error in PlayFallbackIngestSound: {ex.Message}");
+                // Final fallback - use a very basic sound
+                SoundDefOf.Click.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
             }
         }
 
@@ -1118,7 +1402,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         };
             }
         }
-
         public static bool IsMaterialKeyword(string arg)
         {
             InitializeMaterialKeywords();

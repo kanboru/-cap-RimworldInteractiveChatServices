@@ -41,7 +41,7 @@ namespace CAP_ChatInteractive
             get
             {
                 var settings = GetCommandSettings();
-                return settings?.PermissionLevel ?? "everyone";
+                return settings?.PermissionLevel ?? "everyone"; // Default to everyone if no settings
             }
         }
         public virtual int CooldownSeconds => 0;
@@ -54,7 +54,11 @@ namespace CAP_ChatInteractive
             var viewer = Viewers.GetViewer(message.Username);
             if (viewer == null) return false;
 
-            return viewer.HasPermission(PermissionLevel);
+            // Use the PermissionLevel property which now gets from JSON settings
+            string requiredPermission = PermissionLevel;
+            Logger.Debug($"Permission check for {Name}: viewer '{message.Username}' needs '{requiredPermission}'");
+
+            return viewer.HasPermission(requiredPermission);
         }
 
         // Get command settings from the settings manager

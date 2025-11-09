@@ -164,9 +164,13 @@ namespace CAP_ChatInteractive
         }
 
         // Permission checking
+        // Permission checking
         public bool HasPermission(string permissionLevel)
         {
-            return permissionLevel.ToLowerInvariant() switch
+            Logger.Debug($"Checking permission for viewer '{Username}': Current roles - Broadcaster:{IsBroadcaster}, Moderator:{IsModerator}, VIP:{IsVip}, Subscriber:{IsSubscriber}");
+            Logger.Debug($"Required permission level: '{permissionLevel}'");
+
+            bool result = permissionLevel.ToLowerInvariant() switch
             {
                 "broadcaster" => IsBroadcaster,
                 "moderator" => IsModerator || IsBroadcaster,
@@ -175,6 +179,9 @@ namespace CAP_ChatInteractive
                 "everyone" => true,
                 _ => false
             };
+
+            Logger.Debug($"Permission result: {result}");
+            return result;
         }
 
         public void UpdateFromMessage(ChatMessageWrapper message)

@@ -8,7 +8,7 @@ namespace CAP_ChatInteractive.Commands.TestCommands
 {
     public class Hello : ChatCommand
     {
-        public override string Name => "hello";
+        public override string Name =>  "hello";
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
