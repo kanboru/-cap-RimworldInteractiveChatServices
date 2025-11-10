@@ -32,21 +32,28 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 if (args.Length >= 1)
                 {
-                    // Try to find the item name by combining arguments until we hit quality/material/quantity keywords
+                    // Clean and validate the item name first
                     var itemNameParts = new List<string>();
+                    bool foundNonItemArg = false;
 
                     for (int i = 0; i < args.Length; i++)
                     {
                         string arg = args[i];
 
-                        // The FIRST argument must always be part of the item name
-                        // Only check for keywords after we have at least one item name part
+                        // Stop if we hit a quality, material, or quantity keyword
                         if (itemNameParts.Count > 0)
                         {
-                            // Check if this argument is a quality, material, or quantity indicator
+
                             if (IsQualityKeyword(arg.ToLower()) || IsMaterialKeyword(arg) || int.TryParse(arg, out _))
                             {
-                                // We've hit a non-item-name argument, stop collecting
+                                foundNonItemArg = true;
+                                break;
+                            }
+
+                            // Additional check: if argument contains invalid characters that suggest it's not part of item name
+                            if (arg.Contains("(") || arg.Contains(")") || arg.Contains("[") || arg.Contains("]"))
+                            {
+                                foundNonItemArg = true;
                                 break;
                             }
                         }
@@ -54,7 +61,26 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                         itemNameParts.Add(args[i]);
                     }
 
-                    itemName = string.Join(" ", itemNameParts);
+                    itemName = string.Join(" ", itemNameParts).Trim();
+
+                    // Validate item name doesn't contain problematic characters
+                    if (itemName.Contains("(") || itemName.Contains(")"))
+                    {
+                        // Try to extract valid item name before special characters
+                        int specialCharIndex = itemName.IndexOfAny(new char[] { '(', ')', '[', ']' });
+                        if (specialCharIndex > 0)
+                        {
+                            string cleanItemName = itemName.Substring(0, specialCharIndex).Trim();
+                            Logger.Debug($"Cleaned item name from '{itemName}' to '{cleanItemName}'");
+                            itemName = cleanItemName;
+                        }
+                    }
+
+                    // Check if this is a banned race by name
+                    if (StoreCommandHelper.IsRaceBannedByName(itemName))
+                    {
+                        return $"Item '{itemName}' is a humanlike race and cannot be purchased.";
+                    }
 
                     // Parse remaining arguments
                     int currentIndex = itemNameParts.Count;
@@ -136,6 +162,12 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     return $"Error: Item definition not found.";
                 }
 
+                // Check for banned races  -- Needed?
+                if (StoreCommandHelper.IsRaceBanned(thingDef))
+                {
+                    return $"Item '{itemName}' is a banned race and cannot be purchased.";
+                }
+
                 // Parse material
                 ThingDef material = null;
                 if (thingDef.MadeFromStuff)
@@ -200,6 +232,15 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 {
                     // For regular buy commands, try to get the pawn but don't require it
                     viewerPawn = StoreCommandHelper.GetViewerPawn(user.Username);
+                    // Log if no pawn found for debugging
+                    if (viewerPawn == null)
+                    {
+                        Logger.Debug($"No pawn assigned to {user.Username}, using colony-wide delivery");
+                    }
+                    else
+                    {
+                        Logger.Debug($"Using pawn {viewerPawn.Name} for delivery positioning");
+                    }
                     // If no pawn, items will be delivered to a random colony location
                 }
 
@@ -947,22 +988,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             return false;
         }
 
-        private static bool IsSustainerSound(SoundDef soundDef)
-        {
-            if (soundDef == null) return false;
-
-            // Common sustainer sound names that shouldn't be played as one-shot
-            string[] sustainerKeywords = { "Sustain", "Loop", "Ambient", "Meal_Eat", "Ingest_" };
-
-            foreach (string keyword in sustainerKeywords)
-            {
-                if (soundDef.defName.Contains(keyword))
-                    return true;
-            }
-
-            return false;
-        }
-
         private static void UseCompUseEffectItem(Thing thing, Verse.Pawn pawn)
         {
             try
@@ -1191,6 +1216,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             if (material != null)
             {
                 invoice += $"Material: {material.LabelCap}\n";
+            }
+
+            // Add minification note if applicable
+            var thingDef = DefDatabase<ThingDef>.GetNamedSilentFail(itemName.Replace(" ", ""));
+            if (thingDef != null && thingDef.Minifiable)
+            {
+                invoice += $"Note: Delivered in minified form for easy handling\n";
             }
 
             invoice += $"====================\n";

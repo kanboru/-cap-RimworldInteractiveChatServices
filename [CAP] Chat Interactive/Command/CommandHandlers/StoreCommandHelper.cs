@@ -3,6 +3,7 @@
 // Licensed under the AGPLv3 License. See LICENSE file in the project root for full license information.
 //
 // Helper methods for store command handling
+using _CAP__Chat_Interactive.Utilities;
 using CAP_ChatInteractive.Store;
 using RimWorld;
 using System;
@@ -16,29 +17,76 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
     {
         public static StoreItem GetStoreItemByName(string itemName)
         {
-            // Try exact match first
-            var storeItem = StoreInventory.AllStoreItems.Values
-                .FirstOrDefault(item => item.DefName.Equals(itemName, StringComparison.OrdinalIgnoreCase) ||
-                                       item.CustomName?.Equals(itemName, StringComparison.OrdinalIgnoreCase) == true);
+            if (string.IsNullOrWhiteSpace(itemName))
+                return null;
 
-            if (storeItem != null) return storeItem;
+            // Clean the item name
+            string cleanItemName = itemName.Trim();
+            cleanItemName = cleanItemName.TrimEnd('(', '[', '{').TrimStart(')', ']', '}').Trim();
 
-            // Try partial match on label (with spaces)
+            Logger.Debug($"Looking up store item for: '{itemName}' (cleaned: '{cleanItemName}')");
+
+            // Check if this is a banned race first
+            if (IsRaceBannedByName(cleanItemName))
+            {
+                Logger.Debug($"Item '{cleanItemName}' is a banned race, skipping store lookup");
+                return null;
+            }
+            // Try exact matches first
+            var exactMatch = StoreInventory.AllStoreItems.Values
+                .FirstOrDefault(item =>
+                    item.DefName.Equals(cleanItemName, StringComparison.OrdinalIgnoreCase) ||
+                    item.CustomName?.Equals(cleanItemName, StringComparison.OrdinalIgnoreCase) == true);
+
+            if (exactMatch != null)
+            {
+                Logger.Debug($"Found exact match: {exactMatch.DefName}");
+                return exactMatch;
+            }
+
+            // Try partial match on thingDef label (case insensitive, whole word)
             var thingDef = DefDatabase<ThingDef>.AllDefs
-                .FirstOrDefault(def => def.label?.ToLower().Contains(itemName.ToLower()) == true);
+                .FirstOrDefault(def =>
+                    def.label != null &&
+                    def.label.Equals(cleanItemName, StringComparison.OrdinalIgnoreCase));
 
-            if (thingDef != null) return StoreInventory.GetStoreItem(thingDef.defName);
+            if (thingDef != null)
+            {
+                Logger.Debug($"Found via label exact match: {thingDef.defName}");
+                return StoreInventory.GetStoreItem(thingDef.defName);
+            }
 
-            // Try match on label without spaces
+            // Try label without spaces
             thingDef = DefDatabase<ThingDef>.AllDefs
                 .FirstOrDefault(def =>
                 {
-                    string labelWithoutSpaces = def.label?.Replace(" ", "") ?? "";
-                    return labelWithoutSpaces.Equals(itemName, StringComparison.OrdinalIgnoreCase) ||
-                           labelWithoutSpaces.Contains(itemName, StringComparison.OrdinalIgnoreCase);
+                    if (def.label == null) return false;
+
+                    string labelWithoutSpaces = def.label.Replace(" ", "");
+                    return labelWithoutSpaces.Equals(cleanItemName.Replace(" ", ""), StringComparison.OrdinalIgnoreCase);
                 });
 
-            return thingDef != null ? StoreInventory.GetStoreItem(thingDef.defName) : null;
+            if (thingDef != null)
+            {
+                Logger.Debug($"Found via label without spaces: {thingDef.defName}");
+                return StoreInventory.GetStoreItem(thingDef.defName);
+            }
+
+            // Try contains match as last resort, but only if we have at least 3 characters
+            if (cleanItemName.Length >= 3)
+            {
+                thingDef = DefDatabase<ThingDef>.AllDefs
+                    .FirstOrDefault(def => def.label?.ToLower().Contains(cleanItemName.ToLower()) == true);
+
+                if (thingDef != null)
+                {
+                    Logger.Debug($"Found via contains match: {thingDef.defName}");
+                    return StoreInventory.GetStoreItem(thingDef.defName);
+                }
+            }
+
+            Logger.Debug($"No store item found for: '{cleanItemName}'");
+            return null;
         }
 
         public static bool CanUserAfford(ChatMessageWrapper user, int price)
@@ -191,6 +239,29 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     Logger.Debug($"Item requires stuff, selected random material: {finalMaterial?.defName}");
                 }
 
+                // SPECIAL CASE: If this is a pawn (animal), use pawn delivery regardless of other parameters
+                if (thingDef.race != null && thingDef.thingClass == typeof(Pawn))
+                {
+                    Logger.Debug($"Using special pawn delivery for {thingDef.defName}");
+
+                    Map targetMap = pawn?.Map ?? Find.CurrentMap ?? Find.Maps.FirstOrDefault(m => m.IsPlayerHome);
+                    if (targetMap == null)
+                    {
+                        Logger.Error("No valid map found for pawn delivery");
+                        return;
+                    }
+
+                    IntVec3 dropPos;
+                    if (!TryFindSafeDropPosition(targetMap, out dropPos))
+                    {
+                        Logger.Error("No safe drop position found for pawn delivery");
+                        return;
+                    }
+
+                    TryPawnDelivery(thingDef, quantity, quality, material, dropPos, targetMap);
+                    return;
+                }
+
                 // Create the thing
                 Thing thing = ThingMaker.MakeThing(thingDef, finalMaterial);
                 thing.stackCount = Math.Min(quantity, thingDef.stackLimit);
@@ -204,6 +275,8 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                         thing.TryGetComp<CompQuality>()?.SetQuality(quality.Value, ArtGenerationContext.Outsider);
                     }
                 }
+
+
 
                 // Handle different delivery methods
                 if (equipItem && pawn != null && pawn.Map != null)
@@ -256,16 +329,34 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 }
                 else
                 {
-                    // IMPROVED DROP POD DELIVERY
+                    // IMPROVED DELIVERY - Prioritize trade spots, then pawn proximity
                     Map targetMap = null;
                     IntVec3 dropPos;
 
                     if (pawn != null && pawn.Map != null)
                     {
                         targetMap = pawn.Map;
-                        if (!DropCellFinder.TryFindDropSpotNear(pawn.Position, targetMap, out dropPos, allowFogged: false, canRoofPunch: true, maxRadius: 15))
+
+                        // Get the trade spot once
+                        IntVec3 tradeSpot = DropCellFinder.TradeDropSpot(targetMap);
+
+                        // First try to find drop spot near trade spot (highest priority)
+                        if (DropCellFinder.TryFindDropSpotNear(tradeSpot, targetMap, out dropPos,
+                            allowFogged: false, canRoofPunch: true, maxRadius: 15))
                         {
-                            dropPos = pawn.Position;
+                            Logger.Debug($"Using drop spot near trade spot: {dropPos} (trade spot: {tradeSpot})");
+                        }
+                        // If no trade spot available, try near pawn
+                        else if (DropCellFinder.TryFindDropSpotNear(pawn.Position, targetMap, out dropPos,
+                                 allowFogged: false, canRoofPunch: true, maxRadius: 15))
+                        {
+                            Logger.Debug($"Using position near pawn for delivery: {dropPos} (pawn: {pawn.Position})");
+                        }
+                        else
+                        {
+                            // Fallback to trade spot directly
+                            dropPos = tradeSpot;
+                            Logger.Debug($"Using trade spot directly as fallback: {dropPos}");
                         }
                     }
                     else
@@ -274,19 +365,60 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                         if (targetMap == null)
                         {
                             Logger.Error("No valid map found for item delivery");
+                            // Try any player map with spawned colonists as last resort
+                            targetMap = Find.Maps.FirstOrDefault(m => m.IsPlayerHome && m.mapPawns.ColonistsSpawnedCount > 0);
+                            if (targetMap == null)
+                            {
+                                Logger.Error("No player home map with spawned colonists found for item delivery");
+                                return;
+                            }
+                        }
+
+                        Logger.Debug($"Selected map for delivery: {targetMap.info?.parent?.Label ?? "Unknown"} (Size: {targetMap.Size})");
+
+                        // For colony-wide delivery, find a safe drop position
+                        if (!TryFindSafeDropPosition(targetMap, out dropPos))
+                        {
+                            Logger.Error("No safe drop position found on map");
                             return;
                         }
 
-                        if (!DropCellFinder.TryFindDropSpotNear(targetMap.Center, targetMap, out dropPos, allowFogged: false, canRoofPunch: true, maxRadius: 30))
+                        Logger.Debug($"Using safe drop position for colony delivery: {dropPos}");
+                    }
+
+                    Logger.Debug($"Delivering {quantity}x {thingDef.defName} at position {dropPos} on map {targetMap}");
+
+                    // Validate the delivery position
+                    if (!IsValidDeliveryPosition(dropPos, targetMap))
+                    {
+                        Logger.Warning($"Invalid delivery position {dropPos}, finding alternative...");
+
+                        // Try to find any valid position on the map
+                        if (CellFinderLoose.TryFindRandomNotEdgeCellWith(10, (IntVec3 c) =>
+                            c.InBounds(targetMap) && !c.Fogged(targetMap) && c.Standable(targetMap),
+                            targetMap, out IntVec3 altPos))
                         {
-                            dropPos = DropCellFinder.TradeDropSpot(targetMap);
+                            dropPos = altPos;
+                            Logger.Debug($"Using alternative delivery position: {dropPos}");
+                        }
+                        else
+                        {
+                            Logger.Error("No valid delivery position found on map");
+                            return;
                         }
                     }
 
-                    Logger.Debug($"Dropping {quantity}x {thingDef.defName} at position {dropPos} on map {targetMap}");
 
-                    // Use the improved delivery method for handling stack limits
-                    DeliverItemsInDropPods(thingDef, quantity, quality, finalMaterial, dropPos, targetMap);
+                    // Use shuttle delivery if available, otherwise use drop pods
+                    if (TryShuttleDelivery(thingDef, quantity, quality, finalMaterial, dropPos, targetMap))
+                    {
+                        Logger.Debug($"Items delivered via shuttle/drop pod");
+                    }
+                    else
+                    {
+                        // Fallback to drop pod delivery
+                        DeliverItemsInDropPods(thingDef, quantity, quality, finalMaterial, dropPos, targetMap);
+                    }
                 }
             }
             catch (Exception ex)
@@ -296,52 +428,259 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
         }
 
-        private static void DeliverItemsInDropPods(ThingDef thingDef, int quantity, QualityCategory? quality, ThingDef material, IntVec3 dropPos, Map map)
+        private static bool TryFindSafeDropPosition(Map map, out IntVec3 dropPos)
+        {
+            dropPos = IntVec3.Invalid;
+
+            if (map == null)
+                return false;
+
+            // First try trade spot
+            IntVec3 tradeSpot = DropCellFinder.TradeDropSpot(map);
+            if (IsValidDeliveryPosition(tradeSpot, map))
+            {
+                dropPos = tradeSpot;
+                Logger.Debug($"Using valid trade spot: {tradeSpot}");
+                return true;
+            }
+
+            // Try near trade spot
+            if (DropCellFinder.TryFindDropSpotNear(tradeSpot, map, out dropPos,
+                allowFogged: false, canRoofPunch: true, maxRadius: 30))
+            {
+                if (IsValidDeliveryPosition(dropPos, map))
+                {
+                    Logger.Debug($"Using position near trade spot: {dropPos} (trade spot: {tradeSpot})");
+                    return true;
+                }
+            }
+
+            // Try map center
+            IntVec3 mapCenter = map.Center;
+            if (IsValidDeliveryPosition(mapCenter, map))
+            {
+                dropPos = mapCenter;
+                Logger.Debug($"Using map center: {mapCenter}");
+                return true;
+            }
+
+            // Try near map center
+            if (DropCellFinder.TryFindDropSpotNear(mapCenter, map, out dropPos,
+                allowFogged: false, canRoofPunch: true, maxRadius: 50))
+            {
+                if (IsValidDeliveryPosition(dropPos, map))
+                {
+                    Logger.Debug($"Using position near map center: {dropPos} (center: {mapCenter})");
+                    return true;
+                }
+            }
+
+            // Final fallback: find any valid cell on the map
+            if (CellFinderLoose.TryFindRandomNotEdgeCellWith(10,
+                (IntVec3 c) => IsValidDeliveryPosition(c, map),
+                map, out dropPos))
+            {
+                Logger.Debug($"Using random valid cell: {dropPos}");
+                return true;
+            }
+
+            Logger.Error("No safe drop position found after all attempts");
+            return false;
+        }
+
+        private static bool TryShuttleDelivery(ThingDef thingDef, int quantity, QualityCategory? quality, ThingDef material, IntVec3 dropPos, Map map)
         {
             try
             {
+                Logger.Debug($"Attempting delivery at position: {dropPos}, map: {map?.info?.parent?.Label ?? "null"}, map size: {map?.Size}, in bounds: {dropPos.InBounds(map)}");
+
+                if (map == null)
+                {
+                    Logger.Error("Map is null for delivery");
+                    return false;
+                }
+
+                if (!dropPos.InBounds(map))
+                {
+                    Logger.Error($"Delivery position {dropPos} is out of map bounds (map size: {map.Size})");
+                    return false;
+                }
+
+
                 List<Thing> thingsToDeliver = new List<Thing>();
                 int remainingQuantity = quantity;
 
+                // SPECIAL CASE: Handle pawns (animals) differently
+                if (thingDef.race != null && thingDef.thingClass == typeof(Pawn))
+                {
+                    Logger.Debug($"Using pawn delivery for {thingDef.defName}");
+                    return TryPawnDelivery(thingDef, quantity, quality, material, dropPos, map);
+                }
+
+                Logger.Debug($"Attempting delivery at position: {dropPos}, map: {map?.info?.parent?.Label ?? "null"}, map size: {map?.Size}, in bounds: {dropPos.InBounds(map)}");
+
+
+                // Check if this item should be minified
+                bool shouldMinify = ShouldMinifyForDelivery(thingDef);
+                Logger.Debug($"Should minify {thingDef.defName}: {shouldMinify}");
+
                 while (remainingQuantity > 0)
                 {
-                    int stackSize = Math.Min(remainingQuantity, thingDef.stackLimit);
-                    Thing thing = ThingMaker.MakeThing(thingDef, material);
-                    thing.stackCount = stackSize;
+                    Thing thing;
 
-                    // Set quality if applicable
-                    if (quality.HasValue && thingDef.HasComp(typeof(CompQuality)))
+                    if (shouldMinify)
                     {
-                        if (thing.TryGetQuality(out QualityCategory existingQuality))
+                        // For minified items, deliver one at a time
+                        thing = CreateMinifiedThing(thingDef, quality, material);
+                        remainingQuantity -= 1;
+                        Logger.Debug($"Created minified version of {thingDef.defName}");
+                    }
+                    else
+                    {
+                        // For regular items, use normal stack logic
+                        int stackSize = Math.Min(remainingQuantity, thingDef.stackLimit);
+                        thing = ThingMaker.MakeThing(thingDef, material);
+                        thing.stackCount = stackSize;
+
+                        // Set quality if applicable
+                        if (quality.HasValue && thingDef.HasComp(typeof(CompQuality)))
                         {
-                            thing.TryGetComp<CompQuality>()?.SetQuality(quality.Value, ArtGenerationContext.Outsider);
+                            if (thing.TryGetQuality(out QualityCategory existingQuality))
+                            {
+                                thing.TryGetComp<CompQuality>()?.SetQuality(quality.Value, ArtGenerationContext.Outsider);
+                            }
                         }
+
+                        remainingQuantity -= stackSize;
+                        Logger.Debug($"Created regular thing: {thingDef.defName} with stack count: {stackSize}");
                     }
 
                     thingsToDeliver.Add(thing);
-                    remainingQuantity -= stackSize;
                 }
 
-                // Deliver all items in one drop pod
+                Logger.Debug($"Calling DropPodUtility.DropThingsNear with {thingsToDeliver.Count} stacks at position {dropPos}");
+
+                // Use DropPodUtility which automatically handles both shuttles and drop pods
                 DropPodUtility.DropThingsNear(
                     dropPos,
                     map,
                     thingsToDeliver,
                     openDelay: 110,
-                    // instaDrop: false,
                     leaveSlag: false,
                     canRoofPunch: true,
                     forbid: true,
                     allowFogged: false
                 );
 
-                Logger.Debug($"Delivered {quantity}x {thingDef.defName} in {thingsToDeliver.Count} stacks");
+                Logger.Debug($"Successfully called DropPodUtility for {quantity}x {thingDef.defName} at {dropPos}");
+                return true;
             }
             catch (Exception ex)
             {
-                Logger.Error($"Error delivering items in drop pods: {ex}");
-                throw;
+                Logger.Error($"Error in delivery at position {dropPos}: {ex}");
+                return false;
             }
+        }
+        private static void DeliverItemsInDropPods(ThingDef thingDef, int quantity, QualityCategory? quality, ThingDef material, IntVec3 dropPos, Map map)
+        {
+            // Just call the shuttle delivery method as a fallback
+            TryShuttleDelivery(thingDef, quantity, quality, material, dropPos, map);
+        }
+
+        private static Thing CreateMinifiedThing(ThingDef thingDef, QualityCategory? quality, ThingDef material)
+        {
+            try
+            {
+                // Create the original thing first
+                Thing originalThing = ThingMaker.MakeThing(thingDef, material);
+
+                // Set quality if applicable
+                if (quality.HasValue && thingDef.HasComp(typeof(CompQuality)))
+                {
+                    if (originalThing.TryGetQuality(out QualityCategory existingQuality))
+                    {
+                        originalThing.TryGetComp<CompQuality>()?.SetQuality(quality.Value, ArtGenerationContext.Outsider);
+                    }
+                }
+
+                // Minify the thing
+                Thing minifiedThing = MinifyUtility.TryMakeMinified(originalThing);
+
+                if (minifiedThing != null)
+                {
+                    Logger.Debug($"Successfully minified {thingDef.defName}");
+                    return minifiedThing;
+                }
+                else
+                {
+                    Logger.Debug($"Minification returned null for {thingDef.defName}, returning original");
+                    return originalThing;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error minifying {thingDef.defName}: {ex}");
+                // Return regular thing as fallback
+                return ThingMaker.MakeThing(thingDef, material);
+            }
+        }
+
+        private static bool IsValidDeliveryPosition(IntVec3 pos, Map map)
+        {
+            if (map == null)
+            {
+                Logger.Debug("Map is null");
+                return false;
+            }
+
+            if (!pos.InBounds(map))
+            {
+                Logger.Debug($"Position {pos} is out of map bounds (map size: {map.Size})");
+                return false;
+            }
+
+            if (pos.Fogged(map))
+            {
+                Logger.Debug($"Position {pos} is fogged");
+                return false;
+            }
+
+            // Check if position is standable or can be roof-punched
+            if (!pos.Standable(map))
+            {
+                // Check if we can place on this cell (non-standable but passable)
+                if (!GenGrid.Walkable(pos, map))
+                {
+                    Logger.Debug($"Position {pos} is not walkable or standable");
+                    return false;
+                }
+            }
+
+            // Additional check: ensure it's not in a solid rock wall
+            Building edifice = pos.GetEdifice(map);
+            if (edifice != null && edifice.def.passability == Traversability.Impassable && edifice.def.building.isNaturalRock)
+            {
+                Logger.Debug($"Position {pos} is in solid rock");
+                return false;
+            }
+
+            Logger.Debug($"Position {pos} is valid for delivery");
+            return true;
+        }
+
+        private static bool ShouldMinifyForDelivery(ThingDef thingDef)
+        {
+            if (thingDef == null) return false;
+
+            // Only check if the thing can be minified - that's the main requirement
+            if (!thingDef.Minifiable)
+            {
+                Logger.Debug($"{thingDef.defName} is not minifiable");
+                return false;
+            }
+
+            Logger.Debug($"{thingDef.defName} should be minified for delivery");
+            return true;
         }
 
         public static bool EquipItemOnPawn(Thing item, Verse.Pawn pawn)
@@ -514,6 +853,196 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             return DefDatabase<RecipeDef>.AllDefs
                 .Where(r => r.IsSurgery)
                 .Any(r => r.ingredients.Any(i => i.filter.AllowedThingDefs.Contains(thingDef)));
+        }
+
+        public static bool IsRaceBanned(ThingDef thingDef)
+        {
+            if (thingDef?.race == null)
+                return false;
+
+            // Ban humanlike races
+            if (thingDef.race.Humanlike)
+            {
+                Logger.Debug($"Banned race detected: {thingDef.defName} (Humanlike)");
+                return true;
+            }
+
+            // Add other banned race conditions here if needed
+            string[] bannedRaces = {
+        "Human", "Colonist", "Slave", "Refugee", "Prisoner",
+        "Spacer", "Tribal", "Pirate", "Outlander", "Villager"
+    };
+
+            if (bannedRaces.Any(race => thingDef.defName.Contains(race) ||
+                                       (thingDef.label?.Contains(race) == true)))
+            {
+                Logger.Debug($"Banned race detected: {thingDef.defName}");
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool IsRaceBannedByName(string itemName)
+        {
+            if (string.IsNullOrWhiteSpace(itemName))
+                return false;
+
+            // Clean the item name first (using the same logic as GetStoreItemByName)
+            string cleanItemName = itemName.Trim();
+            cleanItemName = cleanItemName.TrimEnd('(', '[', '{').TrimStart(')', ']', '}').Trim();
+
+            // Try to find if this matches any humanlike race
+            var raceDef = RaceUtils.FindRaceByName(cleanItemName);
+            if (raceDef != null)
+            {
+                Logger.Debug($"Banned race detected by name: '{cleanItemName}' -> {raceDef.defName}");
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryPawnDelivery(ThingDef pawnDef, int quantity, QualityCategory? quality, ThingDef material, IntVec3 dropPos, Map map)
+        {
+            try
+            {
+                Logger.Debug($"Attempting pawn delivery for {quantity}x {pawnDef.defName} at position: {dropPos}");
+
+                if (map == null)
+                {
+                    Logger.Error("Map is null for pawn delivery");
+                    return false;
+                }
+
+                if (!dropPos.InBounds(map))
+                {
+                    Logger.Error($"Pawn delivery position {dropPos} is out of map bounds");
+                    return false;
+                }
+
+                List<Pawn> pawnsToDeliver = new List<Pawn>();
+
+                for (int i = 0; i < quantity; i++)
+                {
+                    // Create pawn using RimWorld's proper pawn generation
+                    PawnGenerationRequest request = new PawnGenerationRequest(
+                        kind: pawnDef.race.AnyPawnKind, // Use the default pawn kind for this race
+                        faction: null, // No faction - wild/tame animal
+                        context: PawnGenerationContext.NonPlayer,
+                        tile: -1,
+                        forceGenerateNewPawn: true,
+                        // newborn: false,
+                        allowDead: false,
+                        allowDowned: false,
+                        canGeneratePawnRelations: false,
+                        mustBeCapableOfViolence: false,
+                        colonistRelationChanceFactor: 0f,
+                        forceAddFreeWarmLayerIfNeeded: false,
+                        allowGay: true,
+                        allowFood: true,
+                        allowAddictions: true,
+                        inhabitant: false,
+                        certainlyBeenInCryptosleep: false,
+                        forceRedressWorldPawnIfFormerColonist: false,
+                        worldPawnFactionDoesntMatter: false,
+                        biocodeWeaponChance: 0f,
+                        biocodeApparelChance: 0f,
+                        //extraPawnKind: null,
+                        //relationWithExtraPawnKind: null,
+                        validatorPreGear: null,
+                        validatorPostGear: null,
+                        forcedTraits: null,
+                        prohibitedTraits: null,
+                        minChanceToRedressWorldPawn: 0f,
+                        fixedBiologicalAge: null,
+                        fixedChronologicalAge: null,
+                        fixedGender: null,
+                        fixedLastName: null,
+                        //fixedMelanin: null,
+                        fixedBirthName: null
+                    );
+
+                    Pawn pawn = PawnGenerator.GeneratePawn(request);
+
+                    // Set the pawn's def to match what was purchased
+                    if (pawn.def != pawnDef)
+                    {
+                        Logger.Debug($"Generated pawn def {pawn.def.defName} doesn't match requested {pawnDef.defName}, adjusting...");
+                        // For animals, we need to ensure we have the right kind
+                    }
+
+                    pawnsToDeliver.Add(pawn);
+                    Logger.Debug($"Created pawn: {pawn.Name} ({pawn.def.defName})");
+                }
+
+                // Use a gentler delivery method for pawns - walk them in from the edge
+                if (pawnsToDeliver.Count > 0)
+                {
+                    IntVec3 spawnPos = FindPawnSpawnPosition(map, dropPos);
+                    Logger.Debug($"Spawning {pawnsToDeliver.Count} pawns at position: {spawnPos}");
+
+                    foreach (var pawn in pawnsToDeliver)
+                    {
+                        // Spawn the pawn properly
+                        GenSpawn.Spawn(pawn, spawnPos, map);
+
+                        // Make animals tame
+                        if (pawn.RaceProps.Animal)
+                        {
+                            pawn.SetFaction(Faction.OfPlayer);
+                            Logger.Debug($"Tamed animal: {pawn.Name}");
+                        }
+
+                        // Add some arrival effects
+                        FleckMaker.ThrowDustPuff(spawnPos, map, 2f);
+                    }
+
+                    // Send a custom letter for pawn deliveries
+                    string letterLabel = $"🐾 Rimazon Pet Delivery - {pawnsToDeliver.Count}x {pawnDef.label}";
+                    string letterText = $"Your Rimazon pet delivery has arrived! {pawnsToDeliver.Count}x {pawnDef.label} have been delivered to your colony.";
+
+                    if (pawnsToDeliver.Count == 1)
+                    {
+                        var singlePawn = pawnsToDeliver[0];
+                        letterText = $"Your Rimazon pet delivery has arrived! {singlePawn.Name} the {pawnDef.label} has joined your colony.";
+                    }
+
+                    Find.LetterStack.ReceiveLetter(letterLabel, letterText, LetterDefOf.PositiveEvent, pawnsToDeliver.FirstOrDefault());
+
+                    Logger.Debug($"Successfully delivered {pawnsToDeliver.Count}x {pawnDef.defName}");
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error in pawn delivery: {ex}");
+                return false;
+            }
+        }
+
+        private static IntVec3 FindPawnSpawnPosition(Map map, IntVec3 preferredPos)
+        {
+            // Try to find a valid spawn position near the preferred position
+            if (CellFinder.TryFindRandomCellNear(preferredPos, map, 10,
+                (IntVec3 c) => c.Standable(map) && !c.Fogged(map) && c.Walkable(map),
+                out IntVec3 spawnPos))
+            {
+                return spawnPos;
+            }
+
+            // Fallback: find any valid cell on the map edge
+            if (CellFinder.TryFindRandomEdgeCellWith(
+                (IntVec3 c) => c.Standable(map) && !c.Fogged(map) && c.Walkable(map),
+                map, CellFinder.EdgeRoadChance_Ignore, out spawnPos))
+            {
+                return spawnPos;
+            }
+
+            // Final fallback: use the preferred position
+            return preferredPos;
         }
 
         public static class PurchaseHelper

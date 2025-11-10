@@ -2,13 +2,14 @@
 // Copyright (c) Captolamia. All rights reserved.
 // Licensed under the AGPLv3 License. See LICENSE file in the project root for full license information.
 // Manages the store inventory for the chat interactive mod
+using _CAP__Chat_Interactive.Utilities;
 using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 using Verse;
-using System.Text;
 
 namespace CAP_ChatInteractive.Store
 {
@@ -163,12 +164,18 @@ namespace CAP_ChatInteractive.Store
                 }
             }
 
-            // Remove items that no longer exist in the game
+            // Remove items that no longer exist in the game OR are humanlike races
             var defNamesToRemove = new List<string>();
             foreach (var storeItem in AllStoreItems.Values)
             {
-                if (DefDatabase<ThingDef>.GetNamedSilentFail(storeItem.DefName) == null)
+                var thingDef = DefDatabase<ThingDef>.GetNamedSilentFail(storeItem.DefName);
+                if (thingDef == null)
                 {
+                    defNamesToRemove.Add(storeItem.DefName);
+                }
+                else if (thingDef.race?.Humanlike == true || RaceUtils.IsRaceExcluded(thingDef))
+                {
+                    Logger.Debug($"Removing humanlike race from store during validation: {storeItem.DefName}");
                     defNamesToRemove.Add(storeItem.DefName);
                 }
             }
@@ -212,6 +219,28 @@ namespace CAP_ChatInteractive.Store
                 {
                     try
                     {
+                        // Skip humanlike races using RaceUtils
+                        if (t.race?.Humanlike == true)
+                        {
+                            Logger.Debug($"Excluding humanlike race from store: {t.defName} ({t.label})");
+                            return false;
+                        }
+
+                        // Skip corpses of humanlike races
+                        if (t.IsCorpse && t.race?.Humanlike == true)
+                        {
+                            Logger.Debug($"Excluding humanlike corpse from store: {t.defName}");
+                            return false;
+                        }
+
+                        // Skip if RaceUtils identifies it as excluded
+                        if (RaceUtils.IsRaceExcluded(t))
+                        {
+                            Logger.Debug($"Excluding race via RaceUtils: {t.defName} ({t.label})");
+                            return false;
+                        }
+
+                        // Basic tradeable criteria
                         return t.BaseMarketValue > 0f &&
                                !t.IsCorpse &&
                                t.defName != "Human" &&
@@ -224,6 +253,7 @@ namespace CAP_ChatInteractive.Store
                 })
                 .ToList();
 
+            Logger.Debug($"Found {tradeableItems.Count} tradeable items after filtering out humanlike races");
             return tradeableItems;
         }
 

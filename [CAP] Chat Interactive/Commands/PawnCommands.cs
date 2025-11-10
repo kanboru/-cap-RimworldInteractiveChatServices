@@ -284,7 +284,34 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             return HealPawnCommandHandler.HandleHealPawn(user, args);
         }
     }
-    
+
+    public class Dye : ChatCommand
+    {
+        public override string Name => "dye";
+
+        public override string Execute(ChatMessageWrapper user, string[] args)
+        {
+            return DyeCommandHandler.HandleDyeCommand(user, args);
+        }
+    }
+
+    public class SetFavoriteColor : ChatCommand
+    {
+        public override string Name => "setfavoritecolor";
+
+        public override string Execute(ChatMessageWrapper user, string[] args)
+        {
+            // Check if Ideology DLC is active
+            if (!ModsConfig.IdeologyActive)
+            {
+                return "The !setfavoritecolor command requires the Ideology DLC to be enabled.";
+            }
+
+            return SetFavoriteColorCommandHandler.HandleSetFavoriteColorCommand(user, args);
+        }
+    }
+
+
     public class DebugRaces : ChatCommand
     {
         public override string Name => "debugraces";

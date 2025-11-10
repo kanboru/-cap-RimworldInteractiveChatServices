@@ -1121,12 +1121,25 @@ namespace CAP_ChatInteractive
             if (thingDef.Claimable) sb.AppendLine($"Claimable: {thingDef.Claimable}");
             if (thingDef.IsWeapon) sb.AppendLine($"IsWeapon: {thingDef.IsWeapon}");
             if (thingDef.IsBuildingArtificial) sb.AppendLine($"IsBuildingArtificial: {thingDef.IsBuildingArtificial}");
-            if (thingDef.Minifiable) sb.AppendLine($"Minifiable: {thingDef.Minifiable}");
+
+            // MINIFICATION PROPERTIES - Always show these
+            sb.AppendLine($"Minifiable: {thingDef.Minifiable}");
+            if (thingDef.Minifiable)
+            {
+                sb.AppendLine($"  - Will be delivered as minified crate");
+            }
+
             if (thingDef.smeltable) sb.AppendLine($"Smeltable: {thingDef.smeltable}");
 
             sb.AppendLine($"");
 
-            // List comps if the thing has them
+            // Delivery Information
+            sb.AppendLine($"--- Delivery Information ---");
+            sb.AppendLine($"Will Minify: {ShouldMinifyForDelivery(thingDef)}");
+            sb.AppendLine($"Stack Limit: {thingDef.stackLimit}");
+            sb.AppendLine($"Size: {thingDef.size}");
+            sb.AppendLine($"");
+
             // List comps if the thing has them
             if (thingDef.comps != null && thingDef.comps.Count > 0)
             {
@@ -1205,6 +1218,12 @@ namespace CAP_ChatInteractive
             Widgets.BeginScrollView(rect, ref scrollPosition, viewRect);
             Widgets.Label(new Rect(0f, 0f, viewRect.width, textHeight), fullText);
             Widgets.EndScrollView();
+        }
+
+        // Helper method to check minification (same logic as StoreCommandHelper)
+        private bool ShouldMinifyForDelivery(ThingDef thingDef)
+        {
+            return thingDef != null && thingDef.Minifiable;
         }
     }
 

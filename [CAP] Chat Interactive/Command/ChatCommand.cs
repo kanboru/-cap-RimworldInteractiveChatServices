@@ -112,18 +112,18 @@ namespace CAP_ChatInteractive
         {
             try
             {
-                Logger.Debug($"=== Settings lookup for: '{commandName}' ===");
+                //Logger.Debug($"=== Settings lookup for: '{commandName}' ===");
 
                 // Try to get from open dialog first
                 var dialog = Find.WindowStack?.WindowOfType<Dialog_CommandManager>();
                 if (dialog != null && dialog.commandSettings.ContainsKey(commandName))
                 {
-                    Logger.Debug($"  -> Found in dialog settings");
+                    //Logger.Debug($"  -> Found in dialog settings");
                     return dialog.commandSettings[commandName];
                 }
 
                 // Fallback: Load directly from JSON
-                Logger.Debug($"  -> Looking in JSON file");
+                //Logger.Debug($"  -> Looking in JSON file");
                 return LoadSettingsFromJson(commandName);
             }
             catch (Exception ex)
@@ -156,7 +156,7 @@ namespace CAP_ChatInteractive
                     // FIRST: Try exact match
                     if (allSettings != null && allSettings.ContainsKey(commandName))
                     {
-                        Logger.Debug($"  -> Found exact match for '{commandName}'");
+                        // Logger.Debug($"  -> Found exact match for '{commandName}'");
                         return allSettings[commandName];
                     }
 
@@ -168,7 +168,7 @@ namespace CAP_ChatInteractive
 
                         if (matchingKey != null)
                         {
-                            Logger.Debug($"  -> Found case-insensitive match: '{matchingKey}' -> '{commandName}'");
+                            // Logger.Debug($"  -> Found case-insensitive match: '{matchingKey}' -> '{commandName}'");
                             return allSettings[matchingKey];
                         }
                     }
