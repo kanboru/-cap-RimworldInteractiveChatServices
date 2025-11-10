@@ -85,7 +85,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
 
             var report = new StringBuilder();
-            report.AppendLine($"🏥 Health Report for {pawn.Name}:");
+            report.AppendLine($"🏥 Health Report: "); // for {pawn.Name}:
 
             // Add temperature comfort range
             float minComfy = pawn.GetStatValue(StatDefOf.ComfyTemperatureMin);
@@ -211,7 +211,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string HandleGearInfo(Pawn pawn, string[] args)
         {
             var report = new StringBuilder();
-            report.AppendLine($"🎒 Gear Report for {pawn.Name}:");
+            report.AppendLine($"🎒 Gear Report: ");// for {pawn.Name}:
 
             // Weapons - check for Simple Sidearms first
             var weapons = GetWeaponsList(pawn);
@@ -418,7 +418,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string HandleKillInfo(Pawn pawn, string[] args)
         {
             var report = new StringBuilder();
-            report.AppendLine($"💀 Kill Report for {pawn.Name}:");
+            report.AppendLine($"💀 Kill Report:"); //  for {pawn.Name}:
 
             // Get kill counts from pawn records - cast float to int
             int humanlikeKills = (int)pawn.records.GetValue(RecordDefOf.KillsHumanlikes);
@@ -487,7 +487,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string HandleNeedsInfo(Pawn pawn, string[] args)
         {
             var report = new StringBuilder();
-            report.AppendLine($"😊 Needs Report for {pawn.Name}:");
+            report.AppendLine($"😊 Needs Report: "); //for {pawn.Name}:
 
             var needs = pawn.needs?.AllNeeds;
             if (needs == null || needs.Count == 0)
@@ -589,7 +589,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string HandleRelationsInfo(Pawn pawn, Viewer viewer, string[] args)
         {
             var report = new StringBuilder();
-            report.AppendLine($"💕 Relations Report for {pawn.Name}:");
+            report.AppendLine($"💕 Relations Report:"); // for {pawn.Name}:
 
             // Get the assignment manager
             var assignmentManager = Current.Game?.GetComponent<GameComponent_PawnAssignmentManager>();
@@ -739,7 +739,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string HandleSkillsInfo(Pawn pawn, string[] args)
         {
             var report = new StringBuilder();
-            report.AppendLine($"🎯 Skills Report for {pawn.Name}:");
+            report.AppendLine($"🎯 Skills Report: "); // for {pawn.Name}:
 
             var skills = pawn.skills?.skills;
             if (skills == null || skills.Count == 0)
@@ -760,7 +760,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 string passionEmoji = GetPassionEmoji(skill.passion);
                 string levelDescription = GetSkillLevelDescriptionDetailed(skill.Level);
 
-                report.AppendLine($"• {skillName}: {passionEmoji} Level {skill.Level} ({levelDescription})");
+                report.AppendLine($"• {passionEmoji}{skillName}: {skill.Level} {levelDescription}");
             }
 
             // Add learning summary
@@ -769,7 +769,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
             if (burningPassions > 0 || minorPassions > 0)
             {
-                report.AppendLine($"📚 Passions: {burningPassions} burning, {minorPassions} minor");
+                report.AppendLine($"📚 Passions: {burningPassions} 🔥🔥, {minorPassions} 🔥");
             }
 
             // Top 3 skills
@@ -836,7 +836,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string GetStatsOverview(Pawn pawn)
         {
             var report = new StringBuilder();
-            report.AppendLine($"📊 Stats Overview for {pawn.Name}:");
+            report.AppendLine($"📊 Stats Overview:");  // for { pawn.Name}:
 
             // Show a few key stats as examples
             var keyStats = new[]
@@ -873,7 +873,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string GetSpecificStats(Pawn pawn, string[] args)
         {
             var report = new StringBuilder();
-            report.AppendLine($"📊 Stats for {pawn.Name}:");
+            report.AppendLine($"📊 Stats: "); // for {pawn.Name}:
 
             var foundStats = new List<string>();
             var notFoundStats = new List<string>();
@@ -947,7 +947,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string HandleBackstoriesInfo(Pawn pawn, string[] args)
         {
             var report = new StringBuilder();
-            report.AppendLine($"👤 Backstories for {pawn.Name}:");
+            report.AppendLine($"👤 Backstories:");  // for {pawn.Name}:
 
             // Childhood backstory - truncated to fit in one message
             if (pawn.story?.Childhood != null)
@@ -1004,7 +1004,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string HandleTraitsInfo(Pawn pawn, string[] args)
         {
             var report = new StringBuilder();
-            report.AppendLine($"🎭 Traits for {pawn.Name}:");
+            report.AppendLine($"🎭 Traits:"); // for { pawn.Name}
 
             if (pawn.story?.traits == null || pawn.story.traits.allTraits.Count == 0)
             {
@@ -1097,7 +1097,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string GetWorkPrioritySummary(Pawn pawn)
         {
             var report = new StringBuilder();
-            report.AppendLine($"💼 Work Priorities for {pawn.Name}:");
+            report.AppendLine($"💼 Work Priorities: "); // for {pawn.Name}:
 
             // Get all work types in priority order
             var workTypes = WorkTypeDefsUtility.WorkTypeDefsInPriorityOrder
