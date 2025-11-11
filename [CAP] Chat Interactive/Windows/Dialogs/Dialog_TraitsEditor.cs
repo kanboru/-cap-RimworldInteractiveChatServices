@@ -9,6 +9,7 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using CAP_ChatInteractive.Traits;
+using CAP_ChatInteractive;
 
 namespace CAP_ChatInteractive
 {
@@ -100,11 +101,12 @@ namespace CAP_ChatInteractive
         {
             Widgets.BeginGroup(rect);
 
-            float buttonWidth = 100f; // Increased from 90f to 100f
+            float buttonWidth = 100f;
             float spacing = 5f;
             float x = 0f;
 
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Name"))
+            // Use UIUtilities for buttons that might need truncation
+            if (UIUtilities.ButtonWithTruncation(new Rect(x, 0f, buttonWidth, 30f), "Name"))
             {
                 if (sortMethod == TraitsSortMethod.Name)
                     sortAscending = !sortAscending;
@@ -114,7 +116,7 @@ namespace CAP_ChatInteractive
             }
             x += buttonWidth + spacing;
 
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Add Price"))
+            if (UIUtilities.ButtonWithTruncation(new Rect(x, 0f, buttonWidth, 30f), "Add Price"))
             {
                 if (sortMethod == TraitsSortMethod.AddPrice)
                     sortAscending = !sortAscending;
@@ -124,7 +126,7 @@ namespace CAP_ChatInteractive
             }
             x += buttonWidth + spacing;
 
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Remove Price")) // Now fits properly
+            if (UIUtilities.ButtonWithTruncation(new Rect(x, 0f, buttonWidth, 30f), "Remove Price"))
             {
                 if (sortMethod == TraitsSortMethod.RemovePrice)
                     sortAscending = !sortAscending;
@@ -134,7 +136,7 @@ namespace CAP_ChatInteractive
             }
             x += buttonWidth + spacing;
 
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Source"))
+            if (UIUtilities.ButtonWithTruncation(new Rect(x, 0f, buttonWidth, 30f), "Source"))
             {
                 if (sortMethod == TraitsSortMethod.ModSource)
                     sortAscending = !sortAscending;
@@ -158,7 +160,7 @@ namespace CAP_ChatInteractive
             float spacing = 5f;
             float x = 0f;
 
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Reset Prices"))
+            if (UIUtilities.ButtonWithTruncation(new Rect(x, 0f, buttonWidth, 30f), "Reset Prices"))
             {
                 Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
                     "Reset all trait prices to default? This cannot be undone.",
@@ -167,13 +169,13 @@ namespace CAP_ChatInteractive
             }
             x += buttonWidth + spacing;
 
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Enable →"))
+            if (UIUtilities.ButtonWithTruncation(new Rect(x, 0f, buttonWidth, 30f), "Enable →"))
             {
                 ShowEnableMenu();
             }
             x += buttonWidth + spacing;
 
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Disable →"))
+            if (UIUtilities.ButtonWithTruncation(new Rect(x, 0f, buttonWidth, 30f), "Disable →"))
             {
                 ShowDisableMenu();
             }
@@ -259,14 +261,13 @@ namespace CAP_ChatInteractive
             // Mod sources list with margins
             Rect listRect = new Rect(rect.x + 10f, rect.y + 35f, rect.width - 20f, rect.height - 35f); // Reduced margins for wider buttons
             Rect viewRect = new Rect(0f, 0f, listRect.width, modSourceCounts.Count * 30f); // removed -20f to use full width
-            // Rect viewRect = new Rect(0f, 0f, listRect.width - 20f, modSourceCounts.Count * 30f);
+                                                                                           // Rect viewRect = new Rect(0f, 0f, listRect.width - 20f, modSourceCounts.Count * 30f);
             Widgets.BeginScrollView(listRect, ref categoryScrollPosition, viewRect);
             {
                 float y = 0f;
                 foreach (var modSource in modSourceCounts.OrderByDescending(kvp => kvp.Value))
                 {
-                    // Make buttons almost as wide as the available space
-                    Rect sourceButtonRect = new Rect(5f, y, viewRect.width - 10f, 28f); // Reduced margins for wider buttons
+                    Rect sourceButtonRect = new Rect(5f, y, viewRect.width - 10f, 28f);
 
                     if (selectedModSource == modSource.Key)
                     {
@@ -281,13 +282,15 @@ namespace CAP_ChatInteractive
                     string label = $"{displayName} ({modSource.Value})";
 
                     Text.Anchor = TextAnchor.MiddleCenter;
-                    if (Widgets.ButtonText(sourceButtonRect, label))
+
+                    // Use truncation for mod source buttons
+                    if (UIUtilities.ButtonWithTruncation(sourceButtonRect, label))
                     {
                         selectedModSource = modSource.Key;
                         FilterTraits();
                     }
-                    Text.Anchor = TextAnchor.UpperLeft;
 
+                    Text.Anchor = TextAnchor.UpperLeft;
                     y += 30f;
                 }
             }
@@ -371,23 +374,37 @@ namespace CAP_ChatInteractive
         {
             Widgets.BeginGroup(rect);
 
-            // Trait name - increased height to prevent cutting off letters
-            Rect nameRect = new Rect(0f, 0f, rect.width, 30f); // Increased from 24f to 30f
+            // Trait name with truncation and tooltip
+            Rect nameRect = new Rect(0f, 0f, rect.width, 30f);
             Text.Font = GameFont.Medium;
             Text.Anchor = TextAnchor.UpperLeft;
-            string name = trait.Name; // Use Name directly
-            Widgets.Label(nameRect, name);
+
+            string name = trait.Name;
+            string truncatedName = UIUtilities.TruncateTextToWidth(name, nameRect.width);
+            Widgets.Label(nameRect, truncatedName);
+
+            // Add tooltip if name was truncated
+            if (UIUtilities.WouldTruncate(name, nameRect.width))
+            {
+                TooltipHandler.TipRegion(nameRect, name);
+            }
+
             Text.Font = GameFont.Small;
 
             // Description - increased height and better pawn variable replacement
-            Rect descRect = new Rect(0f, 32f, rect.width, 45f); // Increased from 40f to 45f
+            Rect descRect = new Rect(0f, 32f, rect.width, 45f);
             Text.Anchor = TextAnchor.UpperLeft;
             string description = ReplacePawnVariables(trait.Description);
-            if (description.Length > 150)
+
+            // Use efficient truncation for description
+            string displayDescription = UIUtilities.TruncateTextToWidthEfficient(description, descRect.width, "...");
+            Widgets.Label(descRect, displayDescription);
+
+            // Add tooltip if description was truncated
+            if (UIUtilities.WouldTruncate(description, descRect.width))
             {
-                description = description.Substring(0, 147) + "...";
+                TooltipHandler.TipRegion(descRect, description);
             }
-            Widgets.Label(descRect, description);
 
             // Stats (if any) - adjust position due to increased heights
             if (trait.Stats.Count > 0)

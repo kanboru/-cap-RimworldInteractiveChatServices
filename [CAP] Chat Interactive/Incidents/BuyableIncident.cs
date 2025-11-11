@@ -50,7 +50,7 @@ namespace CAP_ChatInteractive.Incidents
         public BuyableIncident(IncidentDef incidentDef)
         {
             DefName = incidentDef.defName;
-            Label = incidentDef.label;
+            Label = Label = CleanIncidentName(incidentDef.label);
             Description = incidentDef.description;
             WorkerClassName = incidentDef.Worker?.GetType()?.Name;
             CategoryName = incidentDef.category?.defName;
@@ -61,12 +61,13 @@ namespace CAP_ChatInteractive.Incidents
             MaxThreatPoints = incidentDef.maxThreatPoints;
 
             AnalyzeIncidentType(incidentDef);
+            KarmaType = DetermineKarmaType(incidentDef);
             SetDefaultPricing(incidentDef);
 
-            // Determine if this incident should be in store at all
+            // Determine if this incident should be in store at all, removes the item from the store
             ShouldBeInStore = DetermineStoreSuitability(incidentDef);
 
-            // Determine command availability
+            // Determine command availability, this will make the incident UNAVAILABLE for commands
             IsAvailableForCommands = DetermineCommandAvailability(incidentDef);
 
             // Auto-disable if not suitable for store
@@ -88,6 +89,7 @@ namespace CAP_ChatInteractive.Incidents
             Logger.Debug($"Created incident: {DefName}, Store: {ShouldBeInStore}, Commands: {IsAvailableForCommands}, Enabled: {Enabled}");
         }
 
+        // Determine if the incident is suitable for inclusion in the store
         private bool DetermineStoreSuitability(IncidentDef incidentDef)
         {
             // Skip incidents without workers
@@ -104,16 +106,16 @@ namespace CAP_ChatInteractive.Incidents
                 return false;
 
             // Skip incidents not suitable for player map
-            if (!IsIncidentSuitableForPlayerMap(incidentDef))
-                return false;
+            //if (!IsIncidentSuitableForPlayerMap(incidentDef))
+              //  return false;
 
             // Skip specific incident types by defName
             if (ShouldSkipByDefName(incidentDef))
                 return false;
 
             // Skip incidents with inappropriate target tags
-            if (ShouldSkipByTargetTags(incidentDef))
-                return false;
+            // if (ShouldSkipByTargetTags(incidentDef))
+               // return false;
 
             // Skip endgame/story-specific incidents
             if (ShouldSkipBySpecialCriteria(incidentDef))
@@ -125,12 +127,9 @@ namespace CAP_ChatInteractive.Incidents
         private bool ShouldSkipByDefName(IncidentDef incidentDef)
         {
             string[] skipDefNames = {
-        "RaidEnemy", "RaidFriendly", "DeepDrillInfestation", "Infestation",
+        "RaidEnemy", "RaidFriendly","MechCluster", "DeepDrillInfestation", 
         "GiveQuest_EndGame_ShipEscape", "GiveQuest_EndGame_ArchonexusVictory",
-        "ManhunterPack", "ShamblerAssault", "ShamblerSwarmAnimals", "SmallShamblerSwarm",
-        "SightstealerArrival", "CreepJoinerJoin_Metalhorror", "CreepJoinerJoin",
-        "DevourerWaterAssault", "HarbingerTreeProvoked", "GameEndedWanderersJoin"
-    };
+             };
 
             return skipDefNames.Contains(incidentDef.defName);
         }
@@ -182,35 +181,33 @@ namespace CAP_ChatInteractive.Incidents
                 return true;
 
             // Skip incidents that require specific conditions not available via commands
-            if (incidentDef.defName.Contains("Ambush"))
-                return true;
+            //if (incidentDef.defName.Contains("Ambush"))
+            //    return true;
 
             // Skip ransom demands (too specific)
             if (incidentDef.defName.Contains("Ransom"))
                 return true;
 
             // Skip game-over specific incidents
-            if (incidentDef.defName.Contains("GameEnded"))
-                return true;
+            //if (incidentDef.defName.Contains("GameEnded"))
+              //  return true;
 
             // Skip provoked incidents that are duplicates
-            if (incidentDef.defName.Contains("Provoked"))
-                return true;
+            //if (incidentDef.defName.Contains("Provoked"))
+              //  return true;
 
             return false;
         }
-
+        // Determine if the incident should be available for command use, disables combat incidents with dedicated commands
         private bool DetermineCommandAvailability(IncidentDef incidentDef)
         {
             string defName = incidentDef.defName.ToLower();
 
             // ONLY filter combat incidents that have dedicated commands
             string[] combatIncidentsToFilter = {
-        "manhunterpack", "infestation", "mechcluster",
-        "fleshmassheart", "shamblerswarm", "ghoulattack",
-        "fleshbeastattack", "gorehulkassault", "devourerassault",
-        "chimeraassault", "psychicritualsiege", "hatechanters"
-    };
+        "RaidEnemy", "RaidFriendly","MechCluster", "DeepDrillInfestation",
+        "GiveQuest_EndGame_ShipEscape", "GiveQuest_EndGame_ArchonexusVictory",
+            };
 
             return !combatIncidentsToFilter.Contains(defName);
         }
@@ -291,10 +288,10 @@ namespace CAP_ChatInteractive.Incidents
             string defName = DefName.ToLower();
 
             string[] combatIncidentsToFilter = {
-            "manhunterpack", "infestation", "mechcluster",
-            "fleshmassheart", "shamblerswarm", "ghoulattack",
-            "fleshbeastattack", "gorehulkassault", "devourerassault",
-            "chimeraassault", "psychicritualsiege", "hatechanters"
+        "RaidEnemy", "RaidFriendly", "DeepDrillInfestation", "Infestation",
+        "GiveQuest_EndGame_ShipEscape", "GiveQuest_EndGame_ArchonexusVictory",
+        "SightstealerArrival", "CreepJoinerJoin_Metalhorror", "CreepJoinerJoin",
+         "HarbingerTreeProvoked",
         };
 
             if (combatIncidentsToFilter.Contains(defName))
@@ -475,6 +472,29 @@ namespace CAP_ChatInteractive.Incidents
 
             BaseCost = (int)(basePrice * impactFactor);
             BaseCost = Math.Max(75, Math.Min(7500, BaseCost)); // Wider range for economy flexibility
+        }
+
+        private string CleanIncidentName(string originalName)
+        {
+            if (string.IsNullOrEmpty(originalName))
+                return originalName;
+
+            string cleaned = originalName;
+
+            // Remove anything in parentheses including the parentheses
+            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"\s*\([^)]*\)", "");
+
+            // Remove anything in brackets including the brackets  
+            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"\s*\[[^\]]*\]", "");
+
+            // Trim any extra whitespace
+            cleaned = cleaned.Trim();
+
+            // If we ended up with empty string, fall back to original
+            if (string.IsNullOrEmpty(cleaned))
+                return originalName;
+
+            return cleaned;
         }
     }
 }

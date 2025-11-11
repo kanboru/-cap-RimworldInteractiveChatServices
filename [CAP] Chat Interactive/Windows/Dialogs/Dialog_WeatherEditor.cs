@@ -218,11 +218,18 @@ namespace CAP_ChatInteractive
                     string displayName = modSource.Key == "All" ? "All" : GetDisplayModName(modSource.Key);
                     string label = $"{displayName} ({modSource.Value})";
 
+                    // Use truncation for long mod names - ONLY USE THE TRUNCATED VERSION
+                    string truncatedLabel = UIUtilities.TruncateTextToWidth(label, sourceButtonRect.width - 10f);
+
                     Text.Anchor = TextAnchor.MiddleLeft;
-                    if (Widgets.ButtonText(sourceButtonRect, label))
+                    if (Widgets.ButtonText(sourceButtonRect, truncatedLabel))
                     {
                         selectedModSource = modSource.Key;
                         FilterWeather();
+                    }
+                    if (truncatedLabel != label)
+                    {
+                        TooltipHandler.TipRegion(sourceButtonRect, label);
                     }
                     Text.Anchor = TextAnchor.UpperLeft;
 
@@ -241,7 +248,18 @@ namespace CAP_ChatInteractive
             Text.Anchor = TextAnchor.UpperCenter;
             string headerText = $"Weather Types ({filteredWeather.Count})";
             if (selectedModSource != "All")
-                headerText += $" - {GetDisplayModName(selectedModSource)}";
+            {
+                string modText = $" - {GetDisplayModName(selectedModSource)}";
+                // Check if full header fits, otherwise shorten
+                if (!UIUtilities.TextFitsWidth(headerText + modText, headerRect.width))
+                {
+                    headerText = $"Weather ({filteredWeather.Count}){modText}";
+                }
+                else
+                {
+                    headerText += modText;
+                }
+            }
             Widgets.Label(headerRect, headerText);
             Text.Anchor = TextAnchor.UpperLeft;
             Text.Font = GameFont.Small;
@@ -315,6 +333,7 @@ namespace CAP_ChatInteractive
                 displayLabel = char.ToUpper(displayLabel[0]) + (displayLabel.Length > 1 ? displayLabel.Substring(1) : "");
             }
 
+            displayLabel = UIUtilities.TruncateTextToWidth(displayLabel, nameRect.width);
             Widgets.Label(nameRect, displayLabel);
             Text.Font = GameFont.Small;
 
@@ -464,6 +483,8 @@ namespace CAP_ChatInteractive
             foreach (var modSource in modSourceCounts.Keys.Where(k => k != "All").OrderBy(k => k))
             {
                 string displayName = GetDisplayModName(modSource);
+
+
                 options.Add(new FloatMenuOption(displayName, () =>
                 {
                     DisableWeatherByModSource(modSource);

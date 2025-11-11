@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using RimWorld;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Verse;
@@ -162,15 +163,33 @@ namespace CAP_ChatInteractive.Incidents
             int updatedStoreSuitability = 0;
             int autoDisabledModEvents = 0;
 
-            // Add any new incidents that aren't in our system
+            // Track all valid incident keys that should be in our system
+            var validIncidentKeys = new HashSet<string>();
+
+            // Process all incident definitions
             foreach (var incidentDef in allIncidentDefs)
             {
-                if (!IsIncidentSuitableForStore(incidentDef))
-                    continue;
-
                 string key = GetIncidentKey(incidentDef);
+                validIncidentKeys.Add(key);
+
+                // Check if this incident should be in store at all
+                bool shouldBeInStore = IsIncidentSuitableForStore(incidentDef);
+
+                if (!shouldBeInStore)
+                {
+                    // If it shouldn't be in store, remove it if it exists
+                    if (AllBuyableIncidents.ContainsKey(key))
+                    {
+                        AllBuyableIncidents.Remove(key);
+                        removedIncidents++;
+                    }
+                    continue; // Skip to next incident
+                }
+
+                // If we get here, the incident should be in store
                 if (!AllBuyableIncidents.ContainsKey(key))
                 {
+                    // Add new incident
                     var buyableIncident = new BuyableIncident(incidentDef);
                     AllBuyableIncidents[key] = buyableIncident;
                     addedIncidents++;
@@ -247,12 +266,12 @@ namespace CAP_ChatInteractive.Incidents
                 }
             }
 
-            // Remove incidents that no longer exist in the game or are no longer suitable
+            // Remove incidents that no longer exist in the game OR are no longer valid
             var keysToRemove = new List<string>();
             foreach (var kvp in AllBuyableIncidents)
             {
                 var incidentDef = DefDatabase<IncidentDef>.GetNamedSilentFail(kvp.Key);
-                if (incidentDef == null || !IsIncidentSuitableForStore(incidentDef))
+                if (incidentDef == null || !validIncidentKeys.Contains(kvp.Key))
                 {
                     keysToRemove.Add(kvp.Key);
                 }
@@ -359,11 +378,154 @@ namespace CAP_ChatInteractive.Incidents
         }
 
 
-        [DebugAction("CAP", "Reload Incidents", allowedGameStates = AllowedGameStates.Playing)]
-        public static void DebugReloadIncidents()
+        // Removes the incidents JSON file and rebuilds the incidents from scratch
+        [DebugAction("CAP", "Delete JSON & Rebuild Incidents", allowedGameStates = AllowedGameStates.Playing)]
+        public static void DebugRebuildIncidents()
         {
-            isInitialized = false;
-            InitializeIncidents();
+            try
+            {
+                // Delete the incidents JSON file
+                string filePath = JsonFileManager.GetFilePath("Incidents.json");
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                    Logger.Message("Deleted Incidents.json file");
+                }
+                else
+                {
+                    Logger.Message("No Incidents.json file found to delete");
+                }
+
+                // Reset initialization and rebuild
+                isInitialized = false;
+                AllBuyableIncidents.Clear();
+                InitializeIncidents();
+
+                Logger.Message("Incidents system rebuilt from scratch with current filtering rules");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error rebuilding incidents: {ex.Message}");
+            }
+        }
+
+        [DebugAction("CAP", "Analyze Incident Filtering", allowedGameStates = AllowedGameStates.Playing)]
+        public static void DebugAnalyzeFiltering()
+        {
+            StringBuilder report = new StringBuilder();
+            report.AppendLine("=== INCIDENT FILTERING ANALYSIS ===");
+
+            var allIncidentDefs = DefDatabase<IncidentDef>.AllDefs.ToList();
+            report.AppendLine($"Total IncidentDefs in game: {allIncidentDefs.Count}");
+
+            // Track filtering reasons
+            var filteredOut = new Dictionary<string, List<string>>();
+            var included = new List<string>();
+
+            foreach (var incidentDef in allIncidentDefs)
+            {
+                var reasons = new List<string>();
+
+                // Check each filtering criterion
+                if (incidentDef.Worker == null)
+                    reasons.Add("No worker");
+
+                if (incidentDef.hidden)
+                    reasons.Add("Hidden incident");
+
+                if (incidentDef.defName.ToLower().Contains("test") || incidentDef.defName.ToLower().Contains("debug"))
+                    reasons.Add("Test/debug incident");
+
+                // Check target tags
+                if (incidentDef.targetTags != null)
+                {
+                    if (incidentDef.targetTags.Any(t => t.defName == "Caravan" || t.defName == "World" || t.defName == "Site"))
+                        reasons.Add("Caravan/World/Site target");
+
+                    if (incidentDef.targetTags.Any(t => t.defName == "Raid"))
+                        reasons.Add("Raid incident");
+
+                    // Check map targeting
+                    bool hasPlayerHome = incidentDef.targetTags.Any(t => t.defName == "Map_PlayerHome");
+                    bool hasMapTag = incidentDef.targetTags.Any(t => t.defName == "Map_TempIncident" || t.defName == "Map_Misc" || t.defName == "Map_RaidBeacon");
+                    if (hasMapTag && !hasPlayerHome)
+                        reasons.Add("Temporary map target only");
+                }
+
+                // Check specific defNames to skip
+                string[] skipDefNames = {
+            "RaidEnemy", "RaidFriendly", "DeepDrillInfestation", "Infestation",
+            "GiveQuest_EndGame_ShipEscape", "GiveQuest_EndGame_ArchonexusVictory",
+            "ManhunterPack", "ShamblerAssault", "ShamblerSwarmAnimals", "SmallShamblerSwarm",
+            "SightstealerArrival", "CreepJoinerJoin_Metalhorror", "CreepJoinerJoin",
+            "DevourerWaterAssault", "HarbingerTreeProvoked", "GameEndedWanderersJoin"
+        };
+
+                if (skipDefNames.Contains(incidentDef.defName))
+                    reasons.Add("Specific defName exclusion");
+
+                // Check endgame/story
+                if (incidentDef.defName.Contains("EndGame") || incidentDef.defName.Contains("Ambush") ||
+                    incidentDef.defName.Contains("Ransom") || incidentDef.defName.Contains("GameEnded"))
+                    reasons.Add("Endgame/story incident");
+
+                // Mod safety filtering
+                string modSource = incidentDef.modContentPack?.Name ?? "RimWorld";
+                if (modSource != "RimWorld" && modSource != "Core")
+                {
+                    string[] officialDLCs = { "Royalty", "Ideology", "Biotech", "Anomaly" };
+                    if (!officialDLCs.Any(dlc => modSource.Contains(dlc)))
+                        reasons.Add("Mod event (auto-disabled for safety)");
+                }
+
+                if (reasons.Count > 0)
+                {
+                    filteredOut[incidentDef.defName] = reasons;
+                }
+                else
+                {
+                    included.Add(incidentDef.defName);
+                }
+            }
+
+            report.AppendLine($"\nINCLUDED INCIDENTS ({included.Count}):");
+            foreach (var incident in included.OrderBy(x => x))
+            {
+                report.AppendLine($"  - {incident}");
+            }
+
+            report.AppendLine($"\nFILTERED OUT INCIDENTS ({filteredOut.Count}):");
+            foreach (var kvp in filteredOut.OrderBy(x => x.Key))
+            {
+                report.AppendLine($"  - {kvp.Key}: {string.Join(", ", kvp.Value)}");
+            }
+
+            // Also show what's actually in our system
+            report.AppendLine($"\nACTUALLY IN OUR SYSTEM ({AllBuyableIncidents.Count}):");
+            foreach (var kvp in AllBuyableIncidents.OrderBy(x => x.Key))
+            {
+                var incident = kvp.Value;
+                string status = incident.Enabled ? "ENABLED" : "DISABLED";
+                string availability = incident.IsAvailableForCommands ? "COMMANDS" : "NO_COMMANDS";
+                string reason = incident.DisabledReason;
+
+                report.AppendLine($"  - {incident.DefName} [{status}] [{availability}] {reason}");
+            }
+
+            Logger.Message(report.ToString());
+
+            // Also log to file for easier analysis
+            string folderPath = Path.Combine(GenFilePaths.ConfigFolderPath, "CAP_Debug");
+            string filePath = Path.Combine(folderPath, "IncidentFilteringAnalysis.txt");
+
+            // Ensure the directory exists
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            File.WriteAllText(filePath, report.ToString());
+            Logger.Message($"Full analysis saved to: {filePath}");
         }
     }
 }

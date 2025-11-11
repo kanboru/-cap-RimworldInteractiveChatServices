@@ -411,11 +411,14 @@ namespace CAP_ChatInteractive
                     })
                     .ThenBy(cat => cat)
                     .ToList();
-
                 foreach (var cat in orderedCategories)
                 {
                     var count = categoryCounts[cat];
-                    Rect categoryButtonRect = new Rect(2f, y, viewRect.width-4f, 28f);
+                    Rect categoryButtonRect = new Rect(2f, y, viewRect.width - 4f, 28f);
+
+                    // Create label and truncate if needed
+                    string label = $"{cat} ({count})";
+                    string displayLabel = UIUtilities.TruncateTextToWidthEfficient(label, categoryButtonRect.width - 10f);
 
                     // Highlight selected category
                     if (selectedCategory == cat)
@@ -423,11 +426,16 @@ namespace CAP_ChatInteractive
                     else if (Mouse.IsOver(categoryButtonRect))
                         Widgets.DrawHighlight(categoryButtonRect);
 
-                    string label = $"{cat} ({count})";
-                    if (Widgets.ButtonText(categoryButtonRect, label))
+                    if (Widgets.ButtonText(categoryButtonRect, displayLabel))
                     {
                         selectedCategory = cat;
                         FilterItems();
+                    }
+
+                    // Add tooltip if truncated
+                    if (UIUtilities.WouldTruncate(label, categoryButtonRect.width - 10f))
+                    {
+                        TooltipHandler.TipRegion(categoryButtonRect, label);
                     }
 
                     y += 30f;
@@ -450,7 +458,17 @@ namespace CAP_ChatInteractive
             Text.Anchor = TextAnchor.MiddleCenter;
             string headerText = $"Items ({filteredItems.Count})";
             if (selectedCategory != "All") headerText += $" - {selectedCategory}";
-            Widgets.Label(countRect, headerText);
+
+            // Truncate header if needed
+            string displayHeader = UIUtilities.TruncateTextToWidthEfficient(headerText, countRect.width - 20f);
+            Widgets.Label(countRect, displayHeader);
+
+            // Add tooltip if truncated
+            if (UIUtilities.WouldTruncate(headerText, countRect.width - 20f))
+            {
+                TooltipHandler.TipRegion(countRect, headerText);
+            }
+
             Text.Anchor = TextAnchor.UpperLeft;
             Text.Font = GameFont.Small;
 
@@ -513,7 +531,15 @@ namespace CAP_ChatInteractive
             // Label
             Rect labelRect = new Rect(x, centerY, 80f, iconSize);
             Text.Anchor = TextAnchor.MiddleRight;
-            Widgets.Label(labelRect, "Set All Qty:");
+            string labelText = "Set All Qty:";
+            string displayLabel = UIUtilities.TruncateTextToWidthEfficient(labelText, labelRect.width);
+            Widgets.Label(labelRect, displayLabel);
+
+            // Add tooltip if truncated
+            if (UIUtilities.WouldTruncate(labelText, labelRect.width))
+            {
+                TooltipHandler.TipRegion(labelRect, labelText);
+            }
             Text.Anchor = TextAnchor.UpperLeft;
             x += 85f + spacing;
 
@@ -628,10 +654,27 @@ namespace CAP_ChatInteractive
                 Rect infoRect = new Rect(x, 5f, infoWidth, 50f);
                 Text.Anchor = TextAnchor.MiddleLeft;
                 string itemName = thingDef?.LabelCap ?? item.DefName;
-                string categoryInfo = $"{item.Category} • {item.ModSource}";
-                Widgets.Label(infoRect.TopHalf(), itemName);
+                // Truncate the item name if needed
+                string displayName = UIUtilities.TruncateTextToWidthEfficient(itemName, infoWidth - 5f);
+                Widgets.Label(infoRect.TopHalf(), displayName);
+                // Add tooltip if truncated
+                if (UIUtilities.WouldTruncate(itemName, infoWidth - 5f))
+                {
+                    TooltipHandler.TipRegion(infoRect.TopHalf(), itemName);
+                }
+
                 Text.Font = GameFont.Tiny;
-                Widgets.Label(infoRect.BottomHalf(), categoryInfo);
+                // Also truncate category info if needed
+                string categoryInfo = $"{item.Category} • {item.ModSource}";
+                string displayCategory = UIUtilities.TruncateTextToWidthEfficient(categoryInfo, infoWidth - 5f);
+                Widgets.Label(infoRect.BottomHalf(), displayCategory);
+
+                // Add tooltip if truncated
+                if (UIUtilities.WouldTruncate(categoryInfo, infoWidth - 5f))
+                {
+                    TooltipHandler.TipRegion(infoRect.BottomHalf(), categoryInfo);
+                }
+
                 Text.Font = GameFont.Small;
                 Text.Anchor = TextAnchor.UpperLeft;
                 x += infoWidth + 10f;

@@ -27,7 +27,7 @@ namespace CAP_ChatInteractive
         private Dictionary<string, int> categoryCounts = new Dictionary<string, int>();
         private List<BuyableIncident> filteredEvents = new List<BuyableIncident>();
         private Dictionary<string, (int baseCost, string karmaType)> originalSettings = new Dictionary<string, (int, string)>();
-        private EventListViewType listViewType = EventListViewType.Category;
+        private EventListViewType listViewType = EventListViewType.ModSource;
 
         public override Vector2 InitialSize => new Vector2(1200f, 700f);
 
@@ -261,7 +261,10 @@ namespace CAP_ChatInteractive
                     }
 
                     string displayName = category.Key == "All" ? "All" : GetDisplayCategoryName(category.Key);
-                    string label = $"{displayName} ({category.Value})";
+                    // Calculate max width for the text (button width minus some padding for the count)
+                    float textMaxWidth = categoryButtonRect.width - Text.CalcSize($" ({category.Value})").x - 10f;
+                    string truncatedName = UIUtilities.TruncateTextToWidth(displayName, textMaxWidth);
+                    string label = $"{truncatedName} ({category.Value})";
 
                     Text.Anchor = TextAnchor.MiddleLeft;
                     if (Widgets.ButtonText(categoryButtonRect, label))
@@ -315,7 +318,10 @@ namespace CAP_ChatInteractive
                     }
 
                     string displayName = modSource.Key == "All" ? "All" : GetDisplayModName(modSource.Key);
-                    string label = $"{displayName} ({modSource.Value})";
+                    // Calculate max width for the text (button width minus some padding for the count)
+                    float textMaxWidth = sourceButtonRect.width - Text.CalcSize($" ({modSource.Value})").x - 10f;
+                    string truncatedName = UIUtilities.TruncateTextToWidth(displayName, textMaxWidth);
+                    string label = $"{truncatedName} ({modSource.Value})";
 
                     Text.Anchor = TextAnchor.MiddleLeft;
                     if (Widgets.ButtonText(sourceButtonRect, label))
@@ -349,13 +355,26 @@ namespace CAP_ChatInteractive
             Text.Anchor = TextAnchor.UpperLeft;
             Text.Font = GameFont.Small;
 
+            // Early return if no events to display
+            if (filteredEvents.Count == 0)
+            {
+                Rect noEventsRect = new Rect(rect.x, rect.y + 35f, rect.width, rect.height - 35f);
+                Text.Anchor = TextAnchor.MiddleCenter;
+                Widgets.Label(noEventsRect, "No events found matching current filters");
+                Text.Anchor = TextAnchor.UpperLeft;
+                return;
+            }
+
             Rect listRect = new Rect(rect.x, rect.y + 35f, rect.width, rect.height - 35f);
             float rowHeight = 70f; // Slightly taller for events
 
+            // Calculate visible indices with proper bounds checking
             int firstVisibleIndex = Mathf.FloorToInt(scrollPosition.y / rowHeight);
             int lastVisibleIndex = Mathf.CeilToInt((scrollPosition.y + listRect.height) / rowHeight);
-            firstVisibleIndex = Mathf.Clamp(firstVisibleIndex, 0, filteredEvents.Count - 1);
-            lastVisibleIndex = Mathf.Clamp(lastVisibleIndex, 0, filteredEvents.Count - 1);
+
+            // Ensure indices are within valid range
+            firstVisibleIndex = Mathf.Clamp(firstVisibleIndex, 0, Mathf.Max(0, filteredEvents.Count - 1));
+            lastVisibleIndex = Mathf.Clamp(lastVisibleIndex, 0, Mathf.Max(0, filteredEvents.Count - 1));
 
             Rect viewRect = new Rect(0f, 0f, listRect.width - 20f, filteredEvents.Count * rowHeight);
 
@@ -364,6 +383,10 @@ namespace CAP_ChatInteractive
                 float y = firstVisibleIndex * rowHeight;
                 for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++)
                 {
+                    // Additional safety check
+                    if (i < 0 || i >= filteredEvents.Count || filteredEvents[i] == null)
+                        continue;
+
                     Rect eventRect = new Rect(0f, y, viewRect.width, rowHeight - 2f);
                     if (i % 2 == 1)
                     {
@@ -727,6 +750,9 @@ namespace CAP_ChatInteractive
 
             var allEvents = IncidentsManager.AllBuyableIncidents.Values.AsEnumerable();
 
+            // Add null check to filter out null incidents
+            allEvents = allEvents.Where(incident => incident != null);
+
             // Apply category/mod source filter based on view type
             if (listViewType == EventListViewType.Category && selectedCategory != "All")
             {
@@ -737,16 +763,16 @@ namespace CAP_ChatInteractive
                 allEvents = allEvents.Where(incident => GetDisplayModName(incident.ModSource) == selectedModSource);
             }
 
-            // Filter by search query
+            // Filter by search query with null-safe property access
             if (!string.IsNullOrEmpty(searchQuery))
             {
                 string searchLower = searchQuery.ToLower();
                 allEvents = allEvents.Where(incident =>
-                    incident.Label.ToLower().Contains(searchLower) ||
-                    incident.Description.ToLower().Contains(searchLower) ||
-                    incident.DefName.ToLower().Contains(searchLower) ||
-                    incident.ModSource.ToLower().Contains(searchLower) ||
-                    incident.CategoryName.ToLower().Contains(searchLower)
+                    (incident.Label?.ToLower().Contains(searchLower) ?? false) ||
+                    (incident.Description?.ToLower().Contains(searchLower) ?? false) ||
+                    (incident.DefName?.ToLower().Contains(searchLower) ?? false) ||
+                    (incident.ModSource?.ToLower().Contains(searchLower) ?? false) ||
+                    (incident.CategoryName?.ToLower().Contains(searchLower) ?? false)
                 );
             }
 
@@ -767,18 +793,18 @@ namespace CAP_ChatInteractive
             {
                 case EventSortMethod.Name:
                     filteredEvents = sortAscending ?
-                        filteredEvents.OrderBy(incident => incident.Label).ToList() :
-                        filteredEvents.OrderByDescending(incident => incident.Label).ToList();
+                        filteredEvents.OrderBy(incident => incident?.Label ?? "").ToList() :
+                        filteredEvents.OrderByDescending(incident => incident?.Label ?? "").ToList();
                     break;
                 case EventSortMethod.Cost:
                     filteredEvents = sortAscending ?
-                        filteredEvents.OrderBy(incident => incident.BaseCost).ToList() :
-                        filteredEvents.OrderByDescending(incident => incident.BaseCost).ToList();
+                        filteredEvents.OrderBy(incident => incident?.BaseCost ?? 0).ToList() :
+                        filteredEvents.OrderByDescending(incident => incident?.BaseCost ?? 0).ToList();
                     break;
                 case EventSortMethod.Karma:
                     filteredEvents = sortAscending ?
-                        filteredEvents.OrderBy(incident => incident.KarmaType).ThenBy(incident => incident.Label).ToList() :
-                        filteredEvents.OrderByDescending(incident => incident.KarmaType).ThenBy(incident => incident.Label).ToList();
+                        filteredEvents.OrderBy(incident => incident?.KarmaType ?? "").ThenBy(incident => incident?.Label ?? "").ToList() :
+                        filteredEvents.OrderByDescending(incident => incident?.KarmaType ?? "").ThenBy(incident => incident?.Label ?? "").ToList();
                     break;
             }
         }
@@ -823,7 +849,7 @@ namespace CAP_ChatInteractive
     public enum EventListViewType
     {
         ModSource,
-        Category        
+        Category
     }
 
     public class EventsDefInfoWindow : Window
@@ -982,188 +1008,190 @@ namespace CAP_ChatInteractive
             if (string.IsNullOrEmpty(categoryName)) return "Uncategorized";
             return categoryName;
         }
+
     }
 
     public class Dialog_EventSettings : Window
-{
-    private CAPGlobalChatSettings settings;
-    private Vector2 scrollPosition = Vector2.zero;
-
-    public override Vector2 InitialSize => new Vector2(500f, 600f);
-
-    public Dialog_EventSettings()
     {
-        settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
+        private CAPGlobalChatSettings settings;
+        private Vector2 scrollPosition = Vector2.zero;
 
-        doCloseButton = true;
-        forcePause = true;
-        absorbInputAroundWindow = true;
-        resizeable = true;
-    }
+        public override Vector2 InitialSize => new Vector2(500f, 600f);
 
-    public override void DoWindowContents(Rect inRect)
-    {
-        // Title
-        Rect titleRect = new Rect(0f, 0f, inRect.width, 35f);
-        Text.Font = GameFont.Medium;
-        Widgets.Label(titleRect, "Event Settings");
-        Text.Font = GameFont.Small;
-
-        // Content area
-        Rect contentRect = new Rect(0f, 40f, inRect.width, inRect.height - 40f - CloseButSize.y);
-        DrawSettings(contentRect);
-    }
-
-    private void DrawSettings(Rect rect)
-    {
-        Rect viewRect = new Rect(0f, 0f, rect.width - 20f, 800f); // Enough height for all content
-
-        Widgets.BeginScrollView(rect, ref scrollPosition, viewRect);
-        Listing_Standard listing = new Listing_Standard();
-        listing.Begin(viewRect);
-
-        // Event Statistics
-        DrawEventStatistics(listing);
-
-        listing.Gap(12f);
-
-        // Display Settings
-        DrawDisplaySettings(listing);
-
-        listing.Gap(12f);
-
-        // Cooldown Settings
-        DrawCooldownSettings(listing);
-
-        listing.End();
-        Widgets.EndScrollView();
-    }
-
-    private void DrawEventStatistics(Listing_Standard listing)
-    {
-        Text.Font = GameFont.Medium;
-        listing.Label("Event Statistics");
-        Text.Font = GameFont.Small;
-        listing.GapLine(6f);
-
-        int totalEvents = IncidentsManager.AllBuyableIncidents?.Count ?? 0;
-        int enabledEvents = IncidentsManager.AllBuyableIncidents?.Values.Count(e => e.Enabled) ?? 0;
-        int availableEvents = IncidentsManager.AllBuyableIncidents?.Values.Count(e => e.IsAvailableForCommands) ?? 0;
-
-        listing.Label($"Total Events: {totalEvents}");
-        listing.Label($"Enabled Events: {enabledEvents}");
-        listing.Label($"Available for Commands: {availableEvents}");
-        listing.Label($"Unavailable Events: {totalEvents - availableEvents}");
-
-        // Breakdown by karma type
-        if (IncidentsManager.AllBuyableIncidents != null)
+        public Dialog_EventSettings()
         {
-            var karmaGroups = IncidentsManager.AllBuyableIncidents.Values
-                .Where(e => e.IsAvailableForCommands)
-                .GroupBy(e => e.KarmaType)
-                .OrderByDescending(g => g.Count());
+            settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
+
+            doCloseButton = true;
+            forcePause = true;
+            absorbInputAroundWindow = true;
+            resizeable = true;
+        }
+
+        public override void DoWindowContents(Rect inRect)
+        {
+            // Title
+            Rect titleRect = new Rect(0f, 0f, inRect.width, 35f);
+            Text.Font = GameFont.Medium;
+            Widgets.Label(titleRect, "Event Settings");
+            Text.Font = GameFont.Small;
+
+            // Content area
+            Rect contentRect = new Rect(0f, 40f, inRect.width, inRect.height - 40f - CloseButSize.y);
+            DrawSettings(contentRect);
+        }
+
+        private void DrawSettings(Rect rect)
+        {
+            Rect viewRect = new Rect(0f, 0f, rect.width - 20f, 800f); // Enough height for all content
+
+            Widgets.BeginScrollView(rect, ref scrollPosition, viewRect);
+            Listing_Standard listing = new Listing_Standard();
+            listing.Begin(viewRect);
+
+            // Event Statistics
+            DrawEventStatistics(listing);
+
+            listing.Gap(12f);
+
+            // Display Settings
+            DrawDisplaySettings(listing);
+
+            listing.Gap(12f);
+
+            // Cooldown Settings
+            DrawCooldownSettings(listing);
+
+            listing.End();
+            Widgets.EndScrollView();
+        }
+
+        private void DrawEventStatistics(Listing_Standard listing)
+        {
+            Text.Font = GameFont.Medium;
+            listing.Label("Event Statistics");
+            Text.Font = GameFont.Small;
+            listing.GapLine(6f);
+
+            int totalEvents = IncidentsManager.AllBuyableIncidents?.Count ?? 0;
+            int enabledEvents = IncidentsManager.AllBuyableIncidents?.Values.Count(e => e.Enabled) ?? 0;
+            int availableEvents = IncidentsManager.AllBuyableIncidents?.Values.Count(e => e.IsAvailableForCommands) ?? 0;
+
+            listing.Label($"Total Events: {totalEvents}");
+            listing.Label($"Enabled Events: {enabledEvents}");
+            listing.Label($"Available for Commands: {availableEvents}");
+            listing.Label($"Unavailable Events: {totalEvents - availableEvents}");
+
+            // Breakdown by karma type
+            if (IncidentsManager.AllBuyableIncidents != null)
+            {
+                var karmaGroups = IncidentsManager.AllBuyableIncidents.Values
+                    .Where(e => e.IsAvailableForCommands)
+                    .GroupBy(e => e.KarmaType)
+                    .OrderByDescending(g => g.Count());
+
+                listing.Gap(4f);
+                Text.Font = GameFont.Tiny;
+                listing.Label("Available events by karma type:");
+                foreach (var group in karmaGroups)
+                {
+                    listing.Label($"  • {group.Key}: {group.Count()} events");
+                }
+                Text.Font = GameFont.Small;
+            }
+        }
+
+        private void DrawDisplaySettings(Listing_Standard listing)
+        {
+            Text.Font = GameFont.Medium;
+            listing.Label("Display Settings");
+            Text.Font = GameFont.Small;
+            listing.GapLine(6f);
+
+            // Show unavailable events setting
+            bool showUnavailable = settings.GetType().GetField("ShowUnavailableEvents")?.GetValue(settings) as bool? ?? true;
+            bool newShowUnavailable = showUnavailable;
+        
+            listing.CheckboxLabeled("Show unavailable events", ref newShowUnavailable,
+                "When enabled, events that are not available via commands will still be visible in the editor");
+
+            if (newShowUnavailable != showUnavailable)
+            {
+                var field = settings.GetType().GetField("ShowUnavailableEvents");
+                if (field != null)
+                {
+                    field.SetValue(settings, newShowUnavailable);
+                }
+                else
+                {
+                    // If the field doesn't exist, we need to add it to the settings class
+                    Logger.Warning("ShowUnavailableEvents field not found in settings");
+                }
+            }
 
             listing.Gap(4f);
             Text.Font = GameFont.Tiny;
-            listing.Label("Available events by karma type:");
-            foreach (var group in karmaGroups)
-            {
-                listing.Label($"  • {group.Key}: {group.Count()} events");
-            }
+            listing.Label("Unavailable events are grayed out and cannot be enabled");
             Text.Font = GameFont.Small;
         }
-    }
 
-    private void DrawDisplaySettings(Listing_Standard listing)
-    {
-        Text.Font = GameFont.Medium;
-        listing.Label("Display Settings");
-        Text.Font = GameFont.Small;
-        listing.GapLine(6f);
-
-        // Show unavailable events setting
-        bool showUnavailable = settings.GetType().GetField("ShowUnavailableEvents")?.GetValue(settings) as bool? ?? true;
-        bool newShowUnavailable = showUnavailable;
-        
-        listing.CheckboxLabeled("Show unavailable events", ref newShowUnavailable,
-            "When enabled, events that are not available via commands will still be visible in the editor");
-
-        if (newShowUnavailable != showUnavailable)
+        private void DrawCooldownSettings(Listing_Standard listing)
         {
-            var field = settings.GetType().GetField("ShowUnavailableEvents");
-            if (field != null)
+            Text.Font = GameFont.Medium;
+            listing.Label("Cooldown Settings");
+            Text.Font = GameFont.Small;
+            listing.GapLine(6f);
+
+            // Event cooldown toggle
+            listing.CheckboxLabeled("Enable event cooldowns", ref settings.EventCooldownsEnabled,
+                "When enabled, events will go on cooldown after being purchased");
+
+            // Cooldown days
+            NumericField(listing, "Event cooldown duration (days):", ref settings.EventCooldownDays, 1, 30);
+            Text.Font = GameFont.Tiny;
+            listing.Label($"Events will be unavailable for {settings.EventCooldownDays} in-game days after purchase");
+            Text.Font = GameFont.Small;
+
+            // Events per cooldown period
+            NumericField(listing, "Events per cooldown period:", ref settings.EventsperCooldown, 1, 50);
+            Text.Font = GameFont.Tiny;
+            listing.Label($"Limit of {settings.EventsperCooldown} event purchases per cooldown period");
+            Text.Font = GameFont.Small;
+
+            listing.Gap(12f);
+
+            // Karma type limits toggle
+            listing.CheckboxLabeled("Limit events by karma type", ref settings.KarmaTypeLimitsEnabled,
+                "Restrict how many events of each karma type can be purchased within a period");
+
+            if (settings.KarmaTypeLimitsEnabled)
             {
-                field.SetValue(settings, newShowUnavailable);
+                listing.Gap(4f);
+                NumericField(listing, "Max bad event purchases:", ref settings.MaxBadEvents, 1, 20);
+                NumericField(listing, "Max good event purchases:", ref settings.MaxGoodEvents, 1, 20);
+                NumericField(listing, "Max neutral event purchases:", ref settings.MaxNeutralEvents, 1, 20);
             }
-            else
-            {
-                // If the field doesn't exist, we need to add it to the settings class
-                Logger.Warning("ShowUnavailableEvents field not found in settings");
-            }
+
+            listing.Gap(12f);
+
+            // Store purchase limits
+            NumericField(listing, "Max item purchases per day:", ref settings.MaxItemPurchases, 1, 50);
+            Text.Font = GameFont.Tiny;
+            listing.Label($"Viewers can purchase up to {settings.MaxItemPurchases} items per game day before cooldown");
+            Text.Font = GameFont.Small;
         }
 
-        listing.Gap(4f);
-        Text.Font = GameFont.Tiny;
-        listing.Label("Unavailable events are grayed out and cannot be enabled");
-        Text.Font = GameFont.Small;
-    }
 
-    private void DrawCooldownSettings(Listing_Standard listing)
-    {
-        Text.Font = GameFont.Medium;
-        listing.Label("Cooldown Settings");
-        Text.Font = GameFont.Small;
-        listing.GapLine(6f);
-
-        // Event cooldown toggle
-        listing.CheckboxLabeled("Enable event cooldowns", ref settings.EventCooldownsEnabled,
-            "When enabled, events will go on cooldown after being purchased");
-
-        // Cooldown days
-        NumericField(listing, "Event cooldown duration (days):", ref settings.EventCooldownDays, 1, 30);
-        Text.Font = GameFont.Tiny;
-        listing.Label($"Events will be unavailable for {settings.EventCooldownDays} in-game days after purchase");
-        Text.Font = GameFont.Small;
-
-        // Events per cooldown period
-        NumericField(listing, "Events per cooldown period:", ref settings.EventsperCooldown, 1, 50);
-        Text.Font = GameFont.Tiny;
-        listing.Label($"Limit of {settings.EventsperCooldown} event purchases per cooldown period");
-        Text.Font = GameFont.Small;
-
-        listing.Gap(12f);
-
-        // Karma type limits toggle
-        listing.CheckboxLabeled("Limit events by karma type", ref settings.KarmaTypeLimitsEnabled,
-            "Restrict how many events of each karma type can be purchased within a period");
-
-        if (settings.KarmaTypeLimitsEnabled)
+        private void NumericField(Listing_Standard listing, string label, ref int value, int min, int max)
         {
-            listing.Gap(4f);
-            NumericField(listing, "Max bad event purchases:", ref settings.MaxBadEvents, 1, 20);
-            NumericField(listing, "Max good event purchases:", ref settings.MaxGoodEvents, 1, 20);
-            NumericField(listing, "Max neutral event purchases:", ref settings.MaxNeutralEvents, 1, 20);
+            Rect rect = listing.GetRect(30f);
+            Rect leftRect = rect.LeftHalf().Rounded();
+            Rect rightRect = rect.RightHalf().Rounded();
+
+            Widgets.Label(leftRect, label);
+            string buffer = value.ToString();
+            Widgets.TextFieldNumeric(rightRect, ref value, ref buffer, min, max);
+            listing.Gap(2f);
         }
-
-        listing.Gap(12f);
-
-        // Store purchase limits
-        NumericField(listing, "Max item purchases per day:", ref settings.MaxItemPurchases, 1, 50);
-        Text.Font = GameFont.Tiny;
-        listing.Label($"Viewers can purchase up to {settings.MaxItemPurchases} items per game day before cooldown");
-        Text.Font = GameFont.Small;
     }
-
-    private void NumericField(Listing_Standard listing, string label, ref int value, int min, int max)
-    {
-        Rect rect = listing.GetRect(30f);
-        Rect leftRect = rect.LeftHalf().Rounded();
-        Rect rightRect = rect.RightHalf().Rounded();
-
-        Widgets.Label(leftRect, label);
-        string buffer = value.ToString();
-        Widgets.TextFieldNumeric(rightRect, ref value, ref buffer, min, max);
-        listing.Gap(2f);
-    }
-}
 }
