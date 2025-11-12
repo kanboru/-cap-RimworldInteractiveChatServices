@@ -26,6 +26,13 @@ namespace CAP_ChatInteractive
             Logger.Debug($"Processing message from {message.Username} on {message.Platform}: {message.Message}");
             try
             {
+                // NEW: Check if game is ready before processing any messages
+                if (!IsGameReady())
+                {
+                    SendPleaseWaitMessage(message);
+                    return;
+                }
+
                 // Process lootbox welcome for ALL messages (commands and regular chat)
                 // This ensures viewers get daily lootboxes when they first chat each day
                 ProcessLootboxWelcome(message);
@@ -46,7 +53,31 @@ namespace CAP_ChatInteractive
             catch (Exception ex)
             {
                 Logger.Error($"Error processing chat message: {ex.Message}");
+                // Send a generic error message to the user
+                SendMessageToUser(message, "An error occurred while processing your message. Please try again.");
             }
+        }
+
+        // NEW: Check if the game is ready to process commands
+        private static bool IsGameReady()
+        {
+            try
+            {
+                // Check if Current.Game is available and the game is in a playable state
+                return Current.Game != null &&
+                       Current.ProgramState == ProgramState.Playing &&
+                       Find.CurrentMap != null;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // NEW: Send "please wait" message to user
+        private static void SendPleaseWaitMessage(ChatMessageWrapper message)
+        {
+            SendMessageToUser(message, "Please wait until the game has fully started before using commands.");
         }
 
         private static void ProcessLootboxWelcome(ChatMessageWrapper message)
