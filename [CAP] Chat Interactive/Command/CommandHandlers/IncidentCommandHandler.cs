@@ -39,7 +39,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 }
 
                 // Check if viewer exists
-                var viewer = Viewers.GetViewer(user.Username);
+                var viewer = Viewers.GetViewer(user);
                 if (viewer == null)
                 {
                     MessageHandler.SendFailureLetter("Incident Failed",

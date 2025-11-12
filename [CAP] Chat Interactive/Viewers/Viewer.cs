@@ -4,9 +4,10 @@
 // Represents a viewer in the chat interaction system
 // with properties for roles, activity, economy, and platform-specific data.
 
+using RimWorld;
 using System;
 using System.Collections.Generic;
-using RimWorld;
+using System.Linq;
 using Verse;
 
 namespace CAP_ChatInteractive
@@ -267,6 +268,28 @@ namespace CAP_ChatInteractive
                     // You could track this manually or use custom logic
                 }
             }
+        }
+
+        // NEW: Helper method to get the primary platform identifier (matches assignment manager logic)
+        public string GetPrimaryPlatformIdentifier()
+        {
+            // Use the same logic as the assignment manager for consistency
+            if (PlatformUserIds.TryGetValue("twitch", out string twitchId))
+                return $"twitch:{twitchId}";
+            if (PlatformUserIds.TryGetValue("youtube", out string youtubeId))
+                return $"youtube:{youtubeId}";
+            return PlatformUserIds.Values.FirstOrDefault() ?? $"username:{Username}";
+        }
+
+        // NEW: Check if this viewer matches a chat message (for platform ID verification)
+        public bool MatchesChatMessage(ChatMessageWrapper message)
+        {
+            if (!string.IsNullOrEmpty(message.PlatformUserId) &&
+                PlatformUserIds.TryGetValue(message.Platform.ToLowerInvariant(), out string storedId))
+            {
+                return storedId == message.PlatformUserId;
+            }
+            return Username.Equals(message.Username, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

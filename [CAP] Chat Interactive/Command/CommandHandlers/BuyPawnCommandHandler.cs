@@ -23,13 +23,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
                 var currencySymbol = settings.CurrencyName?.Trim() ?? "¢";
 
-                var viewer = Viewers.GetViewer(user.Username);
+                var viewer = Viewers.GetViewer(user);
                 var assignmentManager = CAPChatInteractiveMod.GetPawnAssignmentManager();
 
                 // Check if viewer already has a pawn assigned using the new manager
-                if (assignmentManager != null && assignmentManager.HasAssignedPawn(user.Username))
+                if (assignmentManager != null && assignmentManager.HasAssignedPawn(user))
                 {
-                    Pawn existingPawn = assignmentManager.GetAssignedPawn(user.Username);
+                    Pawn existingPawn = assignmentManager.GetAssignedPawn(user);
                     if (existingPawn != null && !existingPawn.Dead && existingPawn.Spawned)
                     {
                         return $"You already have a pawn in the colony: {existingPawn.Name}! Use !mypawn to check on them.";
@@ -111,7 +111,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     // Save pawn assignment to viewer
                     if (result.Pawn != null && assignmentManager != null)
                     {
-                        assignmentManager.AssignPawnToViewer(user.Username, result.Pawn);
+                        assignmentManager.AssignPawnToViewer(user, result.Pawn);
                     }
 
                     // Send notification
@@ -139,6 +139,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 return "Error purchasing pawn. Please try again.";
             }
         }
+
         private static BuyPawnResult GenerateAndSpawnPawn(string username, string raceName, string xenotypeName, string genderName, int age, RaceSettings raceSettings)
         {
             try
@@ -754,7 +755,9 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         public static string HandleMyPawnCommand(ChatMessageWrapper user)
         {
             var assignmentManager = CAPChatInteractiveMod.GetPawnAssignmentManager();
-            var pawn = assignmentManager?.GetAssignedPawn(user.Username);
+
+            // UPDATED: Use platform ID-based lookup
+            var pawn = assignmentManager?.GetAssignedPawn(user);
 
             if (pawn != null)  // Found assigned pawn even pawn.Dead 
             {

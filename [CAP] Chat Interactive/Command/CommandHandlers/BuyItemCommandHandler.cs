@@ -38,7 +38,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
                 var currencySymbol = settings.CurrencyName?.Trim() ?? "¢";
-                var viewer = Viewers.GetViewer(user.Username);
+                var viewer = Viewers.GetViewer(user);
 
                 // Get store item
                 var storeItem = StoreCommandHelper.GetStoreItemByName(itemName);
@@ -478,7 +478,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
                 var currencySymbol = settings.CurrencyName?.Trim() ?? "¢";
-                var viewer = Viewers.GetViewer(user.Username);
+                var viewer = Viewers.GetViewer(user);
 
                 // REPLACE the parsing code (about 40 lines) with:
                 var parsed = CommandParserUtility.ParseCommandArguments(args, allowQuality: false, allowMaterial: false, allowSide: true, allowQuantity: true);

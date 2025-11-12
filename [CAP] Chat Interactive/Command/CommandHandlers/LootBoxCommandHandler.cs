@@ -54,7 +54,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             if (lootboxComponent.HowManyLootboxesDoesViewerHave(user.Username) > 0)
             {
                 int coins = Rand.Range(settings.LootBoxRandomCoinRange.min, settings.LootBoxRandomCoinRange.max);
-                Viewer viewer = Viewers.GetViewer(user.Username);
+                Viewer viewer = Viewers.GetViewer(user);
                 viewer.GiveCoins(coins);
                 lootboxComponent.ViewersLootboxes[viewer.Username]--;
 
@@ -78,7 +78,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 totalCoins += Rand.Range(settings.LootBoxRandomCoinRange.min, settings.LootBoxRandomCoinRange.max);
             }
 
-            Viewer viewer = Viewers.GetViewer(user.Username);
+            Viewer viewer = Viewers.GetViewer(user);
             viewer.GiveCoins(totalCoins);
             lootboxComponent.ViewersLootboxes[viewer.Username] = 0;
 

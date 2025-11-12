@@ -24,6 +24,28 @@ namespace CAP_ChatInteractive
             LoadViewers();
         }
 
+        public static Viewer GetViewer(ChatMessageWrapper message)
+        {
+            if (message == null || string.IsNullOrEmpty(message.Username))
+            {
+                Logger.Warning("GetViewer: Message or username is null");
+                return null;
+            }
+
+            // First try to find by platform ID (most reliable)
+            if (!string.IsNullOrEmpty(message.PlatformUserId))
+            {
+                var viewerByPlatform = GetViewerByPlatformId(message.Platform, message.PlatformUserId);
+                if (viewerByPlatform != null)
+                {
+                    return viewerByPlatform;
+                }
+            }
+
+            // Fall back to username lookup
+            return GetViewer(message.Username);
+        }
+
         public static Viewer GetViewer(string username)
         {
             if (string.IsNullOrEmpty(username))
@@ -66,7 +88,7 @@ namespace CAP_ChatInteractive
         {
             try
             {
-                var viewer = GetViewer(message.Username);
+                var viewer = GetViewer(message);
                 if (viewer != null)
                 {
                     // Check if this will add a platform ID

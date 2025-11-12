@@ -167,7 +167,7 @@ public class DefBasedChatCommand : ChatCommand
         public override bool CanExecute(ChatMessageWrapper message)
         {
             // Use the Def's permission system
-            var viewer = Viewers.GetViewer(message.Username);
+            var viewer = Viewers.GetViewer(message);
             if (viewer == null) return false;
 
             return viewer.HasPermission(PermissionLevel);

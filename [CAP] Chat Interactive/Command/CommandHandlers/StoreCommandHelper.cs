@@ -91,7 +91,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         public static bool CanUserAfford(ChatMessageWrapper user, int price)
         {
-            var viewer = Viewers.GetViewer(user.Username);
+            var viewer = Viewers.GetViewer(user);
             return viewer.Coins >= price;
         }
 

@@ -185,7 +185,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             }
 
             // Get the sender's viewer data - USING STATIC METHOD
-            Viewer sender = Viewers.GetViewer(user.Username);
+            Viewer sender = Viewers.GetViewer(user);
             if (sender == null)
             {
                 return "Error: Could not find your viewer data.";

@@ -148,7 +148,7 @@ namespace CAP_ChatInteractive
             }
 
             // Get viewer (this creates if doesn't exist - no need to check)
-            var viewer = Viewers.GetViewer(message.Username);
+            var viewer = Viewers.GetViewer(message);
 
             // Fast exit: Banned viewer
             if (viewer.IsBanned)

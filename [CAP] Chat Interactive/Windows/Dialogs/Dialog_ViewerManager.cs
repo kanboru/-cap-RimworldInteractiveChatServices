@@ -25,6 +25,7 @@ namespace CAP_ChatInteractive
         // Ban confirmation
         private bool showBanConfirmation = false;
         private string banConfirmationMessage = "";
+        private bool showRemoveConfirmation = false;
 
         // Mass action confirmations
         private bool showResetCoinsConfirmation = false;
@@ -333,13 +334,43 @@ namespace CAP_ChatInteractive
 
                 // Platform IDs section
                 Rect platformLabelRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
-                Widgets.Label(platformLabelRect, "Platform IDs:");
+                string platformLabel = "Platform IDs:";
+                if (selectedViewer.PlatformUserIds.Count == 0)
+                {
+                    platformLabel += " ⚠ NO PLATFORM IDs (User may be invalid)";
+                    GUI.color = Color.yellow;
+                }
+                Widgets.Label(platformLabelRect, platformLabel);
+                GUI.color = Color.white;
                 y += sectionHeight;
 
-                foreach (var platformId in selectedViewer.PlatformUserIds)
+                if (selectedViewer.PlatformUserIds.Count > 0)
                 {
-                    Rect platformRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding, sectionHeight); // Extra indent for values
-                    Widgets.Label(platformRect, $"{platformId.Key}: {platformId.Value}");
+                    foreach (var platformId in selectedViewer.PlatformUserIds)
+                    {
+                        Rect platformRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding, sectionHeight);
+
+                        // Show which platform ID is being used for pawn assignment
+                        string platformText = $"{platformId.Key}: {platformId.Value}";
+                        var assignmentManager = Current.Game?.GetComponent<GameComponent_PawnAssignmentManager>();
+                        if (assignmentManager != null)
+                        {
+                            // Check if this specific platform ID has a pawn assignment
+                            string testIdentifier = $"{platformId.Key}:{platformId.Value}";
+                            if (assignmentManager.viewerPawnAssignments.ContainsKey(testIdentifier))
+                            {
+                                platformText += " ✓ (Active Assignment)";
+                            }
+                        }
+
+                        Widgets.Label(platformRect, platformText);
+                        y += sectionHeight - 5f;
+                    }
+                }
+                else
+                {
+                    Rect noPlatformsRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding, sectionHeight);
+                    Widgets.Label(noPlatformsRect, "No platform IDs - using username fallback");
                     y += sectionHeight - 5f;
                 }
                 y += 10f;
@@ -619,21 +650,39 @@ namespace CAP_ChatInteractive
             {
                 Widgets.Label(innerRect.TopHalf(), "🚫 THIS VIEWER IS BANNED");
 
-                if (Widgets.ButtonText(innerRect.BottomHalf(), "UNBAN VIEWER"))
+                // Split the bottom half for two buttons
+                Rect unbanButtonRect = new Rect(innerRect.x, innerRect.y + innerRect.height / 2, innerRect.width / 2 - 5f, innerRect.height / 2);
+                Rect removeButtonRect = new Rect(innerRect.x + innerRect.width / 2 + 5f, innerRect.y + innerRect.height / 2, innerRect.width / 2 - 5f, innerRect.height / 2);
+
+                if (Widgets.ButtonText(unbanButtonRect, "UNBAN VIEWER"))
                 {
                     selectedViewer.IsBanned = false;
                     Viewers.SaveViewers();
                     Messages.Message($"{selectedViewer.Username} has been unbanned", MessageTypeDefOf.PositiveEvent);
                 }
+
+                if (Widgets.ButtonText(removeButtonRect, "REMOVE USER"))
+                {
+                    showRemoveConfirmation = true;
+                }
             }
             else
             {
-                Widgets.Label(innerRect.TopHalf(), "Ban Controls");
+                Widgets.Label(innerRect.TopHalf(), "User Management");
 
-                if (Widgets.ButtonText(innerRect.BottomHalf(), "BAN VIEWER"))
+                // Split the bottom half for two buttons
+                Rect banButtonRect = new Rect(innerRect.x, innerRect.y + innerRect.height / 2, innerRect.width / 2 - 5f, innerRect.height / 2);
+                Rect removeButtonRect = new Rect(innerRect.x + innerRect.width / 2 + 5f, innerRect.y + innerRect.height / 2, innerRect.width / 2 - 5f, innerRect.height / 2);
+
+                if (Widgets.ButtonText(banButtonRect, "BAN VIEWER"))
                 {
                     showBanConfirmation = true;
-                    banConfirmationMessage = $"Are you sure you want to ban {selectedViewer.Username}?";
+                    banConfirmationMessage = $"Are you sure you want to ban {selectedViewer.Username}?\n\nThis will also remove any pawn assignments.";
+                }
+
+                if (Widgets.ButtonText(removeButtonRect, "REMOVE USER"))
+                {
+                    showRemoveConfirmation = true;
                 }
             }
 
@@ -649,8 +698,12 @@ namespace CAP_ChatInteractive
                     banConfirmationMessage,
                     () => {
                         selectedViewer.IsBanned = true;
+
+                        // ADD THIS LINE: Remove pawn assignments when banning
+                        UnassignPawn(selectedViewer);
+
                         Viewers.SaveViewers();
-                        Messages.Message($"{selectedViewer.Username} has been banned", MessageTypeDefOf.NegativeEvent);
+                        Messages.Message($"{selectedViewer.Username} has been banned and pawn assignments removed", MessageTypeDefOf.NegativeEvent);
                         showBanConfirmation = false;
                     },
                     true
@@ -696,6 +749,40 @@ namespace CAP_ChatInteractive
                     }
                 ));
                 showResetKarmaConfirmation = false;
+            }
+
+            // Remove user confirmation
+            if (showRemoveConfirmation)
+            {
+                // CAPTURE the username before removal to avoid null reference
+                string usernameToRemove = selectedViewer.Username;
+
+                Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                    $"Permanently remove {usernameToRemove} from the viewer list?\n\n" +
+                    "This will:\n" +
+                    "• Remove all their data (coins, karma, history)\n" +
+                    "• Remove any pawn assignments\n" +
+                    "• Cannot be undone!",
+                    () => {
+                        // Remove pawn assignments first
+                        UnassignPawn(selectedViewer);
+
+                        // Remove from viewers list
+                        Viewers.All.Remove(selectedViewer);
+                        Viewers.SaveViewers();
+
+                        // Clear selection and refresh
+                        selectedViewer = null;
+                        FilterViewers();
+
+                        // Use the captured username here instead of selectedViewer.Username
+                        Messages.Message($"{usernameToRemove} has been permanently removed from the viewer list", MessageTypeDefOf.NeutralEvent);
+                        showRemoveConfirmation = false;
+                    },
+                    true,
+                    "REMOVE USER"
+                ));
+                showRemoveConfirmation = false;
             }
         }
 

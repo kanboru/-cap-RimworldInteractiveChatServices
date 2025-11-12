@@ -85,14 +85,14 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 }
 
                 // Get the viewer and their pawn
-                var viewer = Viewers.GetViewer(user.Username);
+                var viewer = Viewers.GetViewer(user);
                 if (viewer == null)
                 {
                     return "Could not find your viewer data.";
                 }
 
                 var assignmentManager = CAPChatInteractiveMod.GetPawnAssignmentManager();
-                Pawn pawn = assignmentManager.GetAssignedPawn(user.Username);
+                Pawn pawn = assignmentManager.GetAssignedPawn(user);
 
                 if (pawn == null || pawn.Dead)
                 {
@@ -176,14 +176,14 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 }
 
                 // Get the viewer and their pawn
-                var viewer = Viewers.GetViewer(user.Username);
+                var viewer = Viewers.GetViewer(user);
                 if (viewer == null)
                 {
                     return "Could not find your viewer data.";
                 }
 
                 var assignmentManager = CAPChatInteractiveMod.GetPawnAssignmentManager();
-                Pawn pawn = assignmentManager.GetAssignedPawn(user.Username);
+                Pawn pawn = assignmentManager.GetAssignedPawn(user);
 
                 if (pawn == null || pawn.Dead)
                 {

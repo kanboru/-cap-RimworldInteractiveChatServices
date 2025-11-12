@@ -31,7 +31,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             try
             {
                 // Get viewer data
-                var viewer = Viewers.GetViewer(user.Username);
+                var viewer = Viewers.GetViewer(user);
                 if (viewer == null)
                 {
                     return "Could not find your viewer data.";
@@ -70,7 +70,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     return "Pawn assignment system not available.";
                 }
 
-                var pawn = assignmentManager.GetAssignedPawn(user.Username);
+                var pawn = assignmentManager.GetAssignedPawn(user);
                 if (pawn == null)
                 {
                     return "You don't have an active pawn. Use !pawn to purchase one!";

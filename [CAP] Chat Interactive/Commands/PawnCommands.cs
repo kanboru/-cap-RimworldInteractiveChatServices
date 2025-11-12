@@ -154,13 +154,13 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             var assignmentManager = CAPChatInteractiveMod.GetPawnAssignmentManager();
 
             // Check if user has a pawn assigned
-            if (!assignmentManager.HasAssignedPawn(user.Username))
+            if (!assignmentManager.HasAssignedPawn(user))
             {
                 return "You don't have a pawn assigned to release.";
             }
 
             // Get the pawn info before unassigning for the message
-            Verse.Pawn pawn = assignmentManager.GetAssignedPawn(user.Username);
+            Verse.Pawn pawn = assignmentManager.GetAssignedPawn(user);
             string pawnName = pawn?.Name?.ToStringShort ?? "your pawn";
             string pawnStatus = (pawn == null || pawn.Dead) ? " (deceased)" : "";
 
@@ -171,7 +171,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             }
 
             // Release the pawn
-            assignmentManager.UnassignPawn(user.Username);
+            assignmentManager.UnassignPawn(user);
 
             // Send storytelling letter
             SendDepartureLetter(user.Username, pawn, pawnName);

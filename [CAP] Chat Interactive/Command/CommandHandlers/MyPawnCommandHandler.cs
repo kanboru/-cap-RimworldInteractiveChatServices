@@ -21,7 +21,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             try
             {
                 // Get the viewer and their pawn
-                var viewer = Viewers.GetViewer(user.Username);
+                var viewer = Viewers.GetViewer(user);
                 if (viewer == null)
                 {
                     return "Could not find your viewer data.";
@@ -32,14 +32,14 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 // Check if viewer already has a pawn assigned using the new manager
                 if (assignmentManager != null)
                 {
-                    Pawn existingPawn = assignmentManager.GetAssignedPawn(user.Username);
+                    Pawn existingPawn = assignmentManager.GetAssignedPawn(user);
                     if (existingPawn == null)
                     {
                         return "You don't have an active pawn in the colony. Use !pawn to purchase one!";
                     }
                 }
 
-                var pawn = assignmentManager.GetAssignedPawn(user.Username);
+                var pawn = assignmentManager.GetAssignedPawn(user);
 
                 // Route to appropriate handler based on subcommand
                 switch (subCommand)

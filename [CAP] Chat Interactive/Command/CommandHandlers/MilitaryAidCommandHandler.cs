@@ -22,7 +22,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
                 var currencySymbol = settings.CurrencyName?.Trim() ?? "¢";
 
-                var viewer = Viewers.GetViewer(user.Username);
+                var viewer = Viewers.GetViewer(user);
 
                 if (viewer.Coins < wager)
                 {

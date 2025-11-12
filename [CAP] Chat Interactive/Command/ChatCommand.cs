@@ -51,7 +51,7 @@ namespace CAP_ChatInteractive
         public virtual bool CanExecute(ChatMessageWrapper message)
         {
             // Get the viewer from database for permission checking
-            var viewer = Viewers.GetViewer(message.Username);
+            var viewer = Viewers.GetViewer(message);
             if (viewer == null) return false;
 
             // Use the PermissionLevel property which now gets from JSON settings

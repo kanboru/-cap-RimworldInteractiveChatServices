@@ -60,7 +60,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     return "You are not in the pawn queue.";
                 }
 
-                if (assignmentManager.RemoveFromQueue(user.Username))
+                if (assignmentManager.RemoveFromQueue(user))
                 {
                     return "✅ You have left the pawn queue.";
                 }
@@ -108,22 +108,22 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 Logger.Debug($"Accept pawn command received from {user.Username}");
 
                 // Check if user has a pending offer
-                if (!assignmentManager.HasPendingOffer(user.Username))
+                if (!assignmentManager.HasPendingOffer(user))
                 {
                     Logger.Debug($"No pending offer found for {user.Username}");
                     return "You don't have a pending pawn offer. Join the queue with !join to get in line!";
                 }
 
                 // Check if user already has a pawn
-                if (assignmentManager.HasAssignedPawn(user.Username))
+                if (assignmentManager.HasAssignedPawn(user))
                 {
                     Logger.Debug($"User {user.Username} already has an assigned pawn");
-                    assignmentManager.RemovePendingOffer(user.Username);
+                    assignmentManager.RemovePendingOffer(user);
                     return "You already have a pawn assigned! Use !leave to release your current pawn first.";
                 }
 
                 // Accept the offer and get the assigned pawn
-                Pawn assignedPawn = assignmentManager.AcceptPendingOffer(user.Username);
+                Pawn assignedPawn = assignmentManager.AcceptPendingOffer(user);
 
                 if (assignedPawn != null)
                 {
