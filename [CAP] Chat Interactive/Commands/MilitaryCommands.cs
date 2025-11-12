@@ -54,7 +54,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             // Use allowed types from settings, fallback to all if empty
             var validRaidTypes = settingsCommand.AllowedRaidTypes.Count > 0
                 ? settingsCommand.AllowedRaidTypes
-                : new List<string> { "standard", "drop", "dropcenter", "dropedge", "dropchaos", "dropgroups", "mech", "mechcluster", "manhunter", "infestation", "water", "wateredge" };
+                : new List<string> { "standard", "drop", "dropcenter", "dropedge", "dropchaos", "dropgroups", "mech", "mechcluster", "water", "wateredge" };
 
             var validStrategies = settingsCommand.AllowedRaidStrategies.Count > 0
                 ? settingsCommand.AllowedRaidStrategies
@@ -106,55 +106,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            try
-            {
-                var info = new System.Text.StringBuilder();
-                info.AppendLine("=== AVAILABLE RAID TYPES ===");
-
-                info.AppendLine("!raid standard [strategy] [wager] - Edge walk-in raid");
-                info.AppendLine("  Examples: !raid standard smart 5000, !raid standard siege 6000");
-                info.AppendLine("!raid drop [strategy] [wager] - Random drop (varies in danger)");
-                info.AppendLine("!raid dropcenter [strategy] [wager] - Center drop (-15% points)");
-                info.AppendLine("!raid dropedge [strategy] [wager] - Edge drop");
-                info.AppendLine("!raid dropchaos [strategy] [wager] - Random chaotic drop");
-                info.AppendLine("!raid dropgroups [strategy] [wager] - Edge drop groups (+15% points)");
-                info.AppendLine("!raid mech [wager] - Mechanoid raid");
-
-                if (RaidCommandHandler.HasRoyaltyDLC)
-                {
-                    info.AppendLine("!raid mechcluster [wager] - Mech Cluster (Royalty DLC)");
-                }
-
-                info.AppendLine("!raid manhunter [wager] - Manhunter animal pack");
-                info.AppendLine("!raid infestation [wager] - Insect infestation");
-
-                if (RaidCommandHandler.HasBiotechDLC)
-                {
-                    info.AppendLine("!raid water [wager] - Water edge raid (Biotech DLC)");
-                }
-
-                info.AppendLine("\n=== STRATEGIES ===");
-                info.AppendLine("immediate - Direct assault");
-                info.AppendLine("smart - Avoids turrets and traps");
-                info.AppendLine("sappers - Uses explosives to breach walls");
-                info.AppendLine("breach - Focuses on breaking through defenses");
-                info.AppendLine("breachsmart - Smart breaching tactics");
-                info.AppendLine("stage - Waits then attacks");
-                info.AppendLine("siege - Builds mortars and defenses");
-
-                info.AppendLine("\nDefault wager: 5000, Min: 1000, Max: 20000");
-                info.AppendLine("Higher wager = stronger raid, more negative karma");
-
-                // Send as green letter for in-game reference
-                MessageHandler.SendGreenLetter("Raid Commands", info.ToString());
-
-                return "Raid commands sent to in-game letter. Use !raid [type] [strategy] [wager]";
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Raid info error: {ex}");
-                return "Error getting raid info.";
-            }
+            return "Learn raids: https://tinyurl.com/RaidCommand | Usage: !raid [type] [strategy] [wager]";
         }
     }
 }

@@ -86,11 +86,6 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Check if command is enabled
-            if (!IsEnabled())
-            {
-                return "The ModInfo is currently disabled.";
-            }
 
             // Get command settings
             // var settingsCommand = GetCommandSettings();
@@ -104,7 +99,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            return "https://github.com/ekudram/-cap-RimworldInteractiveChatServices/wiki";
+            return "Full command list: https://tinyurl.com/RICSWiki (mobile friendly!)";
         }
     }
 

@@ -338,19 +338,19 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     parms.points *= 1.2f; // Increase for easiest type
                     break;
 
-                case "manhunter":
-                    config.ArrivalMode = PawnsArrivalModeDefOf.EdgeWalkIn;
-                    config.IncidentWorker = new IncidentWorker_Ambush_ManhunterPack();
-                    config.IncidentWorker.def = IncidentDefOf.ManhunterPack;
-                    parms.faction = null;
-                    break;
+                //case "manhunter":
+                //    config.ArrivalMode = PawnsArrivalModeDefOf.EdgeWalkIn;
+                //    config.IncidentWorker = new IncidentWorker_Ambush_ManhunterPack();
+                //    config.IncidentWorker.def = IncidentDefOf.ManhunterPack;
+                //    parms.faction = null;
+                //    break;
 
-                case "infestation":
-                    config.ArrivalMode = null;
-                    config.IncidentWorker = new IncidentWorker_Infestation();
-                    config.IncidentWorker.def = IncidentDefOf.Infestation;
-                    parms.faction = null;
-                    break;
+                //case "infestation":
+                //    config.ArrivalMode = null;
+                //    config.IncidentWorker = new IncidentWorker_Infestation();
+                //    config.IncidentWorker.def = IncidentDefOf.Infestation;
+                //    parms.faction = null;
+                //    break;
 
                 case "water":
                 case "wateredge":
@@ -379,7 +379,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
             // Apply strategy if specified and applicable
             if (!string.IsNullOrEmpty(strategy) && strategy.ToLower() != "default" &&
-                raidType.ToLower() != "mechcluster" && raidType.ToLower() != "infestation")
+                raidType.ToLower() != "mechcluster")
             {
                 var strategyDef = ResolveStrategy(strategy); 
                 if (strategyDef != null)
@@ -620,10 +620,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     return baseKarma - 6;
                 case "mech":
                     return baseKarma - 5;
-                case "infestation":
-                    return baseKarma - 4;
-                case "manhunter":
-                    return baseKarma - 3;
                 default:
                     return baseKarma - 2;
             }

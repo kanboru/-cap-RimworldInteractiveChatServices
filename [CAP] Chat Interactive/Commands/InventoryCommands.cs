@@ -78,19 +78,11 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
     public class PurchaseList : ChatCommand
     {
-        public override string Name => "items";
+        public override string Name => "purchaselist";
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            // Show available categories or a simple message
-            var enabledItems = StoreInventory.GetEnabledItems().Take(5); // Show first 5 as example
-            var itemList = string.Join(", ", enabledItems.Select(item =>
-            {
-                var thingDef = DefDatabase<ThingDef>.GetNamedSilentFail(item.DefName);
-                return thingDef?.LabelCap ?? item.DefName;
-            }));
-
-            return $"Available items (sample): {itemList}. Use !buy <itemname> to purchase.";
+            return $"Use lookup command, purchase list site under construction.";
         }
     }
 
