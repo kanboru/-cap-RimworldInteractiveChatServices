@@ -544,7 +544,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     openDelay: 110,
                     leaveSlag: false,
                     canRoofPunch: true,
-                    forbid: true,
+                    forbid: false,
                     allowFogged: false
                 );
 

@@ -3,6 +3,7 @@
 // Licensed under the AGPLv3 License. See LICENSE file in the project root for full license information.
 // Represents an item available in the chat interactive store
 using RimWorld;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Verse;
@@ -78,7 +79,7 @@ namespace CAP_ChatInteractive.Store
 
         private int CalculateBasePrice(ThingDef thingDef)
         {
-            return (int)(thingDef.BaseMarketValue * 1.67f);
+            return (int)(Math.Max(thingDef.BaseMarketValue, 1f) * 1.67f);
         }
 
         private string GetCategoryFromThingDef(ThingDef thingDef)

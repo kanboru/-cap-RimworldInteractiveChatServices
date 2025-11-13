@@ -820,7 +820,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             if (level >= 4) return "👶";
             if (level >= 2) return "🌱";
             if (level >= 1) return "🐣";
-            return "❓";
+            return "";
         }
 
         private static string HandleStatsInfo(Pawn pawn, string[] args)

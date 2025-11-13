@@ -16,12 +16,6 @@ namespace CAP_ChatInteractive.Traits
         private static bool isInitialized = false;
         private static readonly object lockObject = new object();
 
-        //static Traits()
-        //{
-        //    // Initialize on first access
-        //    InitializeTraits();
-        //}
-
         public static void InitializeTraits()
         {
             if (isInitialized) return;

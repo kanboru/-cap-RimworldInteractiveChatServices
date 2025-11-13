@@ -74,7 +74,7 @@ namespace _CAP__Chat_Interactive
 
             listing.Gap(12f);
 
-            listing.Label("Purchase Prefix - The prefix to use as a substitute for !buy.");
+            listing.Label("Purchase Prefix - The prefix to use for all chat commands.");
             Text.Font = GameFont.Tiny;
             listing.Label("Prefixes cannot start with: / . \\ or contain spaces");
             Text.Font = GameFont.Small;
