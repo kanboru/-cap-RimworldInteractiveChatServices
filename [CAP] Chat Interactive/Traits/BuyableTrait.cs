@@ -54,7 +54,20 @@ namespace CAP_ChatInteractive.Traits
                 foreach (var statOffset in degreeData.statOffsets)
                 {
                     string sign = statOffset.value > 0 ? "+" : "";
-                    Stats.Add($"{sign}{statOffset.value * 100}% {statOffset.stat.LabelCap}");
+
+                    // Check if this stat is typically displayed as a percentage
+                    if (statOffset.stat.formatString == "F1" ||
+                        statOffset.stat.ToString().Contains("Factor") ||
+                        statOffset.stat.ToString().Contains("Percent") )
+                    {
+                        // Display as percentage for stats that are normally percentages
+                        Stats.Add($"{sign}{statOffset.value * 100:f1}% {statOffset.stat.LabelCap}");
+                    }
+                    else
+                    {
+                        // Display as raw value for other stats
+                        Stats.Add($"{sign}{statOffset.value} {statOffset.stat.LabelCap}");
+                    }
                 }
             }
 
@@ -78,9 +91,9 @@ namespace CAP_ChatInteractive.Traits
 
         private void SetDefaultPrices(TraitDef traitDef, TraitDegreeData degreeData)
         {
-            // Base prices for a typical trait
-            int baseAddPrice = 500;  // ~5 minutes of earning
-            int baseRemovePrice = 800; // ~8 minutes of earning
+            // Base prices for a typical trait - adjusted for your economy
+            int baseAddPrice = 300;  // Reduced from 500
+            int baseRemovePrice = 500; // Reduced from 800
 
             float impactFactor = 1.0f;
 
@@ -89,13 +102,16 @@ namespace CAP_ChatInteractive.Traits
             {
                 foreach (var statOffset in degreeData.statOffsets)
                 {
-                    // Absolute value so both positive and negative traits have value
-                    impactFactor += Math.Abs(statOffset.value) * 5f; // Reduced multiplier
+                    float statImpact = Math.Abs(statOffset.value);
+
+                    // Apply different weights based on stat importance
+                    float weight = GetStatWeight(statOffset.stat);
+                    impactFactor += statImpact * weight;
                 }
             }
 
             // Adjust for degree (higher absolute degree = more impact)
-            impactFactor += Math.Abs(Degree) * 0.5f;
+            impactFactor += Math.Abs(Degree) * 0.3f; // Reduced from 0.5f
 
             // Negative traits should be cheaper to add and more expensive to remove
             float addMultiplier = impactFactor;
@@ -112,8 +128,43 @@ namespace CAP_ChatInteractive.Traits
             RemovePrice = (int)(baseRemovePrice * removeMultiplier);
 
             // Ensure minimum prices
-            AddPrice = Math.Max(100, AddPrice);
-            RemovePrice = Math.Max(150, RemovePrice);
+            AddPrice = Math.Max(50, AddPrice);  // Reduced minimum
+            RemovePrice = Math.Max(80, RemovePrice); // Reduced minimum
+        }
+
+        private float GetStatWeight(StatDef stat)
+        {
+            // High importance stats
+            if (stat.defName.Contains("GlobalLearningFactor") ||
+                stat.defName.Contains("WorkSpeedGlobal") ||
+                stat.defName.Contains("MoveSpeed") ||
+                stat.defName.Contains("MeleeHitChance") ||
+                stat.defName.Contains("AimingDelayFactor") ||
+                stat.defName.Contains("ShootingAccuracyPawn"))
+            {
+                return 25f; // High weight for important stats
+            }
+
+            // Medium importance stats  
+            if (stat.defName.Contains("HungerRate") ||
+                stat.defName.Contains("RestRate") ||
+                stat.defName.Contains("PsychicSensitivity") ||
+                stat.defName.Contains("ToxicResistance") ||
+                stat.defName.Contains("PainShockThreshold"))
+            {
+                return 15f;
+            }
+
+            // Low importance stats
+            if (stat.defName.Contains("Beauty") ||
+                stat.defName.Contains("ComfyTemperatureMin") ||
+                stat.defName.Contains("ComfyTemperatureMax"))
+            {
+                return 5f;
+            }
+
+            // Default weight
+            return 10f;
         }
 
         private bool IsGenerallyNegativeTrait(TraitDef traitDef, TraitDegreeData degreeData)
@@ -125,14 +176,7 @@ namespace CAP_ChatInteractive.Traits
                 foreach (var statOffset in degreeData.statOffsets)
                 {
                     // Some stats are more important than others
-                    float weight = 1.0f;
-                    if (statOffset.stat.defName.Contains("GlobalLearningFactor") ||
-                        statOffset.stat.defName.Contains("WorkSpeedGlobal") ||
-                        statOffset.stat.defName.Contains("MoveSpeed"))
-                    {
-                        weight = 2.0f;
-                    }
-
+                    float weight = GetStatWeight(statOffset.stat);
                     netStatImpact += statOffset.value * weight;
                 }
                 return netStatImpact < 0;

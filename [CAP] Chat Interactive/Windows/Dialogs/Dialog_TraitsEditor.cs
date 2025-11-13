@@ -297,7 +297,6 @@ namespace CAP_ChatInteractive
             Widgets.EndScrollView();
         }
 
-
         private void DrawTraitsList(Rect rect)
         {
             // Background
@@ -342,7 +341,6 @@ namespace CAP_ChatInteractive
             }
             Widgets.EndScrollView();
         }
-
 
         private void DrawTraitRow(Rect rect, BuyableTrait trait)
         {
@@ -527,11 +525,11 @@ namespace CAP_ChatInteractive
             Widgets.BeginGroup(rect);
 
             // Label - give it more space
-            Rect labelRect = new Rect(0f, 0f, 100f, 30f); // Increased from 70f to 85f
+            Rect labelRect = new Rect(0f, 0f, 100f, 30f);
             Widgets.Label(labelRect, label);
 
             // Price input
-            Rect inputRect = new Rect(105f, 0f, 80f, 30f); // Moved right from 75f to 90f
+            Rect inputRect = new Rect(105f, 0f, 80f, 30f);
             int priceBuffer = currentPrice;
             string stringBuffer = priceBuffer.ToString();
             Widgets.TextFieldNumeric(inputRect, ref priceBuffer, ref stringBuffer, 0, 1000000);
@@ -545,11 +543,11 @@ namespace CAP_ChatInteractive
                 TraitsManager.SaveTraitsToJson();
             }
 
-            // Reset button
-            Rect resetRect = new Rect(190f, 0f, 60f, 30f); // Moved right from 160f to 175f
+            // Reset button - FIXED: Use proper BuyableTrait constructor to get correct default price
+            Rect resetRect = new Rect(190f, 0f, 60f, 30f);
             if (Widgets.ButtonText(resetRect, "Reset"))
             {
-                int defaultPrice = CalculateDefaultPrice(isAddPrice, trait);
+                int defaultPrice = GetProperDefaultPrice(trait, isAddPrice);
                 if (isAddPrice)
                     trait.AddPrice = defaultPrice;
                 else
@@ -560,27 +558,42 @@ namespace CAP_ChatInteractive
             Widgets.EndGroup();
         }
 
-        private int CalculateDefaultPrice(bool isAddPrice, BuyableTrait trait)
+        private int GetProperDefaultPrice(BuyableTrait trait, bool isAddPrice)
         {
-            float basePrice = isAddPrice ? 500f : 800f;
-            float impactFactor = 1.0f;
-
-            if (trait.Stats.Count > 0)
+            try
             {
-                impactFactor += trait.Stats.Count * 0.5f;
-            }
+                // Get the TraitDef from the game database
+                var traitDef = DefDatabase<TraitDef>.GetNamedSilentFail(trait.DefName);
+                if (traitDef == null)
+                    return isAddPrice ? 300 : 500; // Fallback defaults
 
-            if (trait.Conflicts.Count > 0)
+                // Create a new BuyableTrait instance to get the proper calculated price
+                BuyableTrait freshTrait;
+
+                if (traitDef.degreeDatas != null)
+                {
+                    var degreeData = traitDef.degreeDatas.FirstOrDefault(d => d.degree == trait.Degree);
+                    if (degreeData != null)
+                    {
+                        freshTrait = new BuyableTrait(traitDef, degreeData);
+                    }
+                    else
+                    {
+                        freshTrait = new BuyableTrait(traitDef);
+                    }
+                }
+                else
+                {
+                    freshTrait = new BuyableTrait(traitDef);
+                }
+
+                return isAddPrice ? freshTrait.AddPrice : freshTrait.RemovePrice;
+            }
+            catch (System.Exception ex)
             {
-                impactFactor *= 0.8f;
+                Logger.Error($"Error calculating default price for {trait.DefName}: {ex.Message}");
+                return isAddPrice ? 300 : 500; // Fallback defaults
             }
-
-            if (System.Math.Abs(trait.Degree) > 0)
-            {
-                impactFactor += System.Math.Abs(trait.Degree) * 0.3f;
-            }
-
-            return (int)(basePrice * impactFactor);
         }
 
         private void BuildModSourceCounts()
@@ -678,8 +691,9 @@ namespace CAP_ChatInteractive
         {
             foreach (var trait in TraitsManager.AllBuyableTraits.Values)
             {
-                trait.AddPrice = CalculateDefaultPrice(true, trait);
-                trait.RemovePrice = CalculateDefaultPrice(false, trait);
+                // Use the proper pricing logic for both add and remove prices
+                trait.AddPrice = GetProperDefaultPrice(trait, true);
+                trait.RemovePrice = GetProperDefaultPrice(trait, false);
                 trait.CanAdd = true;
                 trait.CanRemove = true;
             }

@@ -213,7 +213,7 @@ namespace CAP_ChatInteractive
         /// trait serialization with settings to ignore nulls and defaults
         /// </summary>
         /// <param name="traits"></param>
-        /// <returns></returns>
+        /// <returns></returns> 
         public static string SerializeTraits(Dictionary<string, BuyableTrait> traits)
         {
             var settings = new JsonSerializerSettings

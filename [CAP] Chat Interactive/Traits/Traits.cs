@@ -2,9 +2,11 @@
 // Copyright (c) Captolamia. All rights reserved.
 // Licensed under the AGPLv3 License. See LICENSE file in the project root for full license information.
 // Manages the loading, saving, and retrieval of buyable traits for pawns.
+using LudeonTK;
 using RimWorld;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Verse;
 
@@ -113,6 +115,7 @@ namespace CAP_ChatInteractive.Traits
             var allTraitDefs = DefDatabase<TraitDef>.AllDefs;
             int addedTraits = 0;
             int removedTraits = 0;
+            int updatedTraits = 0;
 
             // Add any new traits that aren't in our system
             foreach (var traitDef in allTraitDefs)
@@ -128,6 +131,25 @@ namespace CAP_ChatInteractive.Traits
                             AllBuyableTraits[key] = buyableTrait;
                             addedTraits++;
                         }
+                        else
+                        {
+                            // Check if existing trait needs to be updated
+                            var existingTrait = AllBuyableTraits[key];
+                            if (TraitNeedsUpdate(existingTrait, traitDef, degree))
+                            {
+                                var updatedTrait = new BuyableTrait(traitDef, degree);
+                                // Preserve user settings (CanAdd, CanRemove, CustomName, etc.)
+                                updatedTrait.CanAdd = existingTrait.CanAdd;
+                                updatedTrait.CanRemove = existingTrait.CanRemove;
+                                updatedTrait.CustomName = existingTrait.CustomName;
+                                updatedTrait.KarmaTypeForAdding = existingTrait.KarmaTypeForAdding;
+                                updatedTrait.KarmaTypeForRemoving = existingTrait.KarmaTypeForRemoving;
+                                updatedTrait.BypassLimit = existingTrait.BypassLimit;
+
+                                AllBuyableTraits[key] = updatedTrait;
+                                updatedTraits++;
+                            }
+                        }
                     }
                 }
                 else
@@ -138,6 +160,25 @@ namespace CAP_ChatInteractive.Traits
                         var buyableTrait = new BuyableTrait(traitDef);
                         AllBuyableTraits[key] = buyableTrait;
                         addedTraits++;
+                    }
+                    else
+                    {
+                        // Check if existing trait needs to be updated
+                        var existingTrait = AllBuyableTraits[key];
+                        if (TraitNeedsUpdate(existingTrait, traitDef, null))
+                        {
+                            var updatedTrait = new BuyableTrait(traitDef);
+                            // Preserve user settings
+                            updatedTrait.CanAdd = existingTrait.CanAdd;
+                            updatedTrait.CanRemove = existingTrait.CanRemove;
+                            updatedTrait.CustomName = existingTrait.CustomName;
+                            updatedTrait.KarmaTypeForAdding = existingTrait.KarmaTypeForAdding;
+                            updatedTrait.KarmaTypeForRemoving = existingTrait.KarmaTypeForRemoving;
+                            updatedTrait.BypassLimit = existingTrait.BypassLimit;
+
+                            AllBuyableTraits[key] = updatedTrait;
+                            updatedTraits++;
+                        }
                     }
                 }
             }
@@ -171,11 +212,72 @@ namespace CAP_ChatInteractive.Traits
                 removedTraits++;
             }
 
-            if (addedTraits > 0 || removedTraits > 0)
+            if (addedTraits > 0 || removedTraits > 0 || updatedTraits > 0)
             {
-                Logger.Message($"Traits updated: +{addedTraits} traits, -{removedTraits} traits");
+                Logger.Message($"Traits updated: +{addedTraits} traits, -{removedTraits} traits, ~{updatedTraits} traits modified");
                 SaveTraitsToJson(); // Save changes
             }
+        }
+
+        private static bool TraitNeedsUpdate(BuyableTrait existingTrait, TraitDef traitDef, TraitDegreeData degreeData)
+        {
+            // Check if core trait data has changed
+            string expectedName = degreeData?.label?.CapitalizeFirst() ?? traitDef.LabelCap;
+            string expectedDescription = (degreeData?.description ?? traitDef.description)?.Replace("[PAWN_nameDef]", "[PAWN_name]");
+
+            // Check name changes
+            if (existingTrait.Name != expectedName && !existingTrait.CustomName)
+                return true;
+
+            // Check description changes
+            if (existingTrait.Description != expectedDescription)
+                return true;
+
+            // Check if stat offsets have changed
+            var expectedStats = new List<string>();
+            if (degreeData?.statOffsets != null)
+            {
+                foreach (var statOffset in degreeData.statOffsets)
+                {
+                    string sign = statOffset.value > 0 ? "+" : "";
+                    if (statOffset.stat.formatString == "F1" ||
+                        statOffset.stat.ToString().Contains("Factor") ||
+                        statOffset.stat.ToString().Contains("Percent"))
+                    {
+                        expectedStats.Add($"{sign}{statOffset.value * 100:f1}% {statOffset.stat.LabelCap}");
+                    }
+                    else
+                    {
+                        expectedStats.Add($"{sign}{statOffset.value} {statOffset.stat.LabelCap}");
+                    }
+                }
+            }
+
+            if (!existingTrait.Stats.SequenceEqual(expectedStats))
+                return true;
+
+            // Check if conflicts have changed
+            var expectedConflicts = new List<string>();
+            if (traitDef.conflictingTraits != null)
+            {
+                foreach (var conflict in traitDef.conflictingTraits)
+                {
+                    if (conflict != null && !string.IsNullOrEmpty(conflict.LabelCap))
+                    {
+                        expectedConflicts.Add(conflict.LabelCap);
+                    }
+                }
+            }
+
+            if (!existingTrait.Conflicts.SequenceEqual(expectedConflicts))
+                return true;
+
+            // Check if mod source has changed
+            string expectedModSource = traitDef.modContentPack?.Name ?? "RimWorld";
+            if (existingTrait.ModSource != expectedModSource)
+                return true;
+
+            return false;
         }
 
         private static string GetTraitKey(TraitDef traitDef, int degree)
@@ -231,6 +333,36 @@ namespace CAP_ChatInteractive.Traits
             int enabled = GetEnabledTraits().Count();
             int disabled = total - enabled;
             return (total, enabled, disabled);
+        }
+        // Removes the traits JSON file and rebuilds the traits from scratch
+        [DebugAction("CAP", "Delete JSON & Rebuild Traits", allowedGameStates = AllowedGameStates.Playing)]
+        public static void DebugRebuildTraits()
+        {
+            try
+            {
+                // Delete the traits JSON file
+                string filePath = JsonFileManager.GetFilePath("Traits.json");
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                    Logger.Message("Deleted Traits.json file");
+                }
+                else
+                {
+                    Logger.Message("No Traits.json file found to delete");
+                }
+
+                // Reset initialization and rebuild
+                isInitialized = false;
+                AllBuyableTraits.Clear();
+                InitializeTraits();
+
+                Logger.Message("Traits system rebuilt from scratch with current pricing and display rules");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error rebuilding traits: {ex.Message}");
+            }
         }
     }
 }
