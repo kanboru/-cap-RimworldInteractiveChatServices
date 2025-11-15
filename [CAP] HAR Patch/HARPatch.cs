@@ -3,17 +3,47 @@
 // Licensed under the AGPLv3 License. See LICENSE file in the project root for full license information.
 // Provides compatibility with the Human and Alien Races (HAR) mod for trait and xenotype restrictions.
 using _CAP__Chat_Interactive.Interfaces;
+using _CAP__Chat_Interactive.Utilities;
 using AlienRace;
+using JetBrains.Annotations;
 using RimWorld;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Verse;
 
 namespace CAP_ChatInteractive.Patch.HAR
 {
-    public class HARPatch : IAlienCompatibilityProvider
+    [UsedImplicitly]
+    [StaticConstructorOnStartup]
+    public class HARPatch: IAlienCompatibilityProvider
     {
         public string ModId => "erdelf.HumanoidAlienRaces";
+
+        static HARPatch()
+        {
+            Logger.Message("[CAP] HAR Patch Assembly Loaded!");
+            Logger.Debug("[CAP] HAR Patch static constructor executed");
+        }
+
+        public HARPatch()
+        {
+            Logger.Message("[CAP] HAR Patch Instance Created!");
+        }
+
+        public static class HARPatchVerifier
+        {
+            public static void VerifyLoaded()
+            {
+                Logger.Message("[CAP] HAR Patch Verification Called - Assembly is LOADED!");
+            }
+
+            public static bool IsAvailable()
+            {
+                Logger.Debug("[CAP] HAR Patch Availability Check - YES");
+                return true;
+            }
+        }
 
         public bool IsTraitForced(Pawn pawn, string defName, int degree)
         {
@@ -61,29 +91,39 @@ namespace CAP_ChatInteractive.Patch.HAR
 
         public List<string> GetAllowedXenotypes(ThingDef raceDef)
         {
+            Logger.Debug($"=== HAR PROVIDER: GetAllowedXenotypes for {raceDef.defName} ===");
+
             if (!ModsConfig.BiotechActive || raceDef == ThingDefOf.Human)
             {
+                Logger.Debug($"Returning empty - Biotech: {ModsConfig.BiotechActive}, IsHuman: {raceDef == ThingDefOf.Human}");
                 return new List<string>();
             }
 
             // Get the race restriction settings
             var restriction = GetRaceRestriction(raceDef);
+
             if (restriction == null)
             {
+                Logger.Debug("No race restrictions found, returning empty list");
                 return new List<string>();
             }
 
-            // If only race-restricted xenotypes are allowed, return the exclusive list
-            if (restriction.onlyUseRaceRestrictedXenotypes && restriction.xenotypeList != null)
+            Logger.Debug($"Race restriction found:");
+            Logger.Debug($"  onlyUseRaceRestrictedXenotypes: {restriction.onlyUseRaceRestrictedXenotypes}");
+            Logger.Debug($"  xenotypeList count: {restriction.xenotypeList?.Count ?? 0}");
+            Logger.Debug($"  whiteXenotypeList count: {restriction.whiteXenotypeList?.Count ?? 0}");
+            Logger.Debug($"  blackXenotypeList count: {restriction.blackXenotypeList?.Count ?? 0}");
+
+            // For our purposes, we only care about whiteXenotypeList - this is what we want to enable
+            if (restriction.whiteXenotypeList != null && restriction.whiteXenotypeList.Count > 0)
             {
-                return restriction.xenotypeList.Select(x => x.defName).ToList();
+                var result = restriction.whiteXenotypeList.Select(x => x.defName).ToList();
+                Logger.Debug($"Returning whiteXenotypeList: {result.Count} xenotypes");
+                return result;
             }
 
-            // Otherwise, get all xenotypes that pass the race restriction check
-            return DefDatabase<XenotypeDef>.AllDefs
-                .Where(xenotype => IsXenotypeAllowed(raceDef, xenotype))
-                .Select(xenotype => xenotype.defName)
-                .ToList();
+            Logger.Debug("No whiteXenotypeList found, returning empty list");
+            return new List<string>();
         }
 
         public bool IsXenotypeAllowed(ThingDef raceDef, XenotypeDef xenotype)
@@ -144,6 +184,76 @@ namespace CAP_ChatInteractive.Patch.HAR
             // If we get here, it's not a HAR race - no need for reflection fallback
             // Logger.Warn($"Race {raceDef.defName} is not a ThingDef_AlienRace - skipping HAR xenotype restrictions");
             return null;
+        }
+
+        //  Gender
+
+        public bool IsGenderAllowed(ThingDef raceDef, Gender gender)
+        {
+            if (raceDef is not ThingDef_AlienRace alienRace)
+            {
+                return true; // Non-HAR races allow all genders by default
+            }
+
+            var raceSettings = alienRace.alienRace.generalSettings;
+            if (raceSettings == null)
+            {
+                return true;
+            }
+
+            // Check gender probability to determine allowed genders
+            return gender switch
+            {
+                Gender.Male => raceSettings.maleGenderProbability > 0f,
+                Gender.Female => raceSettings.maleGenderProbability < 1f,
+                Gender.None => true, // Usually "None" is allowed
+                _ => true
+            };
+        }
+
+        public GenderPossibility GetAllowedGenders(ThingDef raceDef)
+        {
+            if (raceDef is not ThingDef_AlienRace alienRace)
+            {
+                return GenderPossibility.Either; // Non-HAR races allow both by default
+            }
+
+            var raceSettings = alienRace.alienRace.generalSettings;
+            if (raceSettings == null)
+            {
+                return GenderPossibility.Either;
+            }
+
+            // Round to 2 decimal places to match HAR's precision
+            float roundedProbability = (float)Math.Round(raceSettings.maleGenderProbability, 2);
+
+            // Convert maleGenderProbability to GenderPossibility
+            if (roundedProbability <= 0f)
+                return GenderPossibility.Female; // Only female allowed
+            else if (roundedProbability >= 1f)
+                return GenderPossibility.Male; // Only male allowed
+            else
+                return GenderPossibility.Either; // Both allowed
+        }
+
+        public (float maleProbability, float femaleProbability) GetGenderProbabilities(ThingDef raceDef)
+        {
+            if (raceDef is not ThingDef_AlienRace alienRace)
+            {
+                return (0.5f, 0.5f); // Default 50/50 for non-HAR races
+            }
+
+            var raceSettings = alienRace.alienRace.generalSettings;
+            if (raceSettings == null)
+            {
+                return (0.5f, 0.5f);
+            }
+
+            // Round to 2 decimal places to match HAR's precision
+            float maleProb = (float)Math.Round(raceSettings.maleGenderProbability, 2);
+            float femaleProb = 1f - maleProb;
+
+            return (maleProb, femaleProb);
         }
     }
 }

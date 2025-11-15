@@ -6,6 +6,7 @@
 using CAP_ChatInteractive.Incidents;
 using CAP_ChatInteractive.Store;
 using CAP_ChatInteractive.Traits;
+using _CAP__Chat_Interactive.Utilities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -427,6 +428,20 @@ namespace CAP_ChatInteractive
                 XenotypePrices = new Dictionary<string, float>(),
                 EnabledXenotypes = new Dictionary<string, bool>()
             };
+        }
+
+        public static void SaveRaceSettings(Dictionary<string, RaceSettings> raceSettings)
+        {
+            try
+            {
+                string json = SerializeRaceSettings(raceSettings);
+                SaveFile("RaceSettings.json", json);
+                Logger.Debug($"Saved race settings for {raceSettings.Count} races");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error saving race settings: {ex}");
+            }
         }
     }
 }

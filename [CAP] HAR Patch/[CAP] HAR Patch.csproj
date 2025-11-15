@@ -3,13 +3,13 @@
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <RootNamespace>CAP_ChatInteractive.Patch.HAR</RootNamespace>
-    <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\[CAP] Chat Interactive\1.6\Patches\HAR\Assemblies</OutputPath>
+    <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\[CAP] Chat Interactive\1.6\Assemblies</OutputPath>
     <DebugType>none</DebugType>
     <CopyLocal>False</CopyLocal>
-    <LangVersion>10</LangVersion>
+    <LangVersion>12</LangVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>

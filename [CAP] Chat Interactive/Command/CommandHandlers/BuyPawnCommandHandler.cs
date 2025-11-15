@@ -174,6 +174,26 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     }
                 }
 
+                var raceDef = RaceUtils.FindRaceByName(raceName);
+                if (raceDef == null)
+                {
+                    return new BuyPawnResult(false, $"Race '{raceName}' not found.");
+                }
+
+                // Validate gender against race restrictions
+                // Validate gender against race restrictions - USE CENTRALIZED SETTINGS
+                //var raceSettings = RaceSettingsManager.GetRaceSettings(raceDef.defName);
+                if (raceSettings != null)
+                {
+                    var requestedGender = ParseGender(genderName);
+                    if (requestedGender.HasValue && !IsGenderAllowed(raceSettings.AllowedGenders, requestedGender.Value))
+                    {
+                        string allowedText = GetAllowedGendersDescription(raceSettings.AllowedGenders);
+                        return new BuyPawnResult(false,
+                            $"The {raceName} race allows {allowedText}. Please choose a different gender or use 'random'.");
+                    }
+                }
+
                 // Prepare generation request with specific age and xenotype
                 var request = new PawnGenerationRequest(
                     kind: pawnKindDef,
@@ -236,6 +256,8 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 return new BuyPawnResult(false, $"Generation error: {ex.Message}");
             }
         }
+
+
         public static PawnKindDef GetPawnKindDefForRace(string raceName)
         {
             // Use centralized race lookup
@@ -360,7 +382,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
 
             // Get race settings - this will never return null now
-            raceSettings = JsonFileManager.GetRaceSettings(raceDef.defName);
+            raceSettings = RaceSettingsManager.GetRaceSettings(raceDef.defName);
 
             // Check if race is enabled using centralized logic
             if (!raceSettings.Enabled)
@@ -580,6 +602,34 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         // Helper methods
 
+        private static bool IsGenderAllowed(AllowedGenders allowedGenders, Gender gender)
+        {
+            return gender switch
+            {
+                Gender.Male => allowedGenders.AllowMale,
+                Gender.Female => allowedGenders.AllowFemale,
+                Gender.None => allowedGenders.AllowOther,
+                _ => true
+            };
+        }
+
+        private static string GetAllowedGendersDescription(AllowedGenders allowedGenders)
+        {
+            if (!allowedGenders.AllowMale && !allowedGenders.AllowFemale && !allowedGenders.AllowOther)
+                return "no genders (custom race)";
+
+            if (allowedGenders.AllowMale && !allowedGenders.AllowFemale && !allowedGenders.AllowOther)
+                return "only male";
+
+            if (!allowedGenders.AllowMale && allowedGenders.AllowFemale && !allowedGenders.AllowOther)
+                return "only female";
+
+            if (allowedGenders.AllowMale && allowedGenders.AllowFemale && !allowedGenders.AllowOther)
+                return "male or female only (no other)";
+
+            return "any gender";
+        }
+
         private static bool TrySpawnPawnInSpaceBiome(Pawn pawn, Map map)
         {
             try
@@ -764,14 +814,32 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         public static string ListAvailableRaces()
         {
             var availableRaces = RaceUtils.GetEnabledRaces();
+
             if (availableRaces.Count == 0)
             {
                 return "No races available for purchase.";
             }
 
-            var raceList = availableRaces.Select(r => r.LabelCap.RawText);
-            return $"Available races: {string.Join(", ", raceList.Take(10))}" +
-                   (raceList.Count() > 10 ? " (and more...)" : "");
+            // Also show how many total races exist for context
+            var allRaces = RaceUtils.GetAllHumanlikeRaces();
+            var raceSettings = JsonFileManager.LoadRaceSettings();
+
+            var raceList = availableRaces.Select(r =>
+            {
+                var inSettings = raceSettings.ContainsKey(r.defName);
+                var settings = inSettings ? raceSettings[r.defName] : null;
+                return $"{r.LabelCap.RawText}{(inSettings ? "" : " [NEW]")}";
+            });
+
+            string result = $"Available races ({availableRaces.Count} of {allRaces.Count()} total): {string.Join(", ", raceList.Take(8))}";
+
+            if (availableRaces.Count > 8)
+                result += $" (and {availableRaces.Count - 8} more...)";
+
+            if (availableRaces.Count < allRaces.Count())
+                result += $"\n{allRaces.Count() - availableRaces.Count} races are disabled in settings";
+
+            return result;
         }
 
         public static string ListAvailableXenotypes(string raceName = null)

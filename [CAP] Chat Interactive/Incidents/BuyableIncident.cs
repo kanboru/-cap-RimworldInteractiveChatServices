@@ -86,7 +86,7 @@ namespace CAP_ChatInteractive.Incidents
                 }
             }
 
-            Logger.Debug($"Created incident: {DefName}, Store: {ShouldBeInStore}, Commands: {IsAvailableForCommands}, Enabled: {Enabled}");
+            // Logger.Debug($"Created incident: {DefName}, Store: {ShouldBeInStore}, Commands: {IsAvailableForCommands}, Enabled: {Enabled}");
         }
 
         // Determine if the incident is suitable for inclusion in the store

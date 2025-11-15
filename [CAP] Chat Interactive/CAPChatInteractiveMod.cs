@@ -12,7 +12,9 @@ using Newtonsoft.Json;
 using RimWorld;
 using System;   
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using UnityEngine;
 using Verse;
@@ -23,12 +25,12 @@ namespace CAP_ChatInteractive
     {
         public static CAPChatInteractiveMod Instance { get; private set; }
         public CAPChatInteractiveSettings Settings { get; private set; }
+
         public IAlienCompatibilityProvider AlienProvider { get; private set; }
 
         // Service managers (we'll create these later)
         private TwitchService _twitchService;
         private YouTubeChatService _youTubeService;
-
 
         public CAPChatInteractiveMod(ModContentPack content) : base(content)
         {
@@ -37,7 +39,6 @@ namespace CAP_ChatInteractive
 
             Settings = GetSettings<CAPChatInteractiveSettings>();
 
-            // Force GameComponent creation if a game is already running
             if (Current.Game != null && Current.Game.components != null)
             {
                 var existingComponent = Current.Game.GetComponent<CAPChatInteractive_GameComponent>();
@@ -50,14 +51,14 @@ namespace CAP_ChatInteractive
 
             Logger.Message("[CAP] RICS mod loaded successfully!");
 
-
             // Force viewer loading by accessing the All property
             var viewerCount = Viewers.All.Count; // This triggers static constructor
             Logger.Debug($"Pre-loaded {viewerCount} viewers");
 
-            // Register commands from game constructor doesn't work reliably due to def loading order
-            // RegisterAllCommands();
-            // InitializeCommandSettings();
+            if (Current.Game != null)
+            {
+                Current.Game.GetComponent<GameComponent_RaceSettingsInitializer>();
+            }
 
             // Then initialize services (which will use the registered commands)
             InitializeServices();
@@ -65,138 +66,89 @@ namespace CAP_ChatInteractive
             Logger.Debug("CAPChatInteractiveMod constructor completed");
         }
 
-        private void InitializeCommandSettings()
+        public void InitializeAlienCompatibilityProvider()
         {
-            Logger.Debug("Initializing command settings...");
-
-            // Try to load existing settings
-            if (!LoadCommandSettingsFromJson())
-            {
-                // If no JSON exists, create default settings from XML defs
-                CreateDefaultCommandSettings();
-                SaveCommandSettingsToJson();
-            }
-
-            Logger.Message($"[CAP] Command settings initialized");
-        }
-
-        private bool LoadCommandSettingsFromJson()
-        {
-            string jsonContent = JsonFileManager.LoadFile("CommandSettings.json");
-            if (string.IsNullOrEmpty(jsonContent))
-                return false;
-
             try
             {
-                var loadedSettings = JsonConvert.DeserializeObject<Dictionary<string, CommandSettings>>(jsonContent);
+                Logger.Debug("=== INITIALIZING ALIEN COMPATIBILITY PROVIDER ===");
 
-                // Update the command settings in the dialog (if it exists later)
-                var dialog = Find.WindowStack?.WindowOfType<Dialog_CommandManager>();
-                if (dialog != null)
+                // Check if HAR mod is loaded
+                if (ModLister.GetActiveModWithIdentifier("erdelf.HumanoidAlienRaces") != null)
                 {
-                    foreach (var kvp in loadedSettings)
+                    Logger.Debug("HAR mod detected, initializing compatibility provider");
+                    AlienProvider = FindAnyAlienCompatibilityProvider();
+
+                    if (AlienProvider != null)
                     {
-                        dialog.commandSettings[kvp.Key] = kvp.Value;
+                        Logger.Debug($"HAR compatibility provider initialized: {AlienProvider.GetType().Name}");
                     }
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Error loading command settings JSON: {ex.Message}");
-                return false;
-            }
-        }
-
-        private void CreateDefaultCommandSettings()
-        {
-            // Get all command defs and create default settings for them
-            var commandDefs = DefDatabase<ChatCommandDef>.AllDefsListForReading;
-
-            foreach (var commandDef in commandDefs)
-            {
-                var settings = new CommandSettings
-                {
-                    Enabled = commandDef.enabled,
-                    CooldownSeconds = commandDef.cooldownSeconds,
-                    PermissionLevel = commandDef.permissionLevel,
-                    // Set other defaults as needed
-                };
-
-                // Store by command name, not defName
-                string commandName = commandDef.commandText?.ToLower() ?? commandDef.defName.ToLower();
-
-                // Update dialog if it exists
-                var dialog = Find.WindowStack?.WindowOfType<Dialog_CommandManager>();
-                if (dialog != null)
-                {
-                    dialog.commandSettings[commandName] = settings;
-                }
-            }
-        }
-
-        private void SaveCommandSettingsToJson()
-        {
-            try
-            {
-                // Get current settings from dialog or create empty dict
-                var settingsToSave = new Dictionary<string, CommandSettings>();
-                var dialog = Find.WindowStack?.WindowOfType<Dialog_CommandManager>();
-
-                if (dialog != null)
-                {
-                    settingsToSave = dialog.commandSettings;
+                    else
+                    {
+                        Logger.Warning("No alien compatibility provider found");
+                    }
                 }
                 else
                 {
-                    // Create from command defs if dialog doesn't exist yet
-                    foreach (var commandDef in DefDatabase<ChatCommandDef>.AllDefsListForReading)
-                    {
-                        string commandName = commandDef.commandText?.ToLower() ?? commandDef.defName.ToLower();
-                        settingsToSave[commandName] = new CommandSettings
-                        {
-                            Enabled = commandDef.enabled,
-                            CooldownSeconds = commandDef.cooldownSeconds,
-                            PermissionLevel = commandDef.permissionLevel
-                        };
-                    }
+                    Logger.Debug("HAR mod not detected, alien compatibility disabled");
+                    AlienProvider = null;
                 }
-
-                string json = JsonConvert.SerializeObject(settingsToSave, Formatting.Indented);
-                JsonFileManager.SaveFile("CommandSettings.json", json);
             }
             catch (Exception ex)
             {
-                Logger.Error($"Error saving command settings: {ex}");
+                Logger.Error($"Error initializing alien compatibility provider: {ex}");
+                AlienProvider = null;
             }
         }
 
-        private void RegisterAllCommands()
+        public IAlienCompatibilityProvider FindAnyAlienCompatibilityProvider()
         {
-            Logger.Debug("Registering all commands from Mod constructor...");
-
-            // Debug: Check all defs first
-            var allDefsCount = DefDatabase<Def>.AllDefsListForReading.Count;
-            Logger.Debug($"Total defs in database: {allDefsCount}");
-
-            // Debug: Check ChatCommandDefs specifically
-            var commandDefs = DefDatabase<ChatCommandDef>.AllDefsListForReading;
-            Logger.Debug($"Found {commandDefs.Count} ChatCommandDefs");
-
-            // Log each def we find
-            foreach (var def in commandDefs)
+            try
             {
-                Logger.Debug($"  -> Def: {def.defName}, CommandText: {def.commandText}, Class: {def.commandClass?.Name}");
-            }
+                Logger.Debug("=== DIRECT HAR PATCH SEARCH ===");
 
-            // Register commands from XML Defs
-            foreach (var commandDef in commandDefs)
+                // Method 1: Direct assembly name search
+                Assembly harPatchAssembly = AppDomain.CurrentDomain.GetAssemblies()
+                    .FirstOrDefault(a => a.GetName().Name == "[CAP] HAR Patch");
+
+                if (harPatchAssembly != null)
+                {
+                    Logger.Debug($"Found HAR Patch assembly: {harPatchAssembly.FullName}");
+                    Type harPatchType = harPatchAssembly.GetType("CAP_ChatInteractive.Patch.HAR.HARPatch");
+                    if (harPatchType != null)
+                    {
+                        Logger.Debug($"Found HARPatch type, creating instance...");
+                        var instance = Activator.CreateInstance(harPatchType) as IAlienCompatibilityProvider;
+                        if (instance != null)
+                        {
+                            Logger.Debug($"SUCCESS: Created HARPatch instance with ModId: {instance.ModId}");
+                            return instance;
+                        }
+                    }
+                    else
+                    {
+                        Logger.Error($"HARPatch type not found in assembly");
+                    }
+                }
+                else
+                {
+                    Logger.Error("[CAP] HAR Patch assembly not found in loaded assemblies");
+
+                    // Log all loaded assemblies for debugging
+                    Logger.Debug("=== LOADED ASSEMBLIES ===");
+                    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        Logger.Debug($"Assembly: {assembly.GetName().Name}");
+                    }
+                    Logger.Debug("=== END LOADED ASSEMBLIES ===");
+                }
+
+                return null;
+            }
+            catch (Exception ex)
             {
-                commandDef.RegisterCommand();
+                Logger.Error($"Error finding HAR Patch: {ex}");
+                return null;
             }
-
-            Logger.Message($"[CAP] Registered {commandDefs.Count} commands successfully");
         }
 
         private void InitializeServices()

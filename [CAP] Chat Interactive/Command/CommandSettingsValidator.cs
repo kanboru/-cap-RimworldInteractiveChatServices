@@ -57,7 +57,7 @@ public static class CommandSettingsValidator
             {
                 string newKey = defNameToCommandName[oldKey];
                 newSettings[newKey] = settings;
-                Logger.Debug($"Migrated settings key: '{oldKey}' -> '{newKey}'");
+                // Logger.Debug($"Migrated settings key: '{oldKey}' -> '{newKey}'");
             }
             else if (commandDefs.Any(def => def.commandText?.ToLower() == oldKey.ToLower()))
             {

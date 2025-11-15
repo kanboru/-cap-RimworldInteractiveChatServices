@@ -315,6 +315,38 @@ namespace CAP_ChatInteractive
                 Text.Font = GameFont.Small;
                 y += sectionHeight;
 
+                // Show inherent gender restrictions from HAR (read-only)
+                // Show inherent gender restrictions from RaceSettings (read-only)
+                var raceSettings = RaceSettingsManager.GetRaceSettings(selectedRace.defName);
+                if (raceSettings != null)
+                {
+                    string genderRestrictionText = "";
+
+                    if (!raceSettings.AllowedGenders.AllowMale && !raceSettings.AllowedGenders.AllowFemale)
+                    {
+                        genderRestrictionText = "No genders allowed (custom race)";
+                    }
+                    else if (!raceSettings.AllowedGenders.AllowMale)
+                    {
+                        genderRestrictionText = "Female only";
+                    }
+                    else if (!raceSettings.AllowedGenders.AllowFemale)
+                    {
+                        genderRestrictionText = "Male only";
+                    }
+                    else if (!raceSettings.AllowedGenders.AllowOther)
+                    {
+                        genderRestrictionText = "Male/Female only (no other)";
+                    }
+
+                    if (!string.IsNullOrEmpty(genderRestrictionText))
+                    {
+                        Rect inherentGenderRect = new Rect(leftPadding, y, viewRect.width - leftPadding, sectionHeight);
+                        Widgets.Label(inherentGenderRect, $"Inherent gender restriction: {genderRestrictionText}");
+                        y += sectionHeight;
+                    }
+                }
+
                 // Race description (compact)
                 Rect descRect = new Rect(leftPadding, y, viewRect.width - leftPadding, sectionHeight * 1.5f);
                 string desc = string.IsNullOrEmpty(selectedRace.description) ?
@@ -413,6 +445,7 @@ namespace CAP_ChatInteractive
                 y += sectionHeight + 10f;
 
                 // Xenotype Settings section (only if Biotech is active)
+                // Xenotype Settings section (only if Biotech is active)
                 if (ModsConfig.BiotechActive)
                 {
                     Rect xenotypeLabelRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
@@ -421,10 +454,14 @@ namespace CAP_ChatInteractive
                     Text.Font = GameFont.Small;
                     y += sectionHeight;
 
-                    // Get allowed xenotypes
-                    var allowedXenotypes = GetAllowedXenotypes(selectedRace);
+                    // Get ALL xenotypes, not just allowed ones
+                    var allXenotypes = DefDatabase<XenotypeDef>.AllDefs
+                        .Where(x => !string.IsNullOrEmpty(x.defName))
+                        .Select(x => x.defName)
+                        .OrderBy(x => x)
+                        .ToList();
 
-                    if (allowedXenotypes.Count > 0)
+                    if (allXenotypes.Count > 0)
                     {
                         // Column headers
                         Rect xenotypeHeaderRect = new Rect(leftPadding, y, columnWidth, sectionHeight);
@@ -438,16 +475,23 @@ namespace CAP_ChatInteractive
                         Text.Font = GameFont.Small;
                         y += sectionHeight;
 
-                        // Xenotype rows
-                        foreach (var xenotype in allowedXenotypes)
+                        // Get allowed xenotypes from HAR to set default enabled state
+                        var allowedXenotypes = GetAllowedXenotypes(selectedRace);
+                        Logger.Debug($"HAR allows {allowedXenotypes.Count} xenotypes for {selectedRace.defName}");
+
+                        // Xenotype rows - show ALL xenotypes
+                        foreach (var xenotype in allXenotypes)
                         {
                             // Initialize if not exists
                             if (!settings.EnabledXenotypes.ContainsKey(xenotype))
                             {
+                                // Default enabled based on HAR restrictions
                                 bool defaultEnabled = xenotype == "Baseliner" ||
-                                                    xenotype.ToLower() == selectedRace.defName.ToLower() ||
-                                                    xenotype.ToLower() == selectedRace.LabelCap.RawText.ToLower();
+                                                    allowedXenotypes.Contains(xenotype) ||
+                                                    allowedXenotypes.Count == 0; // If no restrictions, enable all
+
                                 settings.EnabledXenotypes[xenotype] = defaultEnabled;
+                                Logger.Debug($"Default enabled for {xenotype}: {defaultEnabled} (HAR allowed: {allowedXenotypes.Contains(xenotype)})");
                             }
                             if (!settings.XenotypePrices.ContainsKey(xenotype))
                             {
@@ -461,7 +505,6 @@ namespace CAP_ChatInteractive
                             // Enabled checkbox 
                             Rect xenotypeEnabledRect = new Rect(leftPadding + columnWidth, y, 30f, sectionHeight);
                             bool currentXenoEnabled = settings.EnabledXenotypes[xenotype];
-                            // Use the top-left position of the rect instead of the rect itself
                             Widgets.Checkbox(xenotypeEnabledRect.position, ref currentXenoEnabled, 24f);
                             if (currentXenoEnabled != settings.EnabledXenotypes[xenotype])
                             {
@@ -473,7 +516,6 @@ namespace CAP_ChatInteractive
                             Rect multiplierRect = new Rect(leftPadding + columnWidth + 90f, y, 80f, sectionHeight);
                             float multiplier = settings.XenotypePrices[xenotype];
                             string multiplierBuffer = multiplier.ToString("F2");
-                            // Use simple TextField for multiplier
                             string newMultiplier = Widgets.TextField(multiplierRect, multiplierBuffer);
                             if (newMultiplier != multiplierBuffer && float.TryParse(newMultiplier, out float parsedMultiplier) &&
                                 parsedMultiplier >= 0.1f && parsedMultiplier <= 10f)
@@ -487,9 +529,9 @@ namespace CAP_ChatInteractive
                     }
                     else
                     {
-                        // No xenotype restrictions
+                        // No xenotypes found
                         Rect noXenotypeRect = new Rect(leftPadding, y, viewRect.width - leftPadding, sectionHeight);
-                        Widgets.Label(noXenotypeRect, "No xenotype restrictions - all xenotypes allowed");
+                        Widgets.Label(noXenotypeRect, "No xenotypes found in the game");
                         y += sectionHeight;
                     }
                 }
@@ -509,23 +551,30 @@ namespace CAP_ChatInteractive
             // Settings section
             height += 28f; // Header
             height += 28f; // Enabled + Price row
-            height += 28f; // Age settings row (now includes sliders)
+            height += 32f; // Age settings row (now includes sliders)
             height += 28f; // Custom xenotypes
+            height += 28f; // Gender settings row
             height += 10f; // Spacing
 
             // Xenotype section
             if (ModsConfig.BiotechActive)
             {
                 height += 28f; // Header
-                var allowedXenotypes = GetAllowedXenotypes(selectedRace);
-                if (allowedXenotypes.Count > 0)
+
+                // Get ALL xenotypes for height calculation, not just allowed ones
+                var allXenotypes = DefDatabase<XenotypeDef>.AllDefs
+                    .Where(x => !string.IsNullOrEmpty(x.defName))
+                    .Select(x => x.defName)
+                    .ToList();
+
+                if (allXenotypes.Count > 0)
                 {
                     height += 28f; // Column headers
-                    height += 28f * allowedXenotypes.Count; // Xenotype rows
+                    height += 28f * allXenotypes.Count; // Xenotype rows
                 }
                 else
                 {
-                    height += 28f; // No restrictions message
+                    height += 28f; // No xenotypes message
                 }
             }
 
@@ -534,13 +583,18 @@ namespace CAP_ChatInteractive
 
         private List<string> GetAllowedXenotypes(ThingDef raceDef)
         {
-            // Use HAR patch if available, otherwise return all xenotypes
-            if (CAPChatInteractiveMod.Instance?.AlienProvider != null)
+            // Use centralized race settings instead of direct HAR calls
+            var raceSettings = RaceSettingsManager.GetRaceSettings(raceDef.defName);
+            if (raceSettings?.EnabledXenotypes != null)
             {
-                return CAPChatInteractiveMod.Instance.AlienProvider.GetAllowedXenotypes(raceDef);
+                // Return only enabled xenotypes from settings
+                return raceSettings.EnabledXenotypes
+                    .Where(kvp => kvp.Value) // Only enabled ones
+                    .Select(kvp => kvp.Key)
+                    .ToList();
             }
 
-            // Fallback: return all xenotypes if no restrictions
+            // Fallback: return all xenotypes if no restrictions in settings
             if (ModsConfig.BiotechActive)
             {
                 return DefDatabase<XenotypeDef>.AllDefs.Select(x => x.defName).ToList();
@@ -552,66 +606,8 @@ namespace CAP_ChatInteractive
         // In Dialog_PawnSettings.cs - Update the LoadRaceSettings method
         private void LoadRaceSettings()
         {
-            // Load from JSON file using JsonFileManager
-            raceSettings = JsonFileManager.LoadRaceSettings();
-
-            // Initialize defaults for any missing races - BUT ONLY FOR NON-EXCLUDED RACES
-            foreach (var race in GetHumanlikeRaces())
-            {
-                // Skip excluded races entirely - don't even add them to settings
-                if (RaceUtils.IsRaceExcluded(race))
-                {
-                    Logger.Debug($"Skipping excluded race in settings: {race.defName}");
-                    continue;
-                }
-
-                if (!raceSettings.ContainsKey(race.defName))
-                {
-                    raceSettings[race.defName] = new RaceSettings
-                    {
-                        Enabled = true, // Enable by default for non-excluded races
-                        BasePrice = CalculateDefaultPrice(race),
-                        MinAge = 16,
-                        MaxAge = 65,
-                        AllowCustomXenotypes = true,
-                        XenotypePrices = new Dictionary<string, float>(),
-                        EnabledXenotypes = new Dictionary<string, bool>()
-                    };
-
-                    // Initialize default xenotype settings if Biotech is active
-                    if (ModsConfig.BiotechActive)
-                    {
-                        var allowedXenotypes = GetAllowedXenotypes(race);
-                        foreach (var xenotype in allowedXenotypes)
-                        {
-                            // Default rules: always enable Baseliner, enable xenotypes with same name as race
-                            bool defaultEnabled = xenotype == "Baseliner" ||
-                                                xenotype.ToLower() == race.defName.ToLower() ||
-                                                xenotype.ToLower() == race.LabelCap.RawText.ToLower();
-                            raceSettings[race.defName].EnabledXenotypes[xenotype] = defaultEnabled;
-
-                            // Set default price multipliers
-                            raceSettings[race.defName].XenotypePrices[xenotype] = GetDefaultXenotypeMultiplier(xenotype);
-                        }
-                    }
-                }
-            }
-
-            // Remove any excluded races that might have been in the saved settings
-            var excludedRaces = raceSettings.Keys.Where(key =>
-            {
-                var raceDef = DefDatabase<ThingDef>.AllDefs.FirstOrDefault(d => d.defName == key);
-                return raceDef != null && RaceUtils.IsRaceExcluded(raceDef);
-            }).ToList();
-
-            foreach (var excludedKey in excludedRaces)
-            {
-                Logger.Debug($"Removing excluded race from settings: {excludedKey}");
-                raceSettings.Remove(excludedKey);
-            }
-
-            // Save any newly initialized settings
-            SaveRaceSettings();
+            // Use centralized manager instead of loading directly
+            raceSettings = RaceSettingsManager.RaceSettings;
         }
 
         private static float GetDefaultXenotypeMultiplier(string xenotypeName)
@@ -624,26 +620,13 @@ namespace CAP_ChatInteractive
         {
             try
             {
-                string json = JsonFileManager.SerializeRaceSettings(raceSettings);
-                JsonFileManager.SaveFile("RaceSettings.json", json);
+                RaceSettingsManager.SaveSettings();
                 Logger.Debug($"Saved race settings for {raceSettings.Count} races");
             }
             catch (Exception ex)
             {
                 Logger.Error($"Error saving race settings: {ex}");
             }
-        }
-
-        private int CalculateDefaultPrice(ThingDef race)
-        {
-            // Use BaseMarketValue if available, otherwise use default pricing
-            if (race.BaseMarketValue > 0)
-            {
-                return (int)(race.BaseMarketValue * 1.5f); // Adjust multiplier as needed
-            }
-
-            // Fallback pricing
-            return race == ThingDefOf.Human ? 1000 : 1500;
         }
 
         private IEnumerable<ThingDef> GetHumanlikeRaces()
@@ -698,23 +681,5 @@ namespace CAP_ChatInteractive
                     break;
             }
         }
-    }
-
-    public class RaceSettings
-    {
-        public bool Enabled { get; set; } = true;
-        public int BasePrice { get; set; } = 1000;
-        public int MinAge { get; set; } = 16;
-        public int MaxAge { get; set; } = 65;
-        public bool AllowCustomXenotypes { get; set; } = true;
-        public Dictionary<string, float> XenotypePrices { get; set; } = new Dictionary<string, float>();
-        public Dictionary<string, bool> EnabledXenotypes { get; set; } = new Dictionary<string, bool>();
-    }
-
-    public enum PawnSortMethod
-    {
-        Name,
-        Category,
-        Status
     }
 }

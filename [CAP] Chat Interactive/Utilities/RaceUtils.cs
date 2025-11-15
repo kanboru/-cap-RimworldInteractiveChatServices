@@ -49,19 +49,17 @@ namespace _CAP__Chat_Interactive.Utilities
         {
             var allRaces = GetAllHumanlikeRaces();
             var enabledRaces = new List<ThingDef>();
-            var raceSettings = JsonFileManager.LoadRaceSettings();
+            var raceSettings = RaceSettingsManager.RaceSettings; // Use centralized manager
 
             foreach (var race in allRaces)
             {
+                // Race should only be in settings if it's not excluded, so we can just check enabled status
                 if (raceSettings.ContainsKey(race.defName) && raceSettings[race.defName].Enabled)
                 {
                     enabledRaces.Add(race);
                 }
-                else if (!raceSettings.ContainsKey(race.defName))
-                {
-                    // New race not in settings - include it by default
-                    enabledRaces.Add(race);
-                }
+                // Note: We don't need the "else if not in settings" case anymore because
+                // RaceSettingsManager ensures all non-excluded races are in settings
             }
 
             return enabledRaces;
@@ -80,7 +78,7 @@ namespace _CAP__Chat_Interactive.Utilities
             // Check explicit exclusion list
             if (ExcludedRaces.Contains(raceDef.defName))
             {
-                CAP_ChatInteractive.Logger.Debug($"Excluded race by defName: {raceDef.defName}");
+                //CAP_ChatInteractive.Logger.Debug($"Excluded race by defName: {raceDef.defName}");
                 return true;
             }
 
@@ -88,7 +86,7 @@ namespace _CAP__Chat_Interactive.Utilities
             if (ExcludedKeywords.Any(keyword =>
                 raceDef.defName.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0))
             {
-                CAP_ChatInteractive.Logger.Debug($"Excluded race by defName keyword: {raceDef.defName}");
+                // CAP_ChatInteractive.Logger.Debug($"Excluded race by defName keyword: {raceDef.defName}");
                 return true;
             }
 
@@ -96,14 +94,14 @@ namespace _CAP__Chat_Interactive.Utilities
             if (ExcludedKeywords.Any(keyword =>
                 raceDef.label.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0))
             {
-                CAP_ChatInteractive.Logger.Debug($"Excluded race by label keyword: {raceDef.defName} - {raceDef.label}");
+                // CAP_ChatInteractive.Logger.Debug($"Excluded race by label keyword: {raceDef.defName} - {raceDef.label}");
                 return true;
             }
 
             // Check if it's a corpse by checking the description or other properties
             if (IsCorpseRace(raceDef))
             {
-                CAP_ChatInteractive.Logger.Debug($"Excluded race as corpse: {raceDef.defName}");
+                // CAP_ChatInteractive.Logger.Debug($"Excluded race as corpse: {raceDef.defName}");
                 return true;
             }
 

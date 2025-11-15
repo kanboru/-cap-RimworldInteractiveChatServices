@@ -20,6 +20,11 @@ namespace _CAP__Chat_Interactive.Interfaces
         bool IsTraitAllowed(Pawn pawn, TraitDef traitDef, int degree = -10);
         List<string> GetAllowedXenotypes(ThingDef raceDef);
         bool IsXenotypeAllowed(ThingDef raceDef, XenotypeDef xenotype);
+
+        // Gender restriction methods
+        bool IsGenderAllowed(ThingDef raceDef, Gender gender);
+        GenderPossibility GetAllowedGenders(ThingDef raceDef);
+        (float maleProbability, float femaleProbability) GetGenderProbabilities(ThingDef raceDef);
     }
 }
 
