@@ -263,7 +263,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
     public class RevivePawn : ChatCommand
     {
-        public override string Name => "revive pawn";
+        public override string Name => "revivepawn";
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
