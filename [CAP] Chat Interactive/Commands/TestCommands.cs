@@ -10,9 +10,9 @@ namespace CAP_ChatInteractive.Commands.TestCommands
     {
         public override string Name =>  "hello";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return $"Hello {user.Username}! Thanks for testing the chat system! 🎉";
+            return $"Hello {messageWrapper.Username}! Thanks for testing the chat system! 🎉";
         }
     }
 

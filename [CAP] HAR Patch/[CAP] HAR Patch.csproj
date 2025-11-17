@@ -20,7 +20,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\[CAP] Chat Interactive\[CAP] Chat Interactive.csproj" />
+    <ProjectReference Include="..\[CAP] Chat Interactive\[CAP] Chat Interactive.csproj">
+      <!-- Important: Prevent copying the main DLL -->
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <CopyLocal>False</CopyLocal>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -32,31 +37,60 @@
   <ItemGroup>
     <Reference Update="System">
       <Private>False</Private>
+      <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+      <CopyLocal>false</CopyLocal>
     </Reference>
     <Reference Update="System.Core">
       <Private>False</Private>
+      <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+      <CopyLocal>false</CopyLocal>
     </Reference>
     <Reference Update="System.Data">
       <Private>False</Private>
+      <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+      <CopyLocal>false</CopyLocal>
     </Reference>
     <Reference Update="System.Drawing">
       <Private>False</Private>
+      <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+      <CopyLocal>false</CopyLocal>
     </Reference>
     <Reference Update="System.IO.Compression.FileSystem">
       <Private>False</Private>
+      <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+      <CopyLocal>false</CopyLocal>
     </Reference>
     <Reference Update="System.Numerics">
       <Private>False</Private>
+      <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+      <CopyLocal>false</CopyLocal>
     </Reference>
     <Reference Update="System.Runtime.Serialization">
       <Private>False</Private>
+      <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+      <CopyLocal>false</CopyLocal>
     </Reference>
     <Reference Update="System.Xml">
       <Private>False</Private>
+      <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+      <CopyLocal>false</CopyLocal>
     </Reference>
     <Reference Update="System.Xml.Linq">
       <Private>False</Private>
+      <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+      <CopyLocal>false</CopyLocal>
     </Reference>
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="del &quot;$(OutputPath)\[CAP] Chat Interactive.dll&quot;" />
+    <Exec Command="del &quot;$(OutputPath)\[CAP] Chat Interactive.pdb&quot;" />
+    <Exec Command="del &quot;$(OutputPath)\[CAP] Chat Interactive.dll.config&quot;" />
+
+    <Exec Command="del &quot;$(OutputPath)\[CAP] HAR Patch.dll.config&quot;" />
+    <Exec Command="del &quot;$(OutputPath)\0Harmony.dll&quot;" />
+    <Exec Command="del &quot;$(OutputPath)\AlienRace.dll&quot;" />
+    <Exec Command="del &quot;$(OutputPath)\AlienRace.pdb&quot;" />
+  </Target>
+  
 </Project>

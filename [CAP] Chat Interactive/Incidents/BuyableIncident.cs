@@ -134,46 +134,6 @@ namespace CAP_ChatInteractive.Incidents
             return skipDefNames.Contains(incidentDef.defName);
         }
 
-        private bool ShouldSkipByTargetTags(IncidentDef incidentDef)
-        {
-            if (incidentDef.targetTags == null)
-                return false;
-
-            string[] skipTargetTags = {
-        "Caravan", "World", "Site"
-    };
-
-            string[] raidTags = {
-        "Raid"
-    };
-
-            // Skip caravan/world incidents
-            if (incidentDef.targetTags.Any(tag => skipTargetTags.Contains(tag.defName)))
-                return true;
-
-            // Skip raid incidents (handled by !raid command)
-            if (incidentDef.targetTags.Any(tag => raidTags.Contains(tag.defName)))
-                return true;
-
-            // NEW: Allow incidents that target Map_PlayerHome regardless of other map tags
-            if (incidentDef.targetTags.Any(tag => tag.defName == "Map_PlayerHome"))
-                return false;
-
-            // Skip incidents that ONLY target temporary maps (no player home)
-            string[] mapTags = {
-        "Map_PlayerHome", "Map_TempIncident", "Map_Misc", "Map_RaidBeacon"
-    };
-
-            bool hasAnyMapTag = incidentDef.targetTags.Any(tag => mapTags.Contains(tag.defName));
-            bool hasPlayerHomeTag = incidentDef.targetTags.Any(tag => tag.defName == "Map_PlayerHome");
-
-            // If it has any map tag but NO player home tag, skip it
-            if (hasAnyMapTag && !hasPlayerHomeTag)
-                return true;
-
-            return false;
-        }
-
         private bool ShouldSkipBySpecialCriteria(IncidentDef incidentDef)
         {
             // Skip endgame quests
@@ -210,42 +170,6 @@ namespace CAP_ChatInteractive.Incidents
             };
 
             return !combatIncidentsToFilter.Contains(defName);
-        }
-
-        private bool IsIncidentSuitableForPlayerMap(IncidentDef incidentDef)
-        {
-            string defName = incidentDef.defName.ToLower();
-            string workerName = incidentDef.Worker?.GetType().Name.ToLower() ?? "";
-
-            // Skip caravan-specific incidents
-            if (defName.Contains("caravan") || defName.Contains("ambush") ||
-                workerName.Contains("caravan") || workerName.Contains("ambush"))
-            {
-                Logger.Debug($"Skipping caravan/ambush incident: {defName}");
-                return false;
-            }
-
-            // NEW: Allow incidents that target Map_PlayerHome regardless of other world/caravan tags
-            if (incidentDef.targetTags != null)
-            {
-                bool hasPlayerHome = incidentDef.targetTags.Any(tag => tag.defName == "Map_PlayerHome");
-
-                // If it targets player home, allow it even if it has other tags
-                if (hasPlayerHome)
-                    return true;
-
-                // Otherwise, skip world map only incidents
-                foreach (var tag in incidentDef.targetTags)
-                {
-                    if (tag.defName.Contains("World") || tag.defName.Contains("Caravan"))
-                    {
-                        Logger.Debug($"Skipping world/caravan target incident: {defName}");
-                        return false;
-                    }
-                }
-            }
-
-            return true;
         }
 
         public void UpdateCommandAvailability()
@@ -433,7 +357,7 @@ namespace CAP_ChatInteractive.Incidents
 
         private void SetDefaultPricing(IncidentDef incidentDef)
         {
-            int basePrice = 150; // Slightly higher than minimal since other income sources exist
+            int basePrice = 300; // Slightly higher than minimal since other income sources exist
             float impactFactor = 1.0f;
 
             // Determine karma type first

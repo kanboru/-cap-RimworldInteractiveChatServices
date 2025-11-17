@@ -47,7 +47,7 @@ namespace CAP_ChatInteractive
                 Logger.Debug($"Total defs: {totalDefs}, ChatCommandDefs: {commandDefs.Count}");
 
                 // Initialize settings first
-                InitializeCommandSettings();
+                CAP_InitializeCommandSettings();
 
                 // Then register commands
                 RegisterDefCommands();
@@ -60,21 +60,65 @@ namespace CAP_ChatInteractive
             }
         }
 
-        private void InitializeCommandSettings()
+        private void CAP_InitializeCommandSettings()
         {
-            Logger.Debug("Initializing command settings...");
+            Logger.Message("=== CAP_InitializeCommandSettings called ===");
 
-            // Validate and migrate existing settings first
-            CommandSettingsValidator.ValidateAndMigrateCommandSettings();
+            // FORCE check for any missing commands and add them
+            ForceAddMissingCommands();
 
-            // Then proceed with normal loading
-            if (!LoadCommandSettingsFromJson())
+            Logger.Message($"=== [CAP] Command settings initialized ===");
+        }
+
+        private void ForceAddMissingCommands()
+        {
+            try
             {
-                CreateDefaultCommandSettings();
-                SaveCommandSettingsToJson();
-            }
+                
+                // Load current settings
+                string jsonContent = JsonFileManager.LoadFile("CommandSettings.json");
+                var currentSettings = new Dictionary<string, CommandSettings>();
 
-            Logger.Message($"[CAP] Command settings initialized");
+                if (!string.IsNullOrEmpty(jsonContent))
+                {
+                    currentSettings = JsonConvert.DeserializeObject<Dictionary<string, CommandSettings>>(jsonContent) ?? new Dictionary<string, CommandSettings>();
+                }
+
+                bool settingsChanged = false;
+                var commandDefs = DefDatabase<ChatCommandDef>.AllDefsListForReading;
+
+                // Check every command def and ensure it exists in settings
+                foreach (var def in commandDefs)
+                {
+                    if (!string.IsNullOrEmpty(def.commandText))
+                    {
+                        string commandName = def.commandText.ToLower();
+                        if (!currentSettings.ContainsKey(commandName))
+                        {
+                            currentSettings[commandName] = new CommandSettings
+                            {
+                                Enabled = def.enabled,
+                                CooldownSeconds = def.cooldownSeconds,
+                                PermissionLevel = def.permissionLevel
+                            };
+                            settingsChanged = true;
+                            Logger.Debug($"FORCE ADDED missing command: '{commandName}'");
+                        }
+                    }
+                }
+
+                // Save if changes were made
+                if (settingsChanged)
+                {
+                    string newJson = JsonConvert.SerializeObject(currentSettings, Formatting.Indented);
+                    JsonFileManager.SaveFile("CommandSettings.json", newJson);
+                    Logger.Message("[CAP] Added missing commands to settings");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error in ForceAddMissingCommands: {ex}");
+            }
         }
 
         private void CreateDefaultCommandSettings()

@@ -114,22 +114,21 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                         string eventType = GetKarmaTypeForIncident(buyableIncident.KarmaType);
                         cooldownManager.RecordEventUse(eventType);
                     }
-
-                    MessageHandler.SendBlueLetter("Incident Triggered",
-                        $"{user.Username} triggered {buyableIncident.Label} for {cost}{currencySymbol}");
+                    // To spammy let Rimworld handle it.
+                    // MessageHandler.SendBlueLetter("Incident Triggered",$"{user.Username} triggered {buyableIncident.Label} for {cost}{currencySymbol}");
                     return resultMessage;
                 }
                 else
                 {
-                    MessageHandler.SendFailureLetter("Incident Failed",
-                        $"{user.Username} failed to trigger {buyableIncident.Label}");
+                    // To spammy
+                    // MessageHandler.SendFailureLetter("Incident Failed", $"{user.Username} failed to trigger {buyableIncident.Label}");
                     return $"{resultMessage} No {currencySymbol} were deducted.";
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error($"Error handling incident command: {ex}");
-                MessageHandler.SendFailureLetter("Incident Error", $"Error: {ex.Message}");
+                // MessageHandler.SendFailureLetter("Incident Error", $"Error: {ex.Message}");
                 return "Error triggering incident. Please try again.";
             }
         }

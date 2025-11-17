@@ -163,7 +163,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         public override string Name => "giftcoins"; // Changed from "givecoins" to match XML
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
             // Check if we have enough arguments
             if (args.Length < 2)
@@ -180,7 +180,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             }
 
             // Get the sender's viewer data - USING STATIC METHOD
-            Viewer sender = Viewers.GetViewer(user);
+            Viewer sender = Viewers.GetViewer(messageWrapper);
             if (sender == null)
             {
                 return "Error: Could not find your viewer data.";
@@ -220,9 +220,20 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         public override string Name => "openlootbox";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return LootBoxCommandHandler.HandleLootboxCommand(user, args); // args are passed for potential future use
+            return LootBoxCommandHandler.HandleLootboxCommand(messageWrapper, args); // args are passed for potential future use
+        }
+    }
+
+    public class Research : ChatCommand
+    {
+        public override string Name => "research";
+
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
+        {
+            Logger.Debug("research command Called");
+            return ResearchCommandHandler.HandleResearchCommand(messageWrapper, args);
         }
     }
 }
