@@ -43,7 +43,7 @@ namespace CAP_ChatInteractive.Store
         public StoreItem(ThingDef thingDef)
         {
             DefName = thingDef.defName;
-            CustomName = thingDef.label.CapitalizeFirst();
+            CustomName = thingDef.label.CapitalizeFirst().Replace("(", "").Replace(")", "");
             BasePrice = CalculateBasePrice(thingDef);
             Category = GetCategoryFromThingDef(thingDef);  // This needs fixing
             ModSource = thingDef.modContentPack?.Name ?? "RimWorld";

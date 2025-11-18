@@ -80,19 +80,6 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         }
     }
 
-    public class ModInfo : ChatCommand
-    {
-        public override string Name => "modinfo";
-
-        public override string Execute(ChatMessageWrapper user, string[] args)
-        {
-
-            // Get command settings
-            // var settingsCommand = GetCommandSettings();
-            return "[CAP] Rimwold Interactive Chat Service v1.0 - Twitch & YouTube integration for RimWorld!";
-        }
-    }
-
     public class help : ChatCommand
     {
         public override string Name => "help";

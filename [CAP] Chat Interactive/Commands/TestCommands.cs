@@ -6,6 +6,18 @@ using System;
 
 namespace CAP_ChatInteractive.Commands.TestCommands
 {
+    public class ModInfo : ChatCommand
+    {
+        public override string Name => "modinfo";
+
+        public override string Execute(ChatMessageWrapper user, string[] args)
+        {
+
+            // Get command settings
+            // var settingsCommand = GetCommandSettings();
+            return "[CAP] Rimwold Interactive Chat Service v1.0.4 - Twitch & YouTube integration for RimWorld!";
+        }
+    }
     public class Hello : ChatCommand
     {
         public override string Name =>  "hello";
