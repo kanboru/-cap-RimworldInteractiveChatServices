@@ -26,12 +26,7 @@ namespace CAP_ChatInteractive
             Logger.Debug($"Processing message from {message.Username} on {message.Platform}: {message.Message}");
             try
             {
-                // NEW: Check if game is ready before processing any messages
-                if (!IsGameReady())
-                {
-                    SendPleaseWaitMessage(message);
-                    return;
-                }
+
 
                 // Process lootbox welcome for ALL messages (commands and regular chat)
                 // This ensures viewers get daily lootboxes when they first chat each day
@@ -111,6 +106,13 @@ namespace CAP_ChatInteractive
 
         private static void ProcessCommand(ChatMessageWrapper message)
         {
+            // NEW: Check if game is ready before processing any messages
+            if (!IsGameReady())
+            {
+                SendPleaseWaitMessage(message);
+                return;
+            }
+
             // Fast exit: Empty message
             if (string.IsNullOrEmpty(message.Message))
             {
