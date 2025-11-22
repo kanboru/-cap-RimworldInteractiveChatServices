@@ -247,5 +247,94 @@ namespace CAP_ChatInteractive
             }
         }
 
+        /// <summary>
+        /// Light gray color for descriptions and secondary text
+        /// </summary>
+        public static readonly Color DescriptionColor = new Color(0.7f, 0.7f, 0.7f); // Light gray
+
+
+        /// <summary>
+        /// Draws a label with description text
+        /// </summary>
+        public static void LabelWithDescription(Rect rect, string label, string description)
+        {
+            Text.Anchor = TextAnchor.MiddleLeft;
+
+            // Draw main label
+            Widgets.Label(rect, label);
+
+            if (!string.IsNullOrEmpty(description))
+            {
+                // Save original color
+                Color originalColor = GUI.color;
+                GUI.color = DescriptionColor;
+
+                // Calculate description position (right-aligned)
+                float descriptionWidth = Text.CalcSize(description).x;
+                Rect descriptionRect = new Rect(rect.xMax - descriptionWidth, rect.y, descriptionWidth, rect.height);
+                Widgets.Label(descriptionRect, description);
+
+                // Restore color
+                GUI.color = originalColor;
+            }
+
+            Text.Anchor = TextAnchor.UpperLeft;
+        }
+
+        /// <summary>
+        /// Validates and clamps numeric values with dependencies
+        /// </summary>
+        public static void ValidateMinMax(ref int minValue, ref int maxValue, string minBuffer, string maxBuffer)
+        {
+            if (minValue > maxValue)
+            {
+                minValue = maxValue;
+            }
+        }
+
+        /// <summary>
+        /// Draws a numeric field with label and description
+        /// </summary>
+        public static void NumericField(Listing_Standard listing, string label, string description, ref int value, int min, int max)
+        {
+            Rect rect = listing.GetRect(Text.LineHeight);
+            Rect leftRect = rect.LeftPart(0.7f).Rounded();
+            Rect rightRect = rect.RightPart(0.3f).Rounded();
+
+            // Use the LabelWithDescription method
+            LabelWithDescription(leftRect, label, description);
+
+            string buffer = value.ToString();
+            Widgets.TextFieldNumeric(rightRect, ref value, ref buffer, min, max);
+
+            listing.Gap(2f); // Small gap after each field
+        }
+
+        /// <summary>
+        /// Draws a numeric field for float values with label and description
+        /// </summary>
+        public static void NumericField(Listing_Standard listing, string label, string description, ref float value, float min, float max)
+        {
+            Rect rect = listing.GetRect(Text.LineHeight);
+            Rect leftRect = rect.LeftPart(0.7f).Rounded();
+            Rect rightRect = rect.RightPart(0.3f).Rounded();
+
+            LabelWithDescription(leftRect, label, description);
+
+            string buffer = value.ToString();
+            Widgets.TextFieldNumeric(rightRect, ref value, ref buffer, min, max);
+
+            listing.Gap(2f);
+        }
+    }
+    public static class ColorLibrary
+    {
+        public static readonly Color Orange = new Color(1.0f, 0.5f, 0.1f);
+        public static readonly Color Blue = new Color(0.2f, 0.4f, 0.8f);
+        public static readonly Color SkyBlue = new Color(0.529f, 0.808f, 0.922f);
+        public static readonly Color Teal = new Color(0.0f, 0.5f, 0.5f);
+        public static readonly Color LightGray = new Color(0.9f, 0.9f, 0.9f);
+        public static readonly Color White = Color.white;
+        public static readonly Color Black = Color.black;
     }
 }

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Verse;
+using Verse.Sound;
 
 namespace CAP_ChatInteractive
 {
@@ -168,22 +169,22 @@ namespace CAP_ChatInteractive
 
             Widgets.EndGroup();
         }
-        // fix this to force order
+
         private void ShowMassActionsMenu()
         {
             var options = new List<FloatMenuOption>
             {
                 new FloatMenuOption("Award Coins to Active", () => {
                     showAwardCoinsConfirmation = true;
-                }),
+                }, MenuOptionPriority.Low, null, null, 0, null, null, true, 0),
                 new FloatMenuOption("Reset All Coins", () => {
                     showResetCoinsConfirmation = true;
-                }),
+                }, MenuOptionPriority.Low, null, null, 0, null, null, true, 1),
                 new FloatMenuOption("Reset All Karma", () => {
                     showResetKarmaConfirmation = true;
-                }),
-                new FloatMenuOption("---", null), // Separator
-                new FloatMenuOption("View Statistics", ShowStatistics)
+                }, MenuOptionPriority.Low, null, null, 0, null, null, true, 2),
+                new FloatMenuOption("---", null, MenuOptionPriority.Default, null, null, 0, null, null, true, 3), // Separator with higher order
+                new FloatMenuOption("View Statistics", ShowStatistics, MenuOptionPriority.High, null, null, 0, null, null, true, 4)
             };
 
             Find.WindowStack.Add(new FloatMenu(options));
@@ -629,6 +630,9 @@ namespace CAP_ChatInteractive
             {
                 int newValue = Mathf.Min(currentValue + editAmount, maxValue);
                 onSet?.Invoke(newValue);
+                editAmount = 0;
+                editBuffer = "0";
+                SoundDefOf.Click.PlayOneShotOnCamera();
             }
 
             Rect takeRect = new Rect(buttonsStartX + buttonWidth + spacing, y, buttonWidth, sectionHeight);
@@ -636,12 +640,18 @@ namespace CAP_ChatInteractive
             {
                 int newValue = Mathf.Max(currentValue - editAmount, minValue);
                 onSet?.Invoke(newValue);
+                editAmount = 0;
+                editBuffer = "0";
+                SoundDefOf.Click.PlayOneShotOnCamera();
             }
 
             Rect setRect = new Rect(buttonsStartX + (buttonWidth + spacing) * 2, y, buttonWidth, sectionHeight);
             if (Widgets.ButtonText(setRect, "Set") && editAmount >= minValue && editAmount <= maxValue)
             {
                 onSet?.Invoke(editAmount);
+                editAmount = 0;
+                editBuffer = "0";
+                SoundDefOf.Click.PlayOneShotOnCamera();
             }
 
             y += sectionHeight;

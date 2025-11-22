@@ -9,6 +9,7 @@ using CAP_ChatInteractive.Traits;
 using System.Linq;
 using UnityEngine;
 using Verse;
+using ColorLibrary = CAP_ChatInteractive.ColorLibrary;
 
 namespace CAP_ChatInteractive
 {
@@ -27,8 +28,10 @@ namespace CAP_ChatInteractive
 
             // Header
             Text.Font = GameFont.Medium;
+            GUI.color = ColorLibrary.Orange;
             listing.Label("Game Events & Cooldowns");
             Text.Font = GameFont.Small;
+            GUI.color = ColorLibrary.White;
             listing.GapLine(6f);
 
             // Description
@@ -55,8 +58,10 @@ namespace CAP_ChatInteractive
         private static void DrawCooldownSettings(Listing_Standard listing, CAPGlobalChatSettings settings)
         {
             Text.Font = GameFont.Medium;
+            GUI.color = ColorLibrary.Orange;
             listing.Label("Global Cooldown Settings");
             Text.Font = GameFont.Small;
+            GUI.color = ColorLibrary.White;
             listing.GapLine(6f);
 
             // Event cooldown toggle
@@ -84,15 +89,15 @@ namespace CAP_ChatInteractive
             if (settings.KarmaTypeLimitsEnabled)
             {
                 listing.Gap(4f);
-                NumericField(listing, "Maximum bad event purchases:", ref settings.MaxBadEvents, 1, 20);
-                NumericField(listing, "Maximum good event purchases:", ref settings.MaxGoodEvents, 1, 20);
-                NumericField(listing, "Maximum neutral event purchases:", ref settings.MaxNeutralEvents, 1, 20);
+                NumericField(listing, "Maximum bad event purchases:", ref settings.MaxBadEvents, 1, 100);
+                NumericField(listing, "Maximum good event purchases:", ref settings.MaxGoodEvents, 1, 100);
+                NumericField(listing, "Maximum neutral event purchases:", ref settings.MaxNeutralEvents, 1, 100);
             }
 
             listing.Gap(12f);
 
             // Store purchase limits
-            NumericField(listing, "Maximum item purchases per period:", ref settings.MaxItemPurchases, 1, 50);
+            NumericField(listing, "Maximum item purchases per period:", ref settings.MaxItemPurchases, 1, 1000);
             Text.Font = GameFont.Tiny;
             listing.Label($"Viewers can purchase up to {settings.MaxItemPurchases} items before cooldown");
             Text.Font = GameFont.Small;
@@ -101,8 +106,10 @@ namespace CAP_ChatInteractive
         private static void DrawOtherSettings(Listing_Standard listing, CAPGlobalChatSettings settings)
         {
             Text.Font = GameFont.Medium;
+            GUI.color = ColorLibrary.Orange;
             listing.Label("Other Settings");
             Text.Font = GameFont.Small;
+            GUI.color = ColorLibrary.White;
             listing.GapLine(6f);
 
             // Max Traits setting
@@ -117,8 +124,10 @@ namespace CAP_ChatInteractive
             bool gameLoaded = Current.ProgramState == ProgramState.Playing;
 
             Text.Font = GameFont.Medium;
+            GUI.color = ColorLibrary.Orange;
             listing.Label("Event Management");
             Text.Font = GameFont.Small;
+            GUI.color = ColorLibrary.White;
             listing.GapLine(6f);
 
             if (!gameLoaded)
@@ -156,6 +165,7 @@ namespace CAP_ChatInteractive
             int enabledEvents = IncidentsManager.AllBuyableIncidents?.Values.Count(e => e.Enabled) ?? 0;
 
             Text.Font = GameFont.Small;
+            GUI.color = ColorLibrary.SkyBlue;
             listing.Label("Current Statistics:");
             Text.Font = GameFont.Tiny;
 

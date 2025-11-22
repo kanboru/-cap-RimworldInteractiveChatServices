@@ -447,7 +447,7 @@ namespace CAP_ChatInteractive
                     conflictsText += "...";
                 }
                 Text.Font = GameFont.Tiny;
-                GUI.color = ColorLibrary.RedReadable;
+                GUI.color = Verse.ColorLibrary.RedReadable;
                 Widgets.Label(conflictsRect, conflictsText);
                 GUI.color = Color.white;
                 Text.Font = GameFont.Small;

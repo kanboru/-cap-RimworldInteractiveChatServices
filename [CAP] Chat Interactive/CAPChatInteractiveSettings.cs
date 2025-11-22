@@ -32,6 +32,7 @@ namespace CAP_ChatInteractive
         public string AccessToken = "";
         public bool AutoConnect = false;
         public bool IsConnected = false;
+        public bool suspendFeedback = false;
 
         public void ExposeData()
         {
@@ -41,6 +42,7 @@ namespace CAP_ChatInteractive
             Scribe_Values.Look(ref AccessToken, "accessToken", "");
             Scribe_Values.Look(ref AutoConnect, "autoConnect", false);
             Scribe_Values.Look(ref IsConnected, "isConnected", false);
+            Scribe_Values.Look(ref suspendFeedback,"suspendFeedback",false);
         }
 
         public bool CanConnect
@@ -86,6 +88,11 @@ namespace CAP_ChatInteractive
         public bool EventCooldownsEnabled = true;
         public int EventCooldownDays = 15;
         public int EventsperCooldown = 5;
+        public bool KarmaTypeLimitsEnabled = false;
+        public int MaxBadEvents = 3;
+        public int MaxGoodEvents = 10;
+        public int MaxNeutralEvents = 10;
+        public int MaxItemPurchases = 10;
 
         // Event cooldown tracking
         public int EventsTriggeredThisPeriod = 0;
@@ -98,11 +105,7 @@ namespace CAP_ChatInteractive
         // Pawn queue settings
         public int PawnOfferTimeoutSeconds = 300; // 5 minutes default
 
-        public bool KarmaTypeLimitsEnabled = false;
-        public int MaxBadEvents = 3;
-        public int MaxGoodEvents = 10;
-        public int MaxNeutralEvents = 10;
-        public int MaxItemPurchases = 10;
+
 
         // Command settings could be added here in the future
         public string Prefix = "!";

@@ -9,9 +9,9 @@ namespace CAP_ChatInteractive.Commands.InteractionCommands
     {
         public override string Name => "chitchat";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return EnhancedInteractionCommandHandler.HandleInteractionCommand(user, InteractionDefOf.Chitchat, args);
+            return EnhancedInteractionCommandHandler.HandleInteractionCommand(messageWrapper, InteractionDefOf.Chitchat, args);
         }
     }
 
@@ -19,9 +19,9 @@ namespace CAP_ChatInteractive.Commands.InteractionCommands
     {
         public override string Name => "deeptalk";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return EnhancedInteractionCommandHandler.HandleInteractionCommand(user, InteractionDefOf.DeepTalk, args);
+            return EnhancedInteractionCommandHandler.HandleInteractionCommand(messageWrapper, InteractionDefOf.DeepTalk, args);
         }
     }
 
@@ -29,9 +29,9 @@ namespace CAP_ChatInteractive.Commands.InteractionCommands
     {
         public override string Name => "insult";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return EnhancedInteractionCommandHandler.HandleInteractionCommand(user, InteractionDefOf.Insult, args);
+            return EnhancedInteractionCommandHandler.HandleInteractionCommand(messageWrapper, InteractionDefOf.Insult, args);
         }
     }
 
@@ -39,9 +39,9 @@ namespace CAP_ChatInteractive.Commands.InteractionCommands
     {
         public override string Name => "flirt";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return EnhancedInteractionCommandHandler.HandleInteractionCommand(user, InteractionDefOf.RomanceAttempt, args);
+            return EnhancedInteractionCommandHandler.HandleInteractionCommand(messageWrapper, InteractionDefOf.RomanceAttempt, args);
         }
     }
 
@@ -49,11 +49,11 @@ namespace CAP_ChatInteractive.Commands.InteractionCommands
     {
         public override string Name => "reassure";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
             if (InteractionDefOf.Reassure == null)
                 return "The 'reassure' interaction requires the Ideology DLC.";
-            return EnhancedInteractionCommandHandler.HandleInteractionCommand(user, InteractionDefOf.Reassure, args);
+            return EnhancedInteractionCommandHandler.HandleInteractionCommand(messageWrapper, InteractionDefOf.Reassure, args);
         }
     }
 
@@ -61,9 +61,9 @@ namespace CAP_ChatInteractive.Commands.InteractionCommands
     {
         public override string Name => "nuzzle";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return EnhancedInteractionCommandHandler.HandleInteractionCommand(user, InteractionDefOf.Nuzzle, args);
+            return EnhancedInteractionCommandHandler.HandleInteractionCommand(messageWrapper, InteractionDefOf.Nuzzle, args);
         }
     }
 
@@ -71,9 +71,9 @@ namespace CAP_ChatInteractive.Commands.InteractionCommands
     {
         public override string Name => "animalchat";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return EnhancedInteractionCommandHandler.HandleInteractionCommand(user, InteractionDefOf.AnimalChat, args);
+            return EnhancedInteractionCommandHandler.HandleInteractionCommand(messageWrapper, InteractionDefOf.AnimalChat, args);
         }
     }
 
@@ -81,9 +81,9 @@ namespace CAP_ChatInteractive.Commands.InteractionCommands
     {
         public override string Name => "marry";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return EnhancedInteractionCommandHandler.HandleInteractionCommand(user, InteractionDefOf.MarriageProposal, args);
+            return EnhancedInteractionCommandHandler.HandleInteractionCommand(messageWrapper, InteractionDefOf.MarriageProposal, args);
         }
     }
 
@@ -91,9 +91,9 @@ namespace CAP_ChatInteractive.Commands.InteractionCommands
     {
         public override string Name => "buildrapport";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return EnhancedInteractionCommandHandler.HandleInteractionCommand(user, InteractionDefOf.BuildRapport, args);
+            return EnhancedInteractionCommandHandler.HandleInteractionCommand(messageWrapper, InteractionDefOf.BuildRapport, args);
         }
     }
 
@@ -101,11 +101,11 @@ namespace CAP_ChatInteractive.Commands.InteractionCommands
     {
         public override string Name => "convert";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
             if (InteractionDefOf.ConvertIdeoAttempt == null)
                 return "The 'convert' interaction requires the Ideology DLC.";
-            return EnhancedInteractionCommandHandler.HandleInteractionCommand(user, InteractionDefOf.ConvertIdeoAttempt, args);
+            return EnhancedInteractionCommandHandler.HandleInteractionCommand(messageWrapper, InteractionDefOf.ConvertIdeoAttempt, args);
         }
     }
 }

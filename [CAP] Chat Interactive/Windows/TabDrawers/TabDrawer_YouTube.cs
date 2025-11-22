@@ -6,6 +6,7 @@ using CAP_ChatInteractive;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using ColorLibrary = CAP_ChatInteractive.ColorLibrary;
 
 namespace _CAP__Chat_Interactive
 {
