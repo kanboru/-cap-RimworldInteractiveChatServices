@@ -75,29 +75,20 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
             // Main event cooldown logic
             if (globalSettings.EventCooldownsEnabled)
             {
-                if (settings.UseGameDaysCooldown)
+                // Traditional event cooldown system
+                // 1. Check total event limit
+                if (!CanUseGlobalEvents(globalSettings))
+                    return false;
+
+                // 2. Check type-specific limits if enabled
+                if (globalSettings.KarmaTypeLimitsEnabled)
                 {
-                    // Game-day based individual command cooldowns
-                    // We already handled MaxUsesPerCooldownPeriod above, so just return true
-                    return true;
-                }
-                else
-                {
-                    // Traditional event cooldown system
-                    // 1. Check total event limit
-                    if (!CanUseGlobalEvents(globalSettings))
+                    string eventType = GetEventTypeForCommand(commandName);
+                    if (!CanUseEvent(eventType, globalSettings))
                         return false;
-
-                    // 2. Check type-specific limits if enabled
-                    if (globalSettings.KarmaTypeLimitsEnabled)
-                    {
-                        string eventType = GetEventTypeForCommand(commandName);
-                        if (!CanUseEvent(eventType, globalSettings))
-                            return false;
-                    }
-
-                    return true;
                 }
+
+                return true;
             }
             else
             {

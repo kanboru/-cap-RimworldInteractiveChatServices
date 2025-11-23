@@ -86,13 +86,13 @@ namespace CAP_ChatInteractive
 
         // Global event settings
         public bool EventCooldownsEnabled = true;
-        public int EventCooldownDays = 1;
-        public int EventsperCooldown = 5;
+        public int EventCooldownDays = 5;
+        public int EventsperCooldown = 25; // # of events per Cooldowndays 
         public bool KarmaTypeLimitsEnabled = false;
         public int MaxBadEvents = 3;
         public int MaxGoodEvents = 10;
         public int MaxNeutralEvents = 10;
-        public int MaxItemPurchases = 10;
+        public int MaxItemPurchases = 50;
 
         // Event cooldown tracking
         public int EventsTriggeredThisPeriod = 0;
@@ -175,13 +175,13 @@ namespace CAP_ChatInteractive
 
             // Cooldown settings
             Scribe_Values.Look(ref EventCooldownsEnabled, "eventCooldownsEnabled", true);
-            Scribe_Values.Look(ref EventCooldownDays, "eventCooldownDays", 15);
-            Scribe_Values.Look(ref EventsperCooldown, "eventsperCooldown", 5);
+            Scribe_Values.Look(ref EventCooldownDays, "eventCooldownDays", 5);
+            Scribe_Values.Look(ref EventsperCooldown, "eventsperCooldown", 25);
             Scribe_Values.Look(ref KarmaTypeLimitsEnabled, "karmaTypeLimitsEnabled", false);
             Scribe_Values.Look(ref MaxBadEvents, "maxBadEvents", 3);
             Scribe_Values.Look(ref MaxGoodEvents, "maxGoodEvents", 10);
             Scribe_Values.Look(ref MaxNeutralEvents, "maxNeutralEvents", 10);
-            Scribe_Values.Look(ref MaxItemPurchases, "maxItemPurchases", 10);
+            Scribe_Values.Look(ref MaxItemPurchases, "maxItemPurchases", 50);
             Scribe_Values.Look(ref PawnOfferTimeoutSeconds, "pawnOfferTimeoutSeconds", 300);
             Scribe_Values.Look(ref EventsTriggeredThisPeriod, "eventsTriggeredThisPeriod", 0);
             Scribe_Values.Look(ref LastEventTick, "lastEventTick", 0);

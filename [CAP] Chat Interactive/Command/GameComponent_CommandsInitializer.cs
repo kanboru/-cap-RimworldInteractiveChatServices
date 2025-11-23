@@ -13,7 +13,7 @@ namespace CAP_ChatInteractive
 {
     public class GameComponent_CommandsInitializer : GameComponent
     {
-        private bool commandsInitialized = false;
+        public bool commandsInitialized = false;
 
         public GameComponent_CommandsInitializer(Game game) { }
 
@@ -35,7 +35,7 @@ namespace CAP_ChatInteractive
                 InitializeCommands();
             }
         }
-        private void InitializeCommands()
+        public void InitializeCommands()
         {
             if (!commandsInitialized)
             {
@@ -58,6 +58,12 @@ namespace CAP_ChatInteractive
                 commandsInitialized = true;
                 Logger.Message("[CAP] Commands initialized successfully");
             }
+        }
+
+        public void ResetCommands()
+        {
+            commandsInitialized = false;
+            InitializeCommands();
         }
 
         private void CAP_InitializeCommandSettings()

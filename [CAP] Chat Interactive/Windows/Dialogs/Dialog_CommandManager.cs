@@ -2,9 +2,11 @@
 // Copyright (c) Captolamia. All rights reserved.
 // Licensed under the AGPLv3 License. See LICENSE file in the project root for full license information.
 // A dialog window for managing chat commands and their settings
+using LudeonTK;
 using Newtonsoft.Json;
 using RimWorld;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -50,12 +52,12 @@ namespace CAP_ChatInteractive
                 FilterCommands();
             }
 
-            // Header
-            Rect headerRect = new Rect(0f, 0f, inRect.width, 40f);
+            // Header - increased height for two rows
+            Rect headerRect = new Rect(0f, 0f, inRect.width, 70f); // Changed from 40f to 70f
             DrawHeader(headerRect);
 
-            // Main content area
-            Rect contentRect = new Rect(0f, 45f, inRect.width, inRect.height - 45f - CloseButSize.y);
+            // Main content area - adjusted to start after the taller header
+            Rect contentRect = new Rect(0f, 75f, inRect.width, inRect.height - 75f - CloseButSize.y); // Changed from 90f to 75f
             DrawContent(contentRect);
         }
 
@@ -117,22 +119,48 @@ namespace CAP_ChatInteractive
         {
             Widgets.BeginGroup(rect);
 
-            // Title with counts - left aligned
+            // Title row - Orange with underline
             Text.Font = GameFont.Medium;
+            GUI.color = ColorLibrary.Orange;
             Rect titleRect = new Rect(0f, 0f, 200f, 30f);
-            string titleText = $"Commands ({DefDatabase<ChatCommandDef>.AllDefs.Count()})";
-            if (filteredCommands.Count != DefDatabase<ChatCommandDef>.AllDefs.Count())
-                titleText += $" - Filtered: {filteredCommands.Count}";
-            Widgets.Label(titleRect, titleText);
+            Widgets.Label(titleRect, "Command Management");
+
+            // Draw underline
+            Rect underlineRect = new Rect(titleRect.x, titleRect.yMax - 2f, titleRect.width, 2f);
+            Widgets.DrawLineHorizontal(underlineRect.x, underlineRect.y, underlineRect.width);
+
             Text.Font = GameFont.Small;
+            GUI.color = Color.white;
+
+            // Second row for controls - positioned lower to avoid cutoff
+            float controlsY = 40f; // Increased from 35f to 40f for better spacing
 
             // Search bar
-            Rect searchRect = new Rect(210f, 5f, 250f, 30f);
+            Rect searchRect = new Rect(0f, controlsY, 170f, 30f);
             searchQuery = Widgets.TextField(searchRect, searchQuery);
 
             // Sort buttons
-            Rect sortRect = new Rect(470f, 5f, 300f, 30f);
+            Rect sortRect = new Rect(180f, controlsY, 300f, 30f);
             DrawSortButtons(sortRect);
+
+            // Settings gear icon - adjusted position for taller header
+            Rect settingsRect = new Rect(rect.width - 30f, 10f, 24f, 24f); // Moved down from 5f to 10f
+            Texture2D gearIcon = ContentFinder<Texture2D>.Get("UI/Icons/Options/OptionsGeneral", false);
+            if (gearIcon != null)
+            {
+                if (Widgets.ButtonImage(settingsRect, gearIcon))
+                {
+                    ShowCommandSettingsMenu();
+                }
+            }
+            else
+            {
+                // Fallback text button
+                if (Widgets.ButtonText(new Rect(rect.width - 80f, 10f, 75f, 24f), "Settings"))
+                {
+                    ShowCommandSettingsMenu();
+                }
+            }
 
             Widgets.EndGroup();
         }
@@ -426,13 +454,7 @@ namespace CAP_ChatInteractive
                 Text.Font = GameFont.Small;
                 GUI.color = Color.white;
                 y += 20f;
-
-
-                // Game days cooldown - WITH TOGGLE
-                Rect gameDaysToggleRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                Widgets.CheckboxLabeled(gameDaysToggleRect, "Use game days cooldown", ref settings.UseGameDaysCooldown);
-                y += sectionHeight;
-
+/*
                 if (settings.UseGameDaysCooldown)
                 {
                     // Game days cooldown - IMPROVED: Combined slider and numeric input
@@ -456,28 +478,25 @@ namespace CAP_ChatInteractive
                     GUI.color = Color.white;
                     y += 14f;
                 }
-
+*/
                 // Event Command Settings - Only show for commands like raid, militaryaid
-                if (IsEventCommand(selectedCommand))
-                {
-                    Rect eventHeaderRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
-                    Widgets.Label(eventHeaderRect, "Event Command Settings:");
-                    y += sectionHeight;
+                Rect eventHeaderRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
+                Widgets.Label(eventHeaderRect, "Command Cooldown Settings:");
+                y += sectionHeight;
 
-                    // Use event cooldown toggle
-                    Rect eventToggleRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.CheckboxLabeled(eventToggleRect, "Use command cooldown only.", ref settings.useCommandCooldown);
-                    y += sectionHeight;
+                // Use event cooldown toggle
+                Rect eventToggleRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
+                Widgets.CheckboxLabeled(eventToggleRect, "Turn on for non event Commands", ref settings.useCommandCooldown);
+                y += sectionHeight;
 
-                    // Max uses per cooldown period
-                    Rect eventUsesRect = new Rect(leftPadding + 20f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(eventUsesRect, "Max uses per cooldown period:");
-                    Rect eventUsesInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
-                    string eventUsesBuffer = settings.MaxUsesPerCooldownPeriod.ToString();
-                    UIUtilities.TextFieldNumericFlexible(eventUsesInputRect, ref settings.MaxUsesPerCooldownPeriod, ref eventUsesBuffer, 0, 100);
-                    y += sectionHeight;
+                // Max uses per cooldown period
+                Rect eventUsesRect = new Rect(leftPadding + 20f, y, viewRect.width - leftPadding - 100f, sectionHeight);
+                Widgets.Label(eventUsesRect, "Max uses per cooldown period 0 = infinite use of command:");
+                Rect eventUsesInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
+                string eventUsesBuffer = settings.MaxUsesPerCooldownPeriod.ToString();
+                UIUtilities.TextFieldNumericFlexible(eventUsesInputRect, ref settings.MaxUsesPerCooldownPeriod, ref eventUsesBuffer, 0, 100);
+                y += sectionHeight;
 
-                }
 
                 // RAID-SPECIFIC SETTINGS - Only show for raid command
                 if (selectedCommand.commandText.ToLower() == "raid")
@@ -674,9 +693,19 @@ namespace CAP_ChatInteractive
             Widgets.EndScrollView();
         }
 
+        private void ShowCommandSettingsMenu()
+        {
+            List<FloatMenuOption> options = new List<FloatMenuOption>
+    {
+        new FloatMenuOption("Reset All Commands to Defaults", () => ShowResetConfirmationDialog())
+    };
+
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
         private float CalculateDetailsHeight(CommandSettings settings)
         {
-            float height = 50f; // Header space
+            float height = 70f; // Header space (increased for new header design)
             height += 28f * 5; // Basic info (command, desc, perm)
             height += 38f; // Basic settings label + spacing
             height += 28f; // Enabled
@@ -685,25 +714,11 @@ namespace CAP_ChatInteractive
             height += 38f; // Advanced settings label + spacing
             height += 28f; // Command alias
             height += 14f; // Alias description
-            height += 28f; // Game days toggle
-            if (settings.UseGameDaysCooldown)
-            {
-                height += 28f; // Game days input
-                height += 14f; // Game days description
-            }
-            height += 28f; // Max uses toggle
 
-            // EVENT COMMAND SECTION HEIGHT
-            if (selectedCommand != null && IsEventCommand(selectedCommand))
-            {
-                height += 28f; // Event header
-                height += 28f; // Event cooldown toggle
-                if (settings.useCommandCooldown)
-                {
-                    height += 28f; // Max uses per period
-                    height += 28f; // Respect global limits
-                }
-            }
+            // Command Cooldown Settings (replaces the old game days cooldown)
+            height += 28f; // Command Cooldown Settings header
+            height += 28f; // Turn on for non event Commands toggle
+            height += 28f; // Max uses per cooldown period
 
             // RAID-SPECIFIC SETTINGS HEIGHT
             if (selectedCommand != null && selectedCommand.commandText.ToLower() == "raid")
@@ -819,6 +834,94 @@ namespace CAP_ChatInteractive
             }
             return new CommandSettings();
         }
+
+        private void ShowResetConfirmationDialog()
+        {
+            TaggedString warningText = "You are about to reset all commands to defaults.\n\nExcept the Lootbox Commands coin amounts (because they are global).\n\nThis cannot be undone.".Colorize(Verse.ColorLibrary.RedReadable);
+
+            Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                warningText,
+                () => ResetAllCommandsToDefaults(),
+                true,
+                "Reset Commands"
+            ));
+        }
+
+        private void ResetAllCommandsToDefaults()
+        {
+            try
+            {
+                // Delete the command settings JSON file
+                string filePath = JsonFileManager.GetFilePath("CommandSettings.json");
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                    Logger.Message("Deleted CommandSettings.json file");
+                }
+                else
+                {
+                    Logger.Message("No CommandSettings.json file found to delete");
+                }
+
+                // Rebuild command settings from scratch
+                commandSettings.Clear();
+
+
+                LoadCommandSettings(); // This will recreate defaults
+
+                // Refresh the UI
+                FilterCommands();
+
+                Logger.Message("Command settings reset to defaults");
+                Messages.Message("All commands have been reset to defaults", MessageTypeDefOf.TaskCompletion);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error resetting commands: {ex.Message}");
+                Messages.Message($"Error resetting commands: {ex.Message}", MessageTypeDefOf.NegativeEvent);
+            }
+        }
+
+        [DebugAction("CAP", "Delete JSON & Rebuild Commands", allowedGameStates = AllowedGameStates.Playing)]
+        public static void DebugRebuildCommands()
+        {
+            try
+            {
+                // Delete the command settings JSON file
+                string filePath = JsonFileManager.GetFilePath("CommandSettings.json");
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                    Logger.Message("Deleted CommandSettings.json file");
+                }
+                else
+                {
+                    Logger.Message("No CommandSettings.json file found to delete");
+                }
+
+                // Force reinitialization through the game component
+                var comp = Current.Game.GetComponent<GameComponent_CommandsInitializer>();
+                if (comp != null)
+                {
+                    // Use reflection to reset the initialization flag if needed
+                    var field = typeof(GameComponent_CommandsInitializer).GetField("commandsInitialized",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    if (field != null)
+                    {
+                        field.SetValue(comp, false);
+                    }
+                }
+
+                Logger.Message("Command settings will be rebuilt on next tick");
+                Messages.Message("Command settings will be rebuilt on next tick", MessageTypeDefOf.TaskCompletion);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error rebuilding commands: {ex.Message}");
+                Messages.Message($"Error rebuilding commands: {ex.Message}", MessageTypeDefOf.NegativeEvent);
+            }
+        }
+
     }
 
     public enum CommandSortMethod
@@ -827,4 +930,6 @@ namespace CAP_ChatInteractive
         Category,
         Status
     }
+
+
 }
