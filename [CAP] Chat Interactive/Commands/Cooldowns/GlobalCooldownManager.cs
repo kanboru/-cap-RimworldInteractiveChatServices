@@ -30,7 +30,11 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
         public bool CanUseEvent(string eventType, CAPGlobalChatSettings settings)
         {
             // 0 = infinite
-            Logger.Debug($"eventType: {eventType}");
+            Logger.Debug($"CanUseEvent eventType: {eventType}");
+            Logger.Debug($"Max good events: {settings.MaxGoodEvents}");
+            Logger.Debug($"Max Bad Events: {settings.MaxBadEvents}");
+            Logger.Debug($"Max Neutral Events: {settings.MaxNeutralEvents}");
+
             if (settings.MaxGoodEvents == 0 && eventType == "good") return true;
             if (settings.MaxBadEvents == 0 && eventType == "bad") return true;
             if (settings.MaxNeutralEvents == 0 && eventType == "neutral") return true;

@@ -65,27 +65,40 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     return $"{buyableIncident.Label} is currently disabled.";
                 }
 
+                // DEBUG: Log incident details
+                Logger.Debug($"=== INCIDENT COOLDOWN DEBUG ===");
+                Logger.Debug($"Incident: {buyableIncident.Label}");
+                Logger.Debug($"DefName: {buyableIncident.DefName}");
+                Logger.Debug($"KarmaType: {buyableIncident.KarmaType}");
+                Logger.Debug($"BaseCost: {buyableIncident.BaseCost}");
+
                 // Check global cooldowns using your existing system
                 var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
                 if (cooldownManager != null)
                 {
+                    string eventType = GetKarmaTypeForIncident(buyableIncident.KarmaType);
+                    Logger.Debug($"Converted event type: {eventType}");
+
                     // First check global event limit (if enabled)
                     if (settings.EventCooldownsEnabled && !cooldownManager.CanUseGlobalEvents(settings))
                     {
                         int totalEvents = cooldownManager.data.EventUsage.Values.Sum(record => record.CurrentPeriodUses);
+                        Logger.Debug($"Global event limit reached: {totalEvents}/{settings.EventsperCooldown}");
                         return $"❌ Global event limit reached! ({totalEvents}/{settings.EventsperCooldown} used this period)";
                     }
 
                     // Then check karma-type specific limit (if enabled)
                     if (settings.KarmaTypeLimitsEnabled)
                     {
-                        string eventType = GetKarmaTypeForIncident(buyableIncident.KarmaType);
                         if (!cooldownManager.CanUseEvent(eventType, settings))
                         {
                             string cooldownMessage = GetCooldownMessage(eventType, settings, cooldownManager);
+                            Logger.Debug($"Karma type limit reached: {cooldownMessage}");
                             return cooldownMessage;
                         }
                     }
+
+                    Logger.Debug($"Event cooldown check passed for type: {eventType}");
                 }
 
                 // Check if viewer can afford it
@@ -124,22 +137,26 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     {
                         string eventType = GetKarmaTypeForIncident(buyableIncident.KarmaType);
                         cooldownManager.RecordEventUse(eventType);
+                        Logger.Debug($"Recorded event usage for type: {eventType}");
+
+                        // Log current state after recording
+                        var record = cooldownManager.data.EventUsage.GetValueOrDefault(eventType);
+                        if (record != null)
+                        {
+                            Logger.Debug($"Current usage for {eventType}: {record.CurrentPeriodUses}");
+                        }
                     }
-                    // To spammy let Rimworld handle it.
-                    // MessageHandler.SendBlueLetter("Incident Triggered",$"{user.Username} triggered {buyableIncident.Label} for {cost}{currencySymbol}");
+
                     return resultMessage;
                 }
                 else
                 {
-                    // To spammy
-                    // MessageHandler.SendFailureLetter("Incident Failed", $"{user.Username} failed to trigger {buyableIncident.Label}");
                     return $"{resultMessage} No {currencySymbol} were deducted.";
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error($"Error handling incident command: {ex}");
-                // MessageHandler.SendFailureLetter("Incident Error", $"Error: {ex.Message}");
                 return "Error triggering incident. Please try again.";
             }
         }
@@ -147,6 +164,9 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         // Helper methods for cooldown integration
         private static string GetKarmaTypeForIncident(string karmaType)
         {
+            if (string.IsNullOrEmpty(karmaType))
+                return "neutral";
+
             return karmaType?.ToLower() switch
             {
                 "good" => "good",

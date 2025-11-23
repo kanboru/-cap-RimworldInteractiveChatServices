@@ -3,6 +3,7 @@
 // Licensed under the AGPLv3 License. See LICENSE file in the project root for full license information.
 //
 // Handles the !weather command to change in-game weather conditions via chat.
+using CAP_ChatInteractive.Commands.Cooldowns;
 using CAP_ChatInteractive.Incidents;
 using CAP_ChatInteractive.Incidents.Weather;
 using CAP_ChatInteractive.Utilities;
@@ -66,17 +67,62 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     return $"The {buyableWeather.Label} weather type is currently disabled.";
                 }
 
+                // NEW: Check global cooldowns for weather (uses weather's karma type)
+                var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
+                if (cooldownManager != null)
+                {
+                    Logger.Debug($"=== WEATHER COOLDOWN DEBUG ===");
+                    Logger.Debug($"Weather: {buyableWeather.Label}");
+                    Logger.Debug($"DefName: {buyableWeather.DefName}");
+                    Logger.Debug($"KarmaType: {buyableWeather.KarmaType}");
+
+                    // First check global event limit (if enabled)
+                    if (settings.EventCooldownsEnabled && !cooldownManager.CanUseGlobalEvents(settings))
+                    {
+                        int totalEvents = cooldownManager.data.EventUsage.Values.Sum(record => record.CurrentPeriodUses);
+                        Logger.Debug($"Global event limit reached: {totalEvents}/{settings.EventsperCooldown}");
+                        MessageHandler.SendFailureLetter("Weather Change Blocked",
+                            $"{user.Username} tried to change weather but global limit reached\n\n{totalEvents}/{settings.EventsperCooldown} events used");
+                        return $"❌ Global event limit reached! ({totalEvents}/{settings.EventsperCooldown} used this period)";
+                    }
+
+                    // Then check karma-type specific limit (if enabled)
+                    if (settings.KarmaTypeLimitsEnabled)
+                    {
+                        string eventType = GetKarmaTypeForWeather(buyableWeather.KarmaType);
+                        Logger.Debug($"Converted event type: {eventType}");
+
+                        if (!cooldownManager.CanUseEvent(eventType, settings))
+                        {
+                            var record = cooldownManager.data.EventUsage.GetValueOrDefault(eventType);
+                            int used = record?.CurrentPeriodUses ?? 0;
+                            int max = eventType switch
+                            {
+                                "good" => settings.MaxGoodEvents,
+                                "bad" => settings.MaxBadEvents,
+                                "neutral" => settings.MaxNeutralEvents,
+                                "doom" => 1,
+                                _ => 10
+                            };
+                            string cooldownMessage = $"❌ {eventType.ToUpper()} event limit reached! ({used}/{max} used this period)";
+                            Logger.Debug($"Karma type limit reached: {used}/{max}");
+                            MessageHandler.SendFailureLetter("Weather Change Blocked",
+                                $"{user.Username} tried to change weather but {eventType} limit reached\n\n{used}/{max} {eventType} events used");
+                            return cooldownMessage;
+                        }
+                    }
+
+                    Logger.Debug($"Weather cooldown check passed");
+                }
+
                 // Get cost and check if viewer can afford it
                 int cost = buyableWeather.BaseCost;
                 if (viewer.Coins < cost)
                 {
                     MessageHandler.SendFailureLetter("Weather Change Failed",
                         $"{user.Username} doesn't have enough {currencySymbol} for {buyableWeather.Label}\n\nNeeded: {cost}{currencySymbol}, Has: {viewer.Coins}{currencySymbol}");
-                    // SendChatResponse(user, $"You need {cost}{currencySymbol} to change the weather to {buyableWeather.Label}! You have {viewer.Coins}{currencySymbol}.");
                     return $"You need {cost}{currencySymbol} for {buyableWeather.Label}!";
                 }
-
-                // Logging current map count and game state
 
                 bool success = false;
                 string resultMessage = "";
@@ -96,7 +142,23 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 // Handle the result - ONLY deduct coins on success
                 if (success)
                 {
-                    viewer.Coins -= cost;
+                    viewer.TakeCoins(cost);
+
+                    // Record weather usage for cooldowns
+                    if (cooldownManager != null)
+                    {
+                        string eventType = GetKarmaTypeForWeather(buyableWeather.KarmaType);
+                        cooldownManager.RecordEventUse(eventType);
+                        Logger.Debug($"Recorded weather usage as {eventType} event");
+
+                        // Log current state after recording
+                        var record = cooldownManager.data.EventUsage.GetValueOrDefault(eventType);
+                        if (record != null)
+                        {
+                            Logger.Debug($"Current {eventType} event usage: {record.CurrentPeriodUses}");
+                        }
+                    }
+
                     MessageHandler.SendBlueLetter("Weather Changed",
                         $"{user.Username} changed the weather to {buyableWeather.Label} for {cost}{currencySymbol}\n\n{resultMessage}");
                 }
@@ -113,9 +175,22 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 Logger.Error($"Error handling weather command: {ex}");
                 MessageHandler.SendFailureLetter("Weather Error",
                     $"Error changing weather: {ex.Message}\n\nPlease try again later.");
-                string errorMsg = "Error changing weather. Please try again.";
-                return errorMsg;
+                return "Error changing weather. Please try again.";
             }
+        }
+
+        private static string GetKarmaTypeForWeather(string karmaType)
+        {
+            if (string.IsNullOrEmpty(karmaType))
+                return "neutral";
+
+            return karmaType?.ToLower() switch
+            {
+                "good" => "good",
+                "bad" => "bad",
+                "doom" => "doom",
+                _ => "neutral"
+            };
         }
 
         private static BuyableWeather FindBuyableWeather(string input)
@@ -353,13 +428,38 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         {
             var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
             var currencySymbol = settings.CurrencyName?.Trim() ?? "¢";
+            var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
 
             var availableWeathers = GetAvailableWeatherTypes()
                 .Where(kvp => !IsGameConditionWeather(kvp.Value.DefName))
-                .Select(kvp => $"{kvp.Value.Label} ({kvp.Value.BaseCost}{currencySymbol})")
+                .Select(kvp =>
+                {
+                    string status = "✅";
+                    if (cooldownManager != null && settings.KarmaTypeLimitsEnabled)
+                    {
+                        string eventType = GetKarmaTypeForWeather(kvp.Value.KarmaType);
+                        if (!cooldownManager.CanUseEvent(eventType, settings))
+                        {
+                            status = "❌";
+                        }
+                    }
+                    return $"{kvp.Value.Label} ({kvp.Value.BaseCost}{currencySymbol}){status}";
+                })
                 .ToList();
 
+            // Add cooldown summary if limits are enabled
+            string cooldownSummary = "";
+            if (settings.KarmaTypeLimitsEnabled && cooldownManager != null)
+            {
+                cooldownSummary = GetCooldownSummary(settings, cooldownManager);
+            }
+
             var message = "Available weather: " + string.Join(", ", availableWeathers.Take(8));
+
+            if (!string.IsNullOrEmpty(cooldownSummary))
+            {
+                message += $" | {cooldownSummary}";
+            }
 
             if (availableWeathers.Count > 8)
             {
@@ -367,6 +467,45 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
 
             return message;
+        }
+
+        private static string GetCooldownSummary(CAPGlobalChatSettings settings, GlobalCooldownManager cooldownManager)
+        {
+            var summaries = new List<string>();
+
+            // Global event limit
+            if (settings.EventCooldownsEnabled && settings.EventsperCooldown > 0)
+            {
+                int totalEvents = cooldownManager.data.EventUsage.Values.Sum(record => record.CurrentPeriodUses);
+                summaries.Add($"Total: {totalEvents}/{settings.EventsperCooldown}");
+            }
+
+            // Karma-type limits
+            if (settings.KarmaTypeLimitsEnabled)
+            {
+                if (settings.MaxGoodEvents > 0)
+                {
+                    var goodRecord = cooldownManager.data.EventUsage.GetValueOrDefault("good");
+                    int goodUsed = goodRecord?.CurrentPeriodUses ?? 0;
+                    summaries.Add($"Good: {goodUsed}/{settings.MaxGoodEvents}");
+                }
+
+                if (settings.MaxBadEvents > 0)
+                {
+                    var badRecord = cooldownManager.data.EventUsage.GetValueOrDefault("bad");
+                    int badUsed = badRecord?.CurrentPeriodUses ?? 0;
+                    summaries.Add($"Bad: {badUsed}/{settings.MaxBadEvents}");
+                }
+
+                if (settings.MaxNeutralEvents > 0)
+                {
+                    var neutralRecord = cooldownManager.data.EventUsage.GetValueOrDefault("neutral");
+                    int neutralUsed = neutralRecord?.CurrentPeriodUses ?? 0;
+                    summaries.Add($"Neutral: {neutralUsed}/{settings.MaxNeutralEvents}");
+                }
+            }
+
+            return string.Join(" | ", summaries);
         }
 
         private static string GetWeatherListPage(int page)

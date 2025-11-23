@@ -3,6 +3,7 @@
 // Licensed under the AGPLv3 License. See LICENSE file in the project root for full license information.
 //
 // Handles the !militaryaid command to call for military reinforcements in exchange for in-game currency.
+using CAP_ChatInteractive.Commands.Cooldowns;
 using CAP_ChatInteractive.Incidents;
 using LudeonTK;
 using RimWorld;
@@ -24,6 +25,41 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 var viewer = Viewers.GetViewer(user);
 
+                // NEW: Check global cooldowns for military aid (always "good" karma type)
+                var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
+                if (cooldownManager != null)
+                {
+                    Logger.Debug($"=== MILITARY AID COOLDOWN DEBUG ===");
+                    Logger.Debug($"Wager: {wager}");
+
+                    // First check global event limit (if enabled)
+                    if (settings.EventCooldownsEnabled && !cooldownManager.CanUseGlobalEvents(settings))
+                    {
+                        int totalEvents = cooldownManager.data.EventUsage.Values.Sum(record => record.CurrentPeriodUses);
+                        Logger.Debug($"Global event limit reached: {totalEvents}/{settings.EventsperCooldown}");
+                        MessageHandler.SendFailureLetter("Military Aid Blocked",
+                            $"{user.Username} tried to call military aid but global limit reached\n\n{totalEvents}/{settings.EventsperCooldown} events used");
+                        return $"❌ Global event limit reached! ({totalEvents}/{settings.EventsperCooldown} used this period)";
+                    }
+
+                    // Then check good event limit (if enabled) - military aid is always "good"
+                    if (settings.KarmaTypeLimitsEnabled)
+                    {
+                        if (!cooldownManager.CanUseEvent("good", settings))
+                        {
+                            var goodRecord = cooldownManager.data.EventUsage.GetValueOrDefault("good");
+                            int goodUsed = goodRecord?.CurrentPeriodUses ?? 0;
+                            string cooldownMessage = $"❌ GOOD event limit reached! ({goodUsed}/{settings.MaxGoodEvents} used this period)";
+                            Logger.Debug($"Good event limit reached: {goodUsed}/{settings.MaxGoodEvents}");
+                            MessageHandler.SendFailureLetter("Military Aid Blocked",
+                                $"{user.Username} tried to call military aid but good event limit reached\n\n{goodUsed}/{settings.MaxGoodEvents} good events used");
+                            return cooldownMessage;
+                        }
+                    }
+
+                    Logger.Debug($"Military aid cooldown check passed");
+                }
+
                 if (viewer.Coins < wager)
                 {
                     MessageHandler.SendFailureLetter("Military Aid Failed",
@@ -44,6 +80,20 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 {
                     viewer.TakeCoins(wager);
                     viewer.GiveKarma(CalculateKarmaChange(wager));
+
+                    // Record military aid usage for cooldowns
+                    if (cooldownManager != null)
+                    {
+                        cooldownManager.RecordEventUse("good"); // Military aid is always good events
+                        Logger.Debug($"Recorded military aid usage as good event");
+
+                        // Log current state after recording
+                        var goodRecord = cooldownManager.data.EventUsage.GetValueOrDefault("good");
+                        if (goodRecord != null)
+                        {
+                            Logger.Debug($"Current good event usage: {goodRecord.CurrentPeriodUses}");
+                        }
+                    }
 
                     // Build detailed letter using the result data
                     string factionInfo = result.AidingFaction != null ?

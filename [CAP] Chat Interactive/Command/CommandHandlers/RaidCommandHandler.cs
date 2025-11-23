@@ -3,6 +3,7 @@
 // Licensed under the AGPLv3 License. See LICENSE file in the project root for full license information.
 //
 // Handles the !raid command to trigger raids in exchange for in-game currency.
+using CAP_ChatInteractive.Commands.Cooldowns;
 using LudeonTK;
 using RimWorld;
 using System;
@@ -48,6 +49,43 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 // NEW: Get raid command settings
                 var raidSettings = GetRaidCommandSettings();
+
+                // NEW: Check global cooldowns for raids (always "bad" karma type)
+                var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
+                if (cooldownManager != null)
+                {
+                    Logger.Debug($"=== RAID COOLDOWN DEBUG ===");
+                    Logger.Debug($"Raid type: {raidType}");
+                    Logger.Debug($"Strategy: {strategy}");
+                    Logger.Debug($"Wager: {wager}");
+
+                    // First check global event limit (if enabled)
+                    if (settings.EventCooldownsEnabled && !cooldownManager.CanUseGlobalEvents(settings))
+                    {
+                        int totalEvents = cooldownManager.data.EventUsage.Values.Sum(record => record.CurrentPeriodUses);
+                        Logger.Debug($"Global event limit reached: {totalEvents}/{settings.EventsperCooldown}");
+                        MessageHandler.SendFailureLetter("Raid Blocked",
+                            $"{user.Username} tried to call raid but global limit reached\n\n{totalEvents}/{settings.EventsperCooldown} events used");
+                        return $"❌ Global event limit reached! ({totalEvents}/{settings.EventsperCooldown} used this period)";
+                    }
+
+                    // Then check bad event limit (if enabled) - raids are always "bad"
+                    if (settings.KarmaTypeLimitsEnabled)
+                    {
+                        if (!cooldownManager.CanUseEvent("bad", settings))
+                        {
+                            var badRecord = cooldownManager.data.EventUsage.GetValueOrDefault("bad");
+                            int badUsed = badRecord?.CurrentPeriodUses ?? 0;
+                            string cooldownMessage = $"❌ BAD event limit reached! ({badUsed}/{settings.MaxBadEvents} used this period)";
+                            Logger.Debug($"Bad event limit reached: {badUsed}/{settings.MaxBadEvents}");
+                            MessageHandler.SendFailureLetter("Raid Blocked",
+                                $"{user.Username} tried to call raid but bad event limit reached\n\n{badUsed}/{settings.MaxBadEvents} bad events used");
+                            return cooldownMessage;
+                        }
+                    }
+
+                    Logger.Debug($"Raid cooldown check passed");
+                }
 
                 // Validate wager amount against settings
                 if (wager < raidSettings.MinRaidWager || wager > raidSettings.MaxRaidWager)
@@ -105,6 +143,20 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 {
                     viewer.TakeCoins(wager);
                     viewer.GiveKarma(CalculateKarmaChange(wager, raidType, strategy));
+
+                    // Record raid usage for cooldowns
+                    if (cooldownManager != null)
+                    {
+                        cooldownManager.RecordEventUse("bad"); // Raids are always bad events
+                        Logger.Debug($"Recorded raid usage as bad event");
+
+                        // Log current state after recording
+                        var badRecord = cooldownManager.data.EventUsage.GetValueOrDefault("bad");
+                        if (badRecord != null)
+                        {
+                            Logger.Debug($"Current bad event usage: {badRecord.CurrentPeriodUses}");
+                        }
+                    }
 
                     string raidDetails = BuildRaidDetails(result, wager, currencySymbol);
 
