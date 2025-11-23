@@ -99,7 +99,8 @@ namespace CAP_ChatInteractive
                             {
                                 Enabled = def.enabled,
                                 CooldownSeconds = def.cooldownSeconds,
-                                PermissionLevel = def.permissionLevel
+                                PermissionLevel = def.permissionLevel,
+                                useCommandCooldown = def.useCommandCooldown
                             };
                             settingsChanged = true;
                             Logger.Debug($"FORCE ADDED missing command: '{commandName}'");
@@ -133,7 +134,8 @@ namespace CAP_ChatInteractive
                 {
                     Enabled = commandDef.enabled,
                     CooldownSeconds = commandDef.cooldownSeconds,
-                    PermissionLevel = commandDef.permissionLevel
+                    PermissionLevel = commandDef.permissionLevel,
+                    useCommandCooldown = commandDef.useCommandCooldown
                 };
             }
 

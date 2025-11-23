@@ -9,7 +9,6 @@ using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Management.Instrumentation;
 using UnityEngine;
 using Verse;
 
@@ -17,8 +16,6 @@ namespace CAP_ChatInteractive
 {
     public class ChatInteractiveAddonMenu : IAddonMenu
     {
-        // In ChatInteractiveAddonMenu.cs - Update the MenuOptions method
-        // UPDATE in ChatInteractiveAddonMenu.cs - Add to MenuOptions method
         public List<FloatMenuOption> MenuOptions()
         {
             return new List<FloatMenuOption>
@@ -42,12 +39,40 @@ namespace CAP_ChatInteractive
             Find.WindowStack.Add(new Dialog_TraitsEditor());
         }),
 
-
-
-        // Events Management Submenu
-        new FloatMenuOption("Events →", () =>
+        // Weather Editor 
+        new FloatMenuOption("Weather Editor", () =>
         {
-            ShowEventsMenu();
+            Find.WindowStack.Add(new Dialog_WeatherEditor());
+        }),
+
+        // Events Editor 
+        new FloatMenuOption("Events Editor", () =>
+        {
+            Find.WindowStack.Add(new Dialog_EventsEditor());
+        }),
+
+        // Commands Management
+        new FloatMenuOption("Commands", () =>
+        {
+            Find.WindowStack.Add(new Dialog_CommandManager());
+        }),
+
+        // Viewers Management
+        new FloatMenuOption("Viewers", () =>
+        {
+            Find.WindowStack.Add(new Dialog_ViewerManager());
+        }),
+
+        // Pawn Race & Xenotype Settings
+        new FloatMenuOption("Pawn Races", () =>
+        {
+            Find.WindowStack.Add(new Dialog_PawnSettings());
+        }),
+
+        // NEW: Pawn Queue Management
+        new FloatMenuOption("Pawn Queue", () =>
+        {
+            Find.WindowStack.Add(new Dialog_PawnQueue());
         }),
 
         // Message Log
@@ -70,30 +95,6 @@ namespace CAP_ChatInteractive
             }
         }),
 
-        // Viewers Management
-        new FloatMenuOption("Viewers", () =>
-        {
-            Find.WindowStack.Add(new Dialog_ViewerManager());
-        }),
-
-        // Commands Management
-        new FloatMenuOption("Commands", () =>
-        {
-            Find.WindowStack.Add(new Dialog_CommandManager());
-        }),
-
-        // Pawn Race & Xenotype Settings
-        new FloatMenuOption("Pawn Races", () =>
-        {
-            Find.WindowStack.Add(new Dialog_PawnSettings());
-        }),
-
-        // NEW: Pawn Queue Management
-        new FloatMenuOption("Pawn Queue", () =>
-        {
-            Find.WindowStack.Add(new Dialog_PawnQueue());
-        }),
-
         // Connection Status
         new FloatMenuOption("Connection Status", () =>
         {
@@ -112,14 +113,19 @@ namespace CAP_ChatInteractive
             ShowEconomyMenu();
         }),
 
+        // Events Management Submenu
+        new FloatMenuOption("Events →", () =>
+        {
+            ShowEventsMenu();
+        }),
+
         // Help
         new FloatMenuOption("Help", () =>
         {
-            Application.OpenURL("https://github.com/your-repo/CAP-Chat-Interactive/wiki");
+            Application.OpenURL("https://github.com/ekudram/-cap-RimworldInteractiveChatServices/wiki");
         })
     };
         }
-
 
         private void ShowConnectionStatus()
         {
@@ -313,22 +319,17 @@ namespace CAP_ChatInteractive
         {
             var options = new List<FloatMenuOption>();
 
-            // Weather Editor - AVAILABLE NOW
+            // Weather Editor 
             options.Add(new FloatMenuOption("Weather Editor", () =>
             {
-                // Ensure weather system is initialized before opening editor
-                // Incidents.Weather.BuyableWeatherManager.EnsureInitialized();
                 Find.WindowStack.Add(new Dialog_WeatherEditor());
             }));
 
-            // Events Editor - TODO: Combined editor for animals, traders, etc.
+            // Events Editor 
             options.Add(new FloatMenuOption("Events Editor", () =>
             {
                 Find.WindowStack.Add(new Dialog_EventsEditor());
             }));
-
-            // Separator
-            options.Add(new FloatMenuOption("--- Event Statistics ---", null));
 
             // Event Statistics
             options.Add(new FloatMenuOption("Event Statistics", () =>

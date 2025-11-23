@@ -44,6 +44,12 @@ namespace CAP_ChatInteractive
         public bool isEventCommand = false;  // NEW: Identifies event commands
 
         /// <summary>
+        /// Cooldown, works oppisite false = uses standard cooldowns, true uses command cooldown
+        /// </summary>
+        public bool useCommandCooldown = false;
+        /// think of it like this: public bool useCommandCooldown = false;
+
+        /// <summary>
         /// Gets the display label for this command, using defName if label is empty
         /// </summary>
         public string DisplayLabel
@@ -158,6 +164,8 @@ public class DefBasedChatCommand : ChatCommand
         }
 
         public override int CooldownSeconds => _def.cooldownSeconds;
+
+        public bool useCommandCooldown = false;  // Add this line
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {

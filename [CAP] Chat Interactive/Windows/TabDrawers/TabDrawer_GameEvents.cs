@@ -128,21 +128,26 @@ namespace CAP_ChatInteractive
             listing.Label("Event Management");
             Text.Font = GameFont.Small;
             GUI.color = ColorLibrary.White;
+
             listing.GapLine(6f);
+            GUI.color = Color.white;
 
             if (!gameLoaded)
             {
+                GUI.color = Color.white;
                 listing.Label("Load a game to access event editors and statistics");
                 listing.Gap(12f);
                 return;
             }
 
             // Statistics row
+            GUI.color = Color.white;
             DrawStatisticsRow(listing);
 
             listing.Gap(12f);
 
             // Editor buttons row
+            GUI.color = Color.white;
             DrawEditorButtons(listing);
 
             listing.Gap(12f); // Add extra space after buttons

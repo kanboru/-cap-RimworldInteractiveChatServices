@@ -321,7 +321,7 @@ namespace CAP_ChatInteractive
 
             string cooldownMessage;
 
-            if (commandSettings.UseEventCooldown && commandSettings.MaxUsesPerCooldownPeriod > 0)
+            if (commandSettings.useCommandCooldown && commandSettings.MaxUsesPerCooldownPeriod > 0)
             {
                 cooldownMessage = $"Command {command.Name} limit reached ({commandSettings.MaxUsesPerCooldownPeriod} per {globalSettings.EventCooldownDays} days)";
             }

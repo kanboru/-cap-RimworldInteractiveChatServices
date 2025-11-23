@@ -26,7 +26,7 @@ namespace CAP_ChatInteractive
 
         private bool IsEventCommand(ChatCommandDef command)
         {
-            return command.isEventCommand;
+            return true; // command.isEventCommand;
         }
 
         public override Vector2 InitialSize => new Vector2(1000f, 700f);
@@ -466,24 +466,17 @@ namespace CAP_ChatInteractive
 
                     // Use event cooldown toggle
                     Rect eventToggleRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.CheckboxLabeled(eventToggleRect, "Use event cooldown system", ref settings.UseEventCooldown);
+                    Widgets.CheckboxLabeled(eventToggleRect, "Use command cooldown only.", ref settings.useCommandCooldown);
                     y += sectionHeight;
 
-                    if (selectedCommand.commandText.ToLower() == "raid" || selectedCommand.commandText.ToLower() == "militaryaid")
-                    {
-                        // Max uses per cooldown period
-                        Rect eventUsesRect = new Rect(leftPadding + 20f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                        Widgets.Label(eventUsesRect, "Max uses per cooldown period:");
-                        Rect eventUsesInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
-                        string eventUsesBuffer = settings.MaxUsesPerCooldownPeriod.ToString();
-                        UIUtilities.TextFieldNumericFlexible(eventUsesInputRect, ref settings.MaxUsesPerCooldownPeriod, ref eventUsesBuffer, 0, 100);
-                        y += sectionHeight;
+                    // Max uses per cooldown period
+                    Rect eventUsesRect = new Rect(leftPadding + 20f, y, viewRect.width - leftPadding - 100f, sectionHeight);
+                    Widgets.Label(eventUsesRect, "Max uses per cooldown period:");
+                    Rect eventUsesInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
+                    string eventUsesBuffer = settings.MaxUsesPerCooldownPeriod.ToString();
+                    UIUtilities.TextFieldNumericFlexible(eventUsesInputRect, ref settings.MaxUsesPerCooldownPeriod, ref eventUsesBuffer, 0, 100);
+                    y += sectionHeight;
 
-                        // Respect global limits toggle
-                        Rect globalToggleRect = new Rect(leftPadding + 20f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                        Widgets.CheckboxLabeled(globalToggleRect, "Count toward global event limit", ref settings.RespectsGlobalEventCooldown);
-                        y += sectionHeight;
-                    }
                 }
 
                 // RAID-SPECIFIC SETTINGS - Only show for raid command
@@ -705,7 +698,7 @@ namespace CAP_ChatInteractive
             {
                 height += 28f; // Event header
                 height += 28f; // Event cooldown toggle
-                if (settings.UseEventCooldown)
+                if (settings.useCommandCooldown)
                 {
                     height += 28f; // Max uses per period
                     height += 28f; // Respect global limits

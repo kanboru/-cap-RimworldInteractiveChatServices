@@ -30,6 +30,7 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
         public bool CanUseEvent(string eventType, CAPGlobalChatSettings settings)
         {
             // 0 = infinite
+            Logger.Debug($"eventType: {eventType}");
             if (settings.MaxGoodEvents == 0 && eventType == "good") return true;
             if (settings.MaxBadEvents == 0 && eventType == "bad") return true;
             if (settings.MaxNeutralEvents == 0 && eventType == "neutral") return true;
@@ -52,7 +53,7 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
         public bool CanUseCommand(string commandName, CommandSettings settings, CAPGlobalChatSettings globalSettings)
         {
             // Check per-command game days cooldown first (applies in both modes)
-            if (settings.UseEventCooldown && settings.MaxUsesPerCooldownPeriod > 0)
+            if (settings.useCommandCooldown && settings.MaxUsesPerCooldownPeriod > 0)
             {
                 var cmdRecord = GetOrCreateCommandRecord(commandName);
                 CleanupOldCommandUses(cmdRecord, globalSettings.EventCooldownDays);
@@ -62,7 +63,7 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
             }
 
             // If per-command limit is 0 (unlimited), we break out here
-            if (settings.UseEventCooldown && settings.MaxUsesPerCooldownPeriod == 0)
+            if (settings.useCommandCooldown && settings.MaxUsesPerCooldownPeriod == 0)
             {
                 return true; // Unlimited uses for this command
             }
@@ -103,7 +104,7 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
         }
 
         // NEW: Check global event count limit
-        private bool CanUseGlobalEvents(CAPGlobalChatSettings settings)
+        public bool CanUseGlobalEvents(CAPGlobalChatSettings settings)
         {
             if (settings.EventsperCooldown == 0) return true; // Unlimited
 

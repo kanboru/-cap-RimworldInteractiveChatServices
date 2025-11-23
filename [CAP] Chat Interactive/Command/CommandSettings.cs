@@ -25,7 +25,7 @@ public class CommandSettings
     public bool RequiresConfirmation = false;
     public string CommandAlias = ""; // Now used for command alias (without prefix)
 
-    public bool UseEventCooldown = false;           // Enable per-command event cooldown
+    public bool useCommandCooldown = false;           // Enable per-command event cooldown
     public int MaxUsesPerCooldownPeriod = 0;        // 0 = unlimited, 1+ = specific limit
     public bool RespectsGlobalEventCooldown = true; // Whether to count toward global event limit
 

@@ -69,11 +69,22 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
                 if (cooldownManager != null)
                 {
-                    string eventType = GetKarmaTypeForIncident(buyableIncident.KarmaType);
-                    if (!cooldownManager.CanUseEvent(eventType, settings))
+                    // First check global event limit (if enabled)
+                    if (settings.EventCooldownsEnabled && !cooldownManager.CanUseGlobalEvents(settings))
                     {
-                        string cooldownMessage = GetCooldownMessage(eventType, settings, cooldownManager);
-                        return cooldownMessage;
+                        int totalEvents = cooldownManager.data.EventUsage.Values.Sum(record => record.CurrentPeriodUses);
+                        return $"❌ Global event limit reached! ({totalEvents}/{settings.EventsperCooldown} used this period)";
+                    }
+
+                    // Then check karma-type specific limit (if enabled)
+                    if (settings.KarmaTypeLimitsEnabled)
+                    {
+                        string eventType = GetKarmaTypeForIncident(buyableIncident.KarmaType);
+                        if (!cooldownManager.CanUseEvent(eventType, settings))
+                        {
+                            string cooldownMessage = GetCooldownMessage(eventType, settings, cooldownManager);
+                            return cooldownMessage;
+                        }
                     }
                 }
 
@@ -340,6 +351,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string GetCooldownSummary(CAPGlobalChatSettings settings, GlobalCooldownManager cooldownManager)
         {
             var summaries = new List<string>();
+
+            // Global event limit
+            if (settings.EventCooldownsEnabled && settings.EventsperCooldown > 0)
+            {
+                int totalEvents = cooldownManager.data.EventUsage.Values.Sum(record => record.CurrentPeriodUses);
+                summaries.Add($"Total: {totalEvents}/{settings.EventsperCooldown}");
+            }
 
             if (settings.MaxGoodEvents > 0)
             {
