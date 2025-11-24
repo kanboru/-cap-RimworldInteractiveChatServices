@@ -16,10 +16,10 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         private static readonly Dictionary<string, ColorDef> GeneratedColors = new Dictionary<string, ColorDef>();
 
-        internal static string HandleSetFavoriteColorCommand(ChatMessageWrapper user, string[] args)
+        internal static string HandleSetFavoriteColorCommand(ChatMessageWrapper messageWrapper, string[] args)
         {
             // Get the viewer's pawn
-            Verse.Pawn viewerPawn = StoreCommandHelper.GetViewerPawn(user.Username);
+            Verse.Pawn viewerPawn = StoreCommandHelper.GetViewerPawn(messageWrapper.Username);
             if (viewerPawn == null)
             {
                 return "You need to have a pawn in the colony to set a favorite color. Use !buy pawn first.";

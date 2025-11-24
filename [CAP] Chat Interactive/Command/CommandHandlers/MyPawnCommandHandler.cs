@@ -618,7 +618,10 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string GetSpecificRelationInfo(Pawn pawn, Pawn targetPawn, string targetViewer, GameComponent_PawnAssignmentManager assignmentManager)
         {
             var report = new StringBuilder();
-            report.AppendLine($"🤝 Relations between {pawn.Name} and {targetViewer}'s pawn {targetPawn.Name}:");
+            string pawnViewer = GetViewerNameFromPawn(pawn);
+            string targetPawnViewer = GetViewerNameFromPawn(targetPawn);
+
+            report.AppendLine($"🤝 Relations between {pawnViewer} and {targetPawnViewer}:");
 
             // Get direct relation
             var directRelation = pawn.relations.DirectRelationExists(PawnRelationDefOf.Spouse, targetPawn) ? "Spouse 💍" :
@@ -667,8 +670,8 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 foreach (var relative in family)
                 {
                     string relation = GetFamilyRelation(pawn, relative);
-                    string viewerInfo = assignmentManager.IsViewerPawn(relative) ? $" ({assignmentManager.GetUsernameForPawn(relative)})" : "";
-                    report.AppendLine($"  • {relative.Name}{viewerInfo}: {relation}");
+                    string viewerName = GetViewerNameFromPawn(relative);
+                    report.AppendLine($"  • {viewerName}: {relation}");
                 }
             }
 
@@ -685,8 +688,8 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 foreach (var friend in viewerFriends)
                 {
                     int opinion = pawn.relations.OpinionOf(friend);
-                    string username = assignmentManager.GetUsernameForPawn(friend);
-                    report.AppendLine($"  • {username}'s {friend.Name}: {opinion} 😊");
+                    string friendViewerName = GetViewerNameFromPawn(friend);
+                    report.AppendLine($"  • {friendViewerName}: +{opinion} 😊");
                 }
             }
 
@@ -703,8 +706,8 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 foreach (var rival in viewerRivals)
                 {
                     int opinion = pawn.relations.OpinionOf(rival);
-                    string username = assignmentManager.GetUsernameForPawn(rival);
-                    report.AppendLine($"  • {username}'s {rival.Name}: {opinion} 😠");
+                    string rivalViewerName = GetViewerNameFromPawn(rival);
+                    report.AppendLine($"  • {rivalViewerName}: {opinion} 😠");
                 }
             }
 
@@ -734,6 +737,34 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             if (pawn.relations.DirectRelationExists(PawnRelationDefOf.ExLover, relative)) return "Ex-Lover 💔";
 
             return "Relative";
+        }
+
+        private static string GetViewerNameFromPawn(Pawn pawn)
+        {
+            if (pawn?.Name is NameTriple nameTriple)
+            {
+                // Prefer the Nick (username) if it's not empty
+                if (!string.IsNullOrEmpty(nameTriple.Nick))
+                    return nameTriple.Nick;
+
+                // Fallback to first name if Nick is empty
+                return nameTriple.First;
+            }
+            return pawn?.Name?.ToString() ?? "Unknown";
+        }
+
+        private static string GetDisplayNameForRelations(Pawn pawn, GameComponent_PawnAssignmentManager assignmentManager = null)
+        {
+            if (pawn?.Name is NameTriple nameTriple)
+            {
+                // If this is a viewer pawn, always use the Nick (username)
+                if (assignmentManager?.IsViewerPawn(pawn) == true)
+                    return nameTriple.Nick;
+
+                // For non-viewer pawns, use First name (more natural for family relationships)
+                return nameTriple.First;
+            }
+            return pawn?.Name?.ToString() ?? "Unknown";
         }
 
         private static string HandleSkillsInfo(Pawn pawn, string[] args)
@@ -953,10 +984,10 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             if (pawn.story?.Childhood != null)
             {
                 var childhoodDesc = StripTags(pawn.story.Childhood.FullDescriptionFor(pawn));
-                var truncatedChildhood = TruncateDescription(childhoodDesc, 183); // Limit to 188 chars
+                // var truncatedChildhood = TruncateDescription(childhoodDesc, 183); // Limit to 188 chars
 
                 report.AppendLine($"🎒 Childhood: {StripTags(pawn.story.Childhood.title)}");
-                report.AppendLine($"   {truncatedChildhood}");
+                // report.AppendLine($"   {truncatedChildhood}");
             }
             else
             {
@@ -969,10 +1000,10 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             if (pawn.story?.Adulthood != null)
             {
                 var adulthoodDesc = StripTags(pawn.story.Adulthood.FullDescriptionFor(pawn));
-                var truncatedAdulthood = TruncateDescription(adulthoodDesc, 183); // Limit to 183 chars
+                // var truncatedAdulthood = TruncateDescription(adulthoodDesc, 183); // Limit to 183 chars
 
                 report.AppendLine($"🧑 Adulthood: {StripTags(pawn.story.Adulthood.title)}");
-                report.AppendLine($"   {truncatedAdulthood}");
+                // report.AppendLine($"   {truncatedAdulthood}");
             }
             else if (pawn.ageTracker.AgeBiologicalYears >= 18)
             {

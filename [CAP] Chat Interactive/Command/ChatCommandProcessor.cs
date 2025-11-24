@@ -49,7 +49,7 @@ namespace CAP_ChatInteractive
             {
                 Logger.Error($"Error processing chat message: {ex.Message}");
                 // Send a generic error message to the user
-                SendMessageToUser(message, "An error occurred while processing your message. Please try again.");
+                // SendMessageToUser(message, "An error occurred while processing your message. Please try again.");
             }
         }
 
@@ -361,7 +361,7 @@ namespace CAP_ChatInteractive
 
                 if (service is TwitchService twitchService)
                 {
-                    twitchService.SendMessage($"@{message.Username} {text}");
+                    twitchService.SendMessage($"{message.Username} {text}");
                 }
                 else if (service is YouTubeChatService youtubeService)
                 {

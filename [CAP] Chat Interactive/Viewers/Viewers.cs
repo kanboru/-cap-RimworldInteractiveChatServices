@@ -73,6 +73,29 @@ namespace CAP_ChatInteractive
             }
         }
 
+        public static Viewer GetViewerNoAdd(string username)
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                Logger.Warning("GetViewer: Username is null or empty");
+                return null;
+            }
+
+            var usernameLower = username.ToLowerInvariant();
+
+            lock (_lock)
+            {
+                var viewer = All.Find(v => v.Username == usernameLower);
+
+                if (viewer == null)
+                {
+                    return null;
+                }
+                // DebugSaveAndLog();
+                return viewer;
+            }
+        }
+
         public static Viewer GetViewerByPlatformId(string platform, string userId)
         {
             if (string.IsNullOrEmpty(platform) || string.IsNullOrEmpty(userId))

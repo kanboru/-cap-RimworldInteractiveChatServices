@@ -225,9 +225,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         public override string Name => "JoinQueue";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return PawnQueueCommandHandler.HandleJoinQueueCommand(user);
+            return PawnQueueCommandHandler.HandleJoinQueueCommand(messageWrapper);
         }
     }
 
@@ -235,9 +235,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         public override string Name => "leavequeue";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return PawnQueueCommandHandler.HandleLeaveQueueCommand(user);
+            return PawnQueueCommandHandler.HandleLeaveQueueCommand(messageWrapper);
         }
     }
 
@@ -245,9 +245,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         public override string Name => "queuestatus";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return PawnQueueCommandHandler.HandleQueueStatusCommand(user);
+            return PawnQueueCommandHandler.HandleQueueStatusCommand(messageWrapper);
         }
     }
 
@@ -255,9 +255,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         public override string Name => "acceptpawn";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return PawnQueueCommandHandler.HandleAcceptPawnCommand(user);
+            return PawnQueueCommandHandler.HandleAcceptPawnCommand(messageWrapper);
         }
     }
 
@@ -265,13 +265,13 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         public override string Name => "revivepawn";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
             if (!IsEnabled())
             {
                 return "The Revivepawn command is currently disabled.";
             }
-            return RevivePawnCommandHandler.HandleRevivePawn(user, args);
+            return RevivePawnCommandHandler.HandleRevivePawn(messageWrapper, args);
         }
     }
 
@@ -279,9 +279,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         public override string Name => "healpawn";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return HealPawnCommandHandler.HandleHealPawn(user, args);
+            return HealPawnCommandHandler.HandleHealPawn(messageWrapper, args);
         }
     }
 
@@ -289,9 +289,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         public override string Name => "dye";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            return DyeCommandHandler.HandleDyeCommand(user, args);
+            return DyeCommandHandler.HandleDyeCommand(messageWrapper, args);
         }
     }
 
@@ -299,7 +299,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         public override string Name => "setfavoritecolor";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
             // Check if Ideology DLC is active
             if (!ModsConfig.IdeologyActive)
@@ -307,10 +307,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return "The !setfavoritecolor command requires the Ideology DLC to be enabled.";
             }
 
-            return SetFavoriteColorCommandHandler.HandleSetFavoriteColorCommand(user, args);
+            return SetFavoriteColorCommandHandler.HandleSetFavoriteColorCommand(messageWrapper, args);
         }
     }
-
 
     public class DebugRaces : ChatCommand
     {

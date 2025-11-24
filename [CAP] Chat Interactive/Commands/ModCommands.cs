@@ -11,15 +11,15 @@ namespace CAP_ChatInteractive.Commands.ModCommands
     {
         public override string Name => "givecoins";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
             // Check if we have enough arguments
             if (args.Length < 2)
             {
-                return "Usage: !givecoins <viewer> <amount>";
+                return "Usage: !givecoins <viewer|all> <amount>";
             }
 
-            string targetUsername = args[0];
+            string target = args[0].ToLowerInvariant();
 
             // Parse the coin amount
             if (!int.TryParse(args[1], out int coinAmount) || coinAmount <= 0)
@@ -27,20 +27,30 @@ namespace CAP_ChatInteractive.Commands.ModCommands
                 return "Please specify a valid positive number of coins to give.";
             }
 
-            // Get the target viewer
-            Viewer target = Viewers.GetViewer(targetUsername);
-            if (target == null)
+            // Handle "all" case
+            if (target == "all")
+            {
+                // Give coins to all viewers
+                Viewers.GiveAllViewersCoins(coinAmount);
+                return $"Gave {coinAmount:N0} coins to all viewers.";
+            }
+
+            // Handle individual viewer case (original logic)
+            string targetUsername = args.Length > 0 ? args[0].Replace("@", "") : "";
+
+            Viewer targetViewer = Viewers.GetViewerNoAdd(targetUsername);
+            if (targetViewer == null)
             {
                 return $"Viewer '{targetUsername}' not found.";
             }
 
             // Give coins to the target
-            target.GiveCoins(coinAmount);
+            targetViewer.GiveCoins(coinAmount);
 
             // Save the changes
             Viewers.SaveViewers();
 
-            return $"Successfully gave {coinAmount} coins to {target.DisplayName}. They now have {target.GetCoins()} coins.";
+            return $"Gave {coinAmount:N0} coins to {targetViewer.DisplayName}. {targetViewer.GetCoins()} now has coins.";
         }
     }
 

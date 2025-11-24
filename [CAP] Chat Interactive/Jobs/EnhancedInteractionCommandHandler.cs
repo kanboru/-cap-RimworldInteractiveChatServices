@@ -25,12 +25,12 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             { InteractionDefOf.AnimalChat, new InteractionInfo { IsNegative = false, Cost = 10, KarmaCost = 0 } }
         };
 
-        public static string HandleInteractionCommand(ChatMessageWrapper user, InteractionDef interaction, string[] args)
+        public static string HandleInteractionCommand(ChatMessageWrapper messageWrapper, InteractionDef interaction, string[] args)
         {
             try
             {
                 // Get viewer data
-                var viewer = Viewers.GetViewer(user);
+                var viewer = Viewers.GetViewer(messageWrapper);
                 if (viewer == null) return "Could not find your viewer data.";
 
                 // Check interaction validity and cost
@@ -52,7 +52,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 // Get pawns
                 var assignmentManager = CAPChatInteractiveMod.GetPawnAssignmentManager();
-                var initiatorPawn = assignmentManager.GetAssignedPawn(user);
+                var initiatorPawn = assignmentManager.GetAssignedPawn(messageWrapper);
                 if (initiatorPawn == null) return "You don't have an active pawn. Use !pawn to purchase one!";
 
                 // Find target pawn

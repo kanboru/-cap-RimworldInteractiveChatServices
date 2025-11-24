@@ -33,7 +33,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 // Use the shared karma emoji method
                 string karmaEmoji = GetKarmaEmoji(viewer.Karma);
 
-                return $"You have {formattedCoins} {currencySymbol} and {viewer.Karma} karma! {karmaEmoji}";
+                return $"You have  {formattedCoins}  {currencySymbol}  and {viewer.Karma} karma! {karmaEmoji}";
             }
             return "Could not find your viewer data.";
         }
@@ -96,9 +96,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class commands : ChatCommand
     {
         public override string Name => "commands";
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            var availableCommands = ChatCommandProcessor.GetAvailableCommands(user);
+            var availableCommands = ChatCommandProcessor.GetAvailableCommands(messageWrapper);
             var commandList = string.Join(", ", availableCommands.Select(cmd => $"!{cmd.Name}"));
             return $"Available commands: {commandList}";
         }
