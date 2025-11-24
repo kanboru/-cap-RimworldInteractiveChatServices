@@ -216,21 +216,25 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
             var currencySymbol = settings.CurrencyName?.Trim() ?? "¢";
 
-            if (args.Length > 0 && args[0].ToLower() == "events")
-            {
-                if (!settings.EventCooldownsEnabled)
-                    return $"📊 Event cooldowns: OFF ❌ | Purchases: {settings.MaxItemPurchases}/period";
+            string response = $"👋 Coins: {settings.BaseCoinReward}{currencySymbol} | Karma Max: {settings.MaxKarma} 🎯";
 
-                var response = $"📊 Events: {settings.EventsperCooldown}/{settings.EventCooldownDays}d";
+            if (settings.EventCooldownsEnabled)
+            {
+                response += $" | Events: {settings.EventsperCooldown}/{settings.EventCooldownDays}d";
 
                 if (settings.KarmaTypeLimitsEnabled)
-                    response += $" | Karma limits: 🔴{settings.MaxBadEvents} 🟢{settings.MaxGoodEvents} ⚪{settings.MaxNeutralEvents}";
+                    response += $" (🔴{settings.MaxBadEvents} 🟢{settings.MaxGoodEvents} ⚪{settings.MaxNeutralEvents})";
 
                 response += $" | Purchases: {settings.MaxItemPurchases}/{settings.EventCooldownDays}d";
-                return response;
+            }
+            else
+            {
+                response += " | Event cooldowns: OFF ❌";
             }
 
-            return $"👋 {messageWrapper.Username}! Base coins: {settings.BaseCoinReward} {currencySymbol} every 2 minutes | Max karma: {settings.MaxKarma} 🎯 | Use '!modinfo events' for cooldowns";
+            response += $" | 🎭Trait Max: {settings.MaxTraits}";
+
+            return response;
         }
     }
 }
