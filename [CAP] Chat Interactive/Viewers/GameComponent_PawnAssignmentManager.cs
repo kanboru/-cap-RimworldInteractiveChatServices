@@ -74,7 +74,7 @@ namespace CAP_ChatInteractive
             {
                 Logger.Debug("No race settings found, initializing defaults...");
                 // This will trigger the initialization in Dialog_PawnSettings.LoadRaceSettings
-                var dialog = new Dialog_PawnSettings();
+                var dialog = new Dialog_PawnRaceSettings();
                 // Just creating the dialog will initialize the settings
             }
         }

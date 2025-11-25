@@ -1,4 +1,4 @@
-﻿// Dialog_PawnSettings.cs
+﻿// Dialog_PawnRaceSettings.cs
 // Copyright (c) Captolamia. All rights reserved.
 // Licensed under the AGPLv3 License. See LICENSE file in the project root for full license information.
 // A dialog window for configuring pawn races and xenotypes 
@@ -13,7 +13,7 @@ using Verse;
 
 namespace CAP_ChatInteractive
 {
-    public class Dialog_PawnSettings : Window
+    public class Dialog_PawnRaceSettings : Window
     {
         private Vector2 raceScrollPosition = Vector2.zero;
         private Vector2 detailsScrollPosition = Vector2.zero;
@@ -24,10 +24,14 @@ namespace CAP_ChatInteractive
         private ThingDef selectedRace = null;
         private List<ThingDef> filteredRaces = new List<ThingDef>();
         private Dictionary<string, RaceSettings> raceSettings = new Dictionary<string, RaceSettings>();
+        private string ageMinBuffer = "";
+        private string ageMaxBuffer = "";
+        private bool buffersInitialized = false;
+        private string lastSelectedRaceDefName = "";
 
         public override Vector2 InitialSize => new Vector2(1000f, 700f);
 
-        public Dialog_PawnSettings()
+        public Dialog_PawnRaceSettings()
         {
             doCloseButton = true;
             forcePause = true;
@@ -297,14 +301,25 @@ namespace CAP_ChatInteractive
 
         private void DrawRaceDetailsContent(Rect rect, RaceSettings settings)
         {
+
             float contentWidth = rect.width - 30f;
             float viewHeight = CalculateDetailsHeight(settings);
+
+
             Rect viewRect = new Rect(0f, 0f, contentWidth, Mathf.Max(viewHeight, rect.height));
 
             Widgets.BeginScrollView(rect, ref detailsScrollPosition, viewRect);
             {
+                if (!buffersInitialized || lastSelectedRaceDefName != selectedRace.defName)
+                {
+                    ageMinBuffer = settings.MinAge.ToString();
+                    ageMaxBuffer = settings.MaxAge.ToString();
+                    buffersInitialized = true;
+                    lastSelectedRaceDefName = selectedRace.defName;
+                }
+
                 float y = 0f;
-                float sectionHeight = 28f;
+                float sectionHeight = 32f;
                 float leftPadding = 15f;
                 float columnWidth = (viewRect.width - leftPadding - 20f) / 2f;
 
@@ -376,59 +391,95 @@ namespace CAP_ChatInteractive
                 Rect priceInputRect = new Rect(leftPadding + columnWidth + 100f, y, 80f, sectionHeight);
                 int currentPrice = settings.BasePrice;
                 string priceBuffer = currentPrice.ToString();
-                
+
                 UIUtilities.TextFieldNumericFlexible(priceInputRect, ref currentPrice, ref priceBuffer, 0, 100000);
                 if (currentPrice != settings.BasePrice)
                 {
                     settings.BasePrice = currentPrice;
                     SaveRaceSettings();
                 }
-                y += sectionHeight;
+                y += sectionHeight + 4f;
 
                 // Age settings - same row with sliders
-                Rect ageMinLabelRect = new Rect(leftPadding, y, 70f, sectionHeight);
-                Widgets.Label(ageMinLabelRect, "Min Age:");
-                Rect ageMinInputRect = new Rect(leftPadding + 70f, y, 50f, sectionHeight);
-                int currentMinAge = settings.MinAge;
-                string ageMinBuffer = currentMinAge.ToString();
-                string newAgeMin = Widgets.TextField(ageMinInputRect, ageMinBuffer);
-                if (newAgeMin != ageMinBuffer && int.TryParse(newAgeMin, out int parsedMinAge) && parsedMinAge >= 4 && parsedMinAge <= 120)
+                Rect ageMinLabelRect = new Rect(leftPadding, y, 100f, sectionHeight);
+                Widgets.Label(ageMinLabelRect, $"Min Age: {settings.MinAge}  ");
+                Rect ageMinInputRect = new Rect(leftPadding + 100f, y, 50f, sectionHeight);
+
+                // Min Age text field with persistent buffer
+                string newAgeMinBuffer = Widgets.TextField(ageMinInputRect, ageMinBuffer);
+                if (newAgeMinBuffer != ageMinBuffer)
                 {
-                    settings.MinAge = parsedMinAge;
-                    if (settings.MinAge > settings.MaxAge)
-                        settings.MaxAge = settings.MinAge;
-                    SaveRaceSettings();
+                    ageMinBuffer = newAgeMinBuffer;
+
+                    // Validate and commit if it's a valid number
+                    if (int.TryParse(ageMinBuffer, out int parsedMinAge))
+                    {
+                        parsedMinAge = Mathf.Clamp(parsedMinAge, 4, 120);
+                        settings.MinAge = parsedMinAge;
+                        if (settings.MinAge > settings.MaxAge)
+                            settings.MaxAge = settings.MinAge;
+                        SaveRaceSettings();
+                    }
+                }
+
+                // Reset buffer if field loses focus and contains invalid data
+                string ageMinControlName = "AgeMinInput_" + selectedRace.defName;
+                GUI.SetNextControlName(ageMinControlName);
+                bool ageMinHasFocus = GUI.GetNameOfFocusedControl() == ageMinControlName;
+
+                if (!ageMinHasFocus && !int.TryParse(ageMinBuffer, out _))
+                {
+                    ageMinBuffer = settings.MinAge.ToString();
                 }
 
                 // Min Age slider
-                Rect ageMinSliderRect = new Rect(leftPadding + 130f, y, 100f, sectionHeight);
-                int newMinAge = (int)Widgets.HorizontalSlider(ageMinSliderRect, settings.MinAge, 4, 120, middleAlignment: true, label: settings.MinAge.ToString(), leftAlignedLabel: "4", rightAlignedLabel: "120");
+                Rect ageMinSliderRect = new Rect(leftPadding + 160f, y, 100f, sectionHeight);
+                int newMinAge = (int)Widgets.HorizontalSlider(ageMinSliderRect, settings.MinAge, 4, 120, middleAlignment: true, label: "", leftAlignedLabel: "4", rightAlignedLabel: "120");
                 if (newMinAge != settings.MinAge)
                 {
                     settings.MinAge = newMinAge;
                     if (settings.MinAge > settings.MaxAge)
                         settings.MaxAge = settings.MinAge;
+                    ageMinBuffer = settings.MinAge.ToString(); // Update buffer to match
                     SaveRaceSettings();
                 }
 
-                Rect ageMaxLabelRect = new Rect(leftPadding + 240f, y, 70f, sectionHeight);
-                Widgets.Label(ageMaxLabelRect, "Max Age:");
-                Rect ageMaxInputRect = new Rect(leftPadding + 310f, y, 50f, sectionHeight);
-                int currentMaxAge = settings.MaxAge;
-                string ageMaxBuffer = currentMaxAge.ToString();
-                string newAgeMax = Widgets.TextField(ageMaxInputRect, ageMaxBuffer);
-                if (newAgeMax != ageMaxBuffer && int.TryParse(newAgeMax, out int parsedMaxAge) && parsedMaxAge >= settings.MinAge && parsedMaxAge <= 120)
+                Rect ageMaxLabelRect = new Rect(leftPadding + 300f, y, 100f, sectionHeight);
+                Widgets.Label(ageMaxLabelRect, $"Max Age: {settings.MaxAge}  ");
+                Rect ageMaxInputRect = new Rect(leftPadding + 400f, y, 50f, sectionHeight);
+
+                // Max Age text field with persistent buffer
+                string newAgeMaxBuffer = Widgets.TextField(ageMaxInputRect, ageMaxBuffer);
+                if (newAgeMaxBuffer != ageMaxBuffer)
                 {
-                    settings.MaxAge = parsedMaxAge;
-                    SaveRaceSettings();
+                    ageMaxBuffer = newAgeMaxBuffer;
+
+                    // Validate and commit if it's a valid number
+                    if (int.TryParse(ageMaxBuffer, out int parsedMaxAge))
+                    {
+                        parsedMaxAge = Mathf.Clamp(parsedMaxAge, settings.MinAge, 120);
+                        settings.MaxAge = parsedMaxAge;
+                        SaveRaceSettings();
+                    }
+                }
+
+                // Reset buffer if field loses focus and contains invalid data
+                string ageMaxControlName = "AgeMaxInput_" + selectedRace.defName;
+                GUI.SetNextControlName(ageMaxControlName);
+                bool ageMaxHasFocus = GUI.GetNameOfFocusedControl() == ageMaxControlName;
+
+                if (!ageMaxHasFocus && !int.TryParse(ageMaxBuffer, out _))
+                {
+                    ageMaxBuffer = settings.MaxAge.ToString();
                 }
 
                 // Max Age slider
-                Rect ageMaxSliderRect = new Rect(leftPadding + 370f, y, 100f, sectionHeight);
-                int newMaxAge = (int)Widgets.HorizontalSlider(ageMaxSliderRect, settings.MaxAge, settings.MinAge, 120, middleAlignment: true, label: settings.MaxAge.ToString(), leftAlignedLabel: settings.MinAge.ToString(), rightAlignedLabel: "120");
+                Rect ageMaxSliderRect = new Rect(leftPadding + 470f, y, 100f, sectionHeight);
+                int newMaxAge = (int)Widgets.HorizontalSlider(ageMaxSliderRect, settings.MaxAge, settings.MinAge, 120, middleAlignment: true, label: "", leftAlignedLabel: settings.MinAge.ToString(), rightAlignedLabel: "120");
                 if (newMaxAge != settings.MaxAge)
                 {
                     settings.MaxAge = newMaxAge;
+                    ageMaxBuffer = settings.MaxAge.ToString(); // Update buffer to match
                     SaveRaceSettings();
                 }
                 y += sectionHeight;
@@ -531,7 +582,7 @@ namespace CAP_ChatInteractive
                     {
                         // No xenotypes found
                         Rect noXenotypeRect = new Rect(leftPadding, y, viewRect.width - leftPadding, sectionHeight);
-                        Widgets.Label(noXenotypeRect, "No xenotypes found in the game");
+                        Widgets.Label(noXenotypeRect, "No xenotypes found");
                         y += sectionHeight;
                     }
                 }
@@ -549,17 +600,17 @@ namespace CAP_ChatInteractive
             height += 10f; // Spacing
 
             // Settings section
-            height += 28f; // Header
-            height += 28f; // Enabled + Price row
-            height += 32f; // Age settings row (now includes sliders)
-            height += 28f; // Custom xenotypes
-            height += 28f; // Gender settings row
+            height += 32f; // Header
+            height += 32f; // Enabled + Price row
+            height += 40f; // Age settings row (now includes sliders)
+            height += 32f; // Custom xenotypes
+            height += 32f; // Gender settings row
             height += 10f; // Spacing
 
             // Xenotype section
             if (ModsConfig.BiotechActive)
             {
-                height += 28f; // Header
+                height += 32f; // Header
 
                 // Get ALL xenotypes for height calculation, not just allowed ones
                 var allXenotypes = DefDatabase<XenotypeDef>.AllDefs
@@ -578,7 +629,7 @@ namespace CAP_ChatInteractive
                 }
             }
 
-            return height + 20f; // Extra padding
+            return height + 30f; // Extra padding
         }
 
         private List<string> GetAllowedXenotypes(ThingDef raceDef)
@@ -679,6 +730,28 @@ namespace CAP_ChatInteractive
                         filteredRaces.OrderBy(r => raceSettings[r.defName].Enabled).ToList() :
                         filteredRaces.OrderByDescending(r => raceSettings[r.defName].Enabled).ToList();
                     break;
+            }
+        }
+
+        public override void Close(bool doCloseSound = true)
+        {
+            // Force validation of any active numeric fields before closing
+            ValidateAllNumericFields();
+            base.Close(doCloseSound);
+        }
+
+        private void ValidateAllNumericFields()
+        {
+            // This would validate any pending numeric inputs
+            // For now, we'll just ensure the age settings are valid
+            if (selectedRace != null && raceSettings.TryGetValue(selectedRace.defName, out var settings))
+            {
+                // Ensure min/max age are valid
+                if (settings.MinAge > settings.MaxAge)
+                {
+                    settings.MaxAge = settings.MinAge;
+                }
+                SaveRaceSettings();
             }
         }
     }
