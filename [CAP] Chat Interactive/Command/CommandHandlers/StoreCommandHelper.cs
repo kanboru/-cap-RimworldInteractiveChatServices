@@ -249,8 +249,8 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     return storeItem.BasePrice * quantity; // Fallback
                 }
 
-                // Start with the base market value from RimWorld
-                float baseCost = thingDef.BaseMarketValue;
+                // Start with the base market value from storeItem  
+                float baseCost = storeItem.BasePrice;
 
                 Logger.Debug($"Base market value for {thingDef.defName}: {baseCost}");
 

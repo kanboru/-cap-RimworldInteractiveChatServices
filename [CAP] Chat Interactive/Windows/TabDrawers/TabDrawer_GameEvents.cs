@@ -21,7 +21,10 @@ namespace CAP_ChatInteractive
         public static void Draw(Rect region)
         {
             var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
-            var view = new Rect(0f, 0f, region.width - 16f, 800f);
+
+            // Calculate dynamic height based on content
+            float contentHeight = CalculateContentHeight(settings);
+            var view = new Rect(0f, 0f, region.width - 16f, contentHeight);
 
             Widgets.BeginScrollView(region, ref _scrollPosition, view);
             var listing = new Listing_Standard();
@@ -57,6 +60,54 @@ namespace CAP_ChatInteractive
 
             listing.End();
             Widgets.EndScrollView();
+        }
+
+        private static float CalculateContentHeight(CAPGlobalChatSettings settings)
+        {
+            // Base heights for different sections
+            float headerHeight = 60f; // Header + description
+            float cooldownHeight = CalculateCooldownSectionHeight(settings);
+            float resetButtonHeight = 50f; // Button + gap
+            float otherSettingsHeight = 40f; // Max traits section
+            float statisticsHeight = CalculateStatisticsSectionHeight();
+
+            // Total height with gaps
+            return headerHeight + cooldownHeight + resetButtonHeight + otherSettingsHeight + statisticsHeight + 200f; // Extra padding
+        }
+
+        private static float CalculateCooldownSectionHeight(CAPGlobalChatSettings settings)
+        {
+            float height = 120f; // Base cooldown section (header + toggle + basic fields)
+
+            if (settings.EventCooldownsEnabled)
+            {
+                height += 120f; // Cooldown days + events per period
+
+                if (settings.KarmaTypeLimitsEnabled)
+                {
+                    height += 120f; // Karma type limits (3 fields + descriptions)
+                }
+
+                height += 60f; // Store purchase limits
+            }
+            else
+            {
+                height += 40f; // Just the disabled message
+            }
+
+            return height;
+        }
+
+        private static float CalculateStatisticsSectionHeight()
+        {
+            bool gameLoaded = Current.ProgramState == ProgramState.Playing;
+
+            if (!gameLoaded)
+            {
+                return 80f; // Just the "load a game" message
+            }
+
+            return 160f; // Statistics + editor buttons with proper spacing
         }
 
         private static void DrawCooldownSettings(Listing_Standard listing, CAPGlobalChatSettings settings)
@@ -287,9 +338,6 @@ namespace CAP_ChatInteractive
             settings.MaxGoodEvents = 10;
             settings.MaxNeutralEvents = 10;
             settings.MaxItemPurchases = 50;
-
-            // Optional: Also reset MaxTraits if you want
-            settings.MaxTraits = 4;
 
             // Save the changes
             CAPChatInteractiveMod.Instance.Settings.Write();
