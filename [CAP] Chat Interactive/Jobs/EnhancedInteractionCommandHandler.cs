@@ -81,7 +81,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 // Create and assign the social visit job
                 Job socialJob = JobMaker.MakeJob(JobDefOf_CAP.CAP_SocialVisit, targetPawn);
-                socialJob.interaction = interaction; // Store which interaction to use
+                socialJob.interaction = interaction; // Store which interaction to useI coul
 
                 initiatorPawn.jobs.StartJob(socialJob, JobCondition.InterruptForced);
 

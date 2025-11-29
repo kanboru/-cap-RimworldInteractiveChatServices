@@ -262,7 +262,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 Logger.Debug($"Final LookTargets: {lookTargets?.ToString() ?? "null"}");
 
                 // Log success
-                Logger.Debug($"Purchase successful: {messageWrapper.Username} bought {quantity}x {itemName} for {finalPrice}{currencySymbol}");
+                Logger.Debug($"Purchase successful: {messageWrapper.Username} bought {quantity}x {itemName} for {finalPrice} {currencySymbol}");
 
                 // Send appropriate letter notification
                 string itemLabel = thingDef?.LabelCap ?? itemName;

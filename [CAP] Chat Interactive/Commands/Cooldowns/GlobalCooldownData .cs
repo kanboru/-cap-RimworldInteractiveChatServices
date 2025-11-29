@@ -16,14 +16,8 @@
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 //
 // Data structures for tracking global cooldowns for events and commands
-using CAP_ChatInteractive.Commands.Cooldowns;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Verse;
-using CAP_ChatInteractive;
 
 namespace CAP_ChatInteractive.Commands.Cooldowns
 {

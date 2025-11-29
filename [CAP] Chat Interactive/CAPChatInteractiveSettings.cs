@@ -17,7 +17,7 @@
 // Global Settings classes for CAP Chat Interactive mod
 // including per-streaming-service settings and global chat settings.
 
-using RimWorld;
+
 using System.Collections.Generic;
 using Verse;
 
