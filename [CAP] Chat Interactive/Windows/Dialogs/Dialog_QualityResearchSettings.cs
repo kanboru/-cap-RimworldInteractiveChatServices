@@ -16,7 +16,6 @@
 using CAP_ChatInteractive;
 using RimWorld;
 using System;
-using System.Security.Permissions;
 using UnityEngine;
 using Verse;
 using Verse.Sound;
@@ -26,7 +25,7 @@ public class Dialog_QualityResearchSettings : Window
     private Vector2 scrollPosition = Vector2.zero;
     private CAPChatInteractiveSettings settings;
 
-    public override Vector2 InitialSize => new Vector2(500f, 600f);
+    public override Vector2 InitialSize => new Vector2(452f, 600f);
 
     public Dialog_QualityResearchSettings(CAPChatInteractiveSettings settings)
     {
@@ -79,52 +78,94 @@ public class Dialog_QualityResearchSettings : Window
         // Section header
         Text.Font = GameFont.Medium;
         Rect headerRect = new Rect(0f, 0f, rect.width, 30f);
-        Widgets.Label(headerRect, "Allowed Quality Levels");
+        Widgets.Label(headerRect, "Allowed Quality Levels & Multipliers");
         Text.Font = GameFont.Small;
 
         float y = 35f;
         float checkboxHeight = 30f;
 
-        // Quality checkboxes with MMO colors - now using settings
-        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Awful", ref settings.GlobalSettings.AllowAwfulQuality, Color.gray);
+        // Quality checkboxes with MMO colors and multiplier inputs
+        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Awful", ref settings.GlobalSettings.AllowAwfulQuality, Color.gray, "Awful");
         y += checkboxHeight;
 
-        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Poor", ref settings.GlobalSettings.AllowPoorQuality, new Color(0.8f, 0.8f, 0.8f));
+        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Poor", ref settings.GlobalSettings.AllowPoorQuality, new Color(0.8f, 0.8f, 0.8f), "Poor");
         y += checkboxHeight;
 
-        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Normal", ref settings.GlobalSettings.AllowNormalQuality, Color.white);
+        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Normal", ref settings.GlobalSettings.AllowNormalQuality, Color.white, "Normal");
         y += checkboxHeight;
 
-        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Good", ref settings.GlobalSettings.AllowGoodQuality, Color.green);
+        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Good", ref settings.GlobalSettings.AllowGoodQuality, Color.green, "Good");
         y += checkboxHeight;
 
-        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Excellent", ref settings.GlobalSettings.AllowExcellentQuality, Color.blue);
+        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Excellent", ref settings.GlobalSettings.AllowExcellentQuality, Color.blue, "Excellent");
         y += checkboxHeight;
 
-        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Masterwork", ref settings.GlobalSettings.AllowMasterworkQuality, new Color(0.5f, 0f, 0.5f));
+        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Masterwork", ref settings.GlobalSettings.AllowMasterworkQuality, new Color(0.5f, 0f, 0.5f), "Masterwork");
         y += checkboxHeight;
 
-        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Legendary", ref settings.GlobalSettings.AllowLegendaryQuality, new Color(1f, 0.5f, 0f));
+        DrawQualityCheckbox(new Rect(0f, y, rect.width, checkboxHeight), "Legendary", ref settings.GlobalSettings.AllowLegendaryQuality, new Color(1f, 0.5f, 0f), "Legendary");
 
         Widgets.EndGroup();
         return rect.height;
     }
 
-    private void DrawQualityCheckbox(Rect rect, string label, ref bool value, Color color)
+    private void DrawQualityCheckbox(Rect rect, string label, ref bool value, Color color, string qualityType)
     {
+        float y = rect.y + 5f;
+        float spacing = 10f;
+
         // Color swatch
-        Rect colorRect = new Rect(rect.x, rect.y + 5f, 20f, 20f);
+        Rect colorRect = new Rect(rect.x, y, 20f, 20f);
         Widgets.DrawBoxSolid(colorRect, color);
         Widgets.DrawBox(colorRect);
 
         // Checkbox
-        Rect checkboxRect = new Rect(colorRect.xMax + 10f, rect.y, rect.width - 30f, rect.height);
+        Rect checkboxRect = new Rect(colorRect.xMax + spacing, rect.y, 150f, rect.height);
         bool previousValue = value;
         Widgets.CheckboxLabeled(checkboxRect, label, ref value);
 
         if (value != previousValue)
         {
             SoundDefOf.Checkbox_TurnedOn.PlayOneShotOnCamera();
+        }
+
+        // Get the multiplier value for this quality type
+        float multiplier = 1.0f;
+        switch (qualityType)
+        {
+            case "Awful": multiplier = settings.GlobalSettings.AwfulQuality; break;
+            case "Poor": multiplier = settings.GlobalSettings.PoorQuality; break;
+            case "Normal": multiplier = settings.GlobalSettings.NormalQuality; break;
+            case "Good": multiplier = settings.GlobalSettings.GoodQuality; break;
+            case "Excellent": multiplier = settings.GlobalSettings.ExcellentQuality; break;
+            case "Masterwork": multiplier = settings.GlobalSettings.MasterworkQuality; break;
+            case "Legendary": multiplier = settings.GlobalSettings.LegendaryQuality; break;
+        }
+
+        // Label for multiplier
+        Rect multiplierLabelRect = new Rect(checkboxRect.xMax + spacing, rect.y, 140f, rect.height);
+        string multiplierText = $"Multiplier: {multiplier * 100:F0}%";
+        Widgets.Label(multiplierLabelRect, multiplierText);
+
+        // Input field for multiplier
+        Rect inputRect = new Rect(multiplierLabelRect.xMax + 5f, rect.y, 60f, rect.height);
+
+        // Convert multiplier to percentage for display (0.5 -> 50)
+        string buffer = (multiplier * 100).ToString("F0");
+
+        // Draw input field
+        Widgets.TextFieldNumeric(inputRect, ref multiplier, ref buffer, 0f, 99999f);
+
+        // Save back to the correct setting
+        switch (qualityType)
+        {
+            case "Awful": settings.GlobalSettings.AwfulQuality = multiplier; break;
+            case "Poor": settings.GlobalSettings.PoorQuality = multiplier; break;
+            case "Normal": settings.GlobalSettings.NormalQuality = multiplier; break;
+            case "Good": settings.GlobalSettings.GoodQuality = multiplier; break;
+            case "Excellent": settings.GlobalSettings.ExcellentQuality = multiplier; break;
+            case "Masterwork": settings.GlobalSettings.MasterworkQuality = multiplier; break;
+            case "Legendary": settings.GlobalSettings.LegendaryQuality = multiplier; break;
         }
     }
 
@@ -152,18 +193,6 @@ public class Dialog_QualityResearchSettings : Window
 
         y += checkboxHeight;
 
-        // Only show this if research requirements are enabled
-        if (settings.GlobalSettings.RequireResearch)
-        {
-            Rect allowUnresearchedRect = new Rect(20f, y, rect.width - 20f, checkboxHeight);
-            bool previousAllow = settings.GlobalSettings.AllowUnresearchedItems;
-            Widgets.CheckboxLabeled(allowUnresearchedRect, "Allow purchase of unresearched items", ref settings.GlobalSettings.AllowUnresearchedItems);
-            if (settings.GlobalSettings.AllowUnresearchedItems != previousAllow)
-            {
-                SoundDefOf.Click.PlayOneShotOnCamera();
-            }
-        }
-
         Widgets.EndGroup();
         return rect.height;
     }
@@ -173,8 +202,9 @@ public class Dialog_QualityResearchSettings : Window
         Text.Font = GameFont.Tiny;
         GUI.color = Color.gray;
 
-        string infoText = "These settings affect the !buy command:\n" +
+        string infoText = "These settings affect the purchase commands:\n" +
                          "• Quality levels determine what qualities viewers can request\n" +
+                         "• Multipliers affect the price of items (100% = normal price)\n" +
                          "• Research settings control whether items require research\n" +
                          "Changes take effect immediately for new purchases.";
 

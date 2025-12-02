@@ -22,7 +22,6 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using CAP_ChatInteractive.Traits;
-using CAP_ChatInteractive;
 
 namespace CAP_ChatInteractive
 {
@@ -38,6 +37,10 @@ namespace CAP_ChatInteractive
         private Dictionary<string, int> modSourceCounts = new Dictionary<string, int>();
         private List<BuyableTrait> filteredTraits = new List<BuyableTrait>();
         private Dictionary<string, (int addPrice, int removePrice)> originalPrices = new Dictionary<string, (int, int)>();
+        private string addAllPriceBuffer = "";
+        private int addAllPriceValue = 0;
+        private string removeAllPriceBuffer = "";
+        private int removeAllPriceValue = 0;
 
         public override Vector2 InitialSize => new Vector2(1300f, 800f);
 
@@ -326,8 +329,12 @@ namespace CAP_ChatInteractive
             Text.Anchor = TextAnchor.UpperLeft;
             Text.Font = GameFont.Small;
 
+            // Price setting controls under the header
+            Rect priceControlsRect = new Rect(rect.x + 10f, rect.y + 35f, rect.width - 20f, 40f);
+            DrawGlobalPriceControls(priceControlsRect);
+
             // Traits list with increased row height
-            Rect listRect = new Rect(rect.x, rect.y + 35f, rect.width, rect.height - 35f);
+            Rect listRect = new Rect(rect.x, rect.y + 80f, rect.width, rect.height - 80f); // Adjusted y position to account for price controls
             float rowHeight = 130f; // Increased from 120f to 130f for better text display
 
             // FIX: Check if filteredTraits is empty to prevent index out of range
@@ -370,6 +377,131 @@ namespace CAP_ChatInteractive
                 }
             }
             Widgets.EndScrollView();
+        }
+
+        private void DrawGlobalPriceControls(Rect rect)
+        {
+            Widgets.BeginGroup(rect);
+
+            try
+            {
+                // Center the controls horizontally - increased total width for wider buttons
+                float totalWidth = 660f; // Increased from 600f to accommodate wider buttons
+                float startX = (rect.width - totalWidth) / 2f;
+
+                // Add Price Controls
+                Rect addLabelRect = new Rect(startX, 0f, 80f, 30f);
+                Widgets.Label(addLabelRect, "Add All:");
+
+                Rect addInputRect = new Rect(startX + 85f, 0f, 80f, 30f);
+                UIUtilities.TextFieldNumericFlexible(addInputRect, ref addAllPriceValue, ref addAllPriceBuffer, 0, 1000000);
+
+                Rect addButtonRect = new Rect(startX + 170f, 0f, 110f, 30f); // Width: 110f for "Set Add Price"
+                if (Widgets.ButtonText(addButtonRect, "Set Add Price"))
+                {
+                    if (addAllPriceValue >= 0)
+                    {
+                        Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                            $"Set Add Price to {addAllPriceValue} for all {filteredTraits.Count} displayed traits?",
+                            () => SetAllAddPrices(addAllPriceValue)
+                        ));
+                    }
+                    else
+                    {
+                        Messages.Message("Price cannot be negative", MessageTypeDefOf.RejectInput);
+                    }
+                }
+
+                // Remove Price Controls (positioned to the right of Add controls with more spacing)
+                Rect removeLabelRect = new Rect(startX + 295f, 0f, 95f, 30f); // Moved right by 5px
+                Widgets.Label(removeLabelRect, "Remove All:");
+
+                Rect removeInputRect = new Rect(startX + 395f, 0f, 80f, 30f); // Moved right by 5px
+                UIUtilities.TextFieldNumericFlexible(removeInputRect, ref removeAllPriceValue, ref removeAllPriceBuffer, 0, 1000000);
+
+                Rect removeButtonRect = new Rect(startX + 480f, 0f, 140f, 30f); // Width: 120f for "Set Remove Price" (moved right by 5px)
+                if (Widgets.ButtonText(removeButtonRect, "Set Remove Price"))
+                {
+                    if (removeAllPriceValue >= 0)
+                    {
+                        Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                            $"Set Remove Price to {removeAllPriceValue} for all {filteredTraits.Count} displayed traits?",
+                            () => SetAllRemovePrices(removeAllPriceValue)
+                        ));
+                    }
+                    else
+                    {
+                        Messages.Message("Price cannot be negative", MessageTypeDefOf.RejectInput);
+                    }
+                }
+
+                // Optional: Add a reset button for both - commented out as requested
+                // Rect resetBothRect = new Rect(startX + 610f, 0f, 80f, 30f);
+                // if (Widgets.ButtonText(resetBothRect, "Reset Both"))
+                // {
+                //    Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                //        $"Reset all displayed traits to their default prices?",
+                //        () => ResetDisplayedTraitsPrices()
+                //    ));
+                // }
+            }
+            finally
+            {
+                Widgets.EndGroup();
+            }
+        }
+
+        private void SetAllAddPrices(int price)
+        {
+            int changedCount = 0;
+            foreach (var trait in filteredTraits)
+            {
+                if (trait.AddPrice != price)
+                {
+                    trait.AddPrice = price;
+                    changedCount++;
+                }
+            }
+
+            TraitsManager.SaveTraitsToJson();
+            Messages.Message($"Set Add Price to {price} for {changedCount} traits", MessageTypeDefOf.PositiveEvent);
+        }
+
+        private void SetAllRemovePrices(int price)
+        {
+            int changedCount = 0;
+            foreach (var trait in filteredTraits)
+            {
+                if (trait.RemovePrice != price)
+                {
+                    trait.RemovePrice = price;
+                    changedCount++;
+                }
+            }
+
+            TraitsManager.SaveTraitsToJson();
+            Messages.Message($"Set Remove Price to {price} for {changedCount} traits", MessageTypeDefOf.PositiveEvent);
+        }
+
+        private void ResetDisplayedTraitsPrices()
+        {
+            int changedCount = 0;
+            foreach (var trait in filteredTraits)
+            {
+                int defaultAddPrice = GetProperDefaultPrice(trait, true);
+                int defaultRemovePrice = GetProperDefaultPrice(trait, false);
+
+                if (trait.AddPrice != defaultAddPrice || trait.RemovePrice != defaultRemovePrice)
+                {
+                    trait.AddPrice = defaultAddPrice;
+                    trait.RemovePrice = defaultRemovePrice;
+                    changedCount++;
+                }
+            }
+
+            TraitsManager.SaveTraitsToJson();
+            Messages.Message($"Reset {changedCount} traits to default prices", MessageTypeDefOf.PositiveEvent);
+            FilterTraits(); // Refresh the display
         }
 
         private void DrawTraitRow(Rect rect, BuyableTrait trait)

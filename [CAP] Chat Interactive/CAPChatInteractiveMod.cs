@@ -18,17 +18,11 @@
 // Handles initialization, settings, and service management.
 // Store, Traits, Weather, and other systems will be initialized when the game starts.
 using _CAP__Chat_Interactive.Interfaces;
-using _CAP__Chat_Interactive.Utilities;
-using Google.Apis.YouTube.v3;
-using LudeonTK;
-using Newtonsoft.Json;
 using RimWorld;
 using System;   
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using UnityEngine;
 using Verse;
 

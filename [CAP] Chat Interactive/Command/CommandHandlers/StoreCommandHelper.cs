@@ -126,13 +126,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 return true;
             }
 
-            // If allowing unresearched items, allow purchase
-            if (settings.AllowUnresearchedItems)
-            {
-                Logger.Debug($"HasRequiredResearch: Unresearched items allowed, allowing purchase");
-                return true;
-            }
-
             // Get the thing definition
             var thingDef = DefDatabase<ThingDef>.GetNamedSilentFail(storeItem.DefName);
             if (thingDef == null)
@@ -324,15 +317,35 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static float GetQualityMultiplier(QualityCategory quality)
         {
+            // Get settings from the mod instance
+            var settings = CAPChatInteractiveMod.Instance?.Settings?.GlobalSettings;
+            if (settings == null)
+            {
+                Logger.Debug($"GetQualityMultiplier: No settings found, using default values");
+                // Fallback to default values if settings aren't available
+                return quality switch
+                {
+                    QualityCategory.Awful => 0.5f,
+                    QualityCategory.Poor => 0.75f,
+                    QualityCategory.Normal => 1.0f,
+                    QualityCategory.Good => 1.5f,
+                    QualityCategory.Excellent => 2.0f,
+                    QualityCategory.Masterwork => 3.0f,
+                    QualityCategory.Legendary => 5.0f,
+                    _ => 1.0f
+                };
+            }
+
+            // Use the configurable settings from GlobalSettings
             return quality switch
             {
-                QualityCategory.Awful => 0.5f,
-                QualityCategory.Poor => 0.75f,
-                QualityCategory.Normal => 1.0f,
-                QualityCategory.Good => 1.5f,
-                QualityCategory.Excellent => 2.0f,
-                QualityCategory.Masterwork => 3.0f,
-                QualityCategory.Legendary => 5.0f,
+                QualityCategory.Awful => settings.AwfulQuality,
+                QualityCategory.Poor => settings.PoorQuality,
+                QualityCategory.Normal => settings.NormalQuality,
+                QualityCategory.Good => settings.GoodQuality,
+                QualityCategory.Excellent => settings.ExcellentQuality,
+                QualityCategory.Masterwork => settings.MasterworkQuality,
+                QualityCategory.Legendary => settings.LegendaryQuality,
                 _ => 1.0f
             };
         }

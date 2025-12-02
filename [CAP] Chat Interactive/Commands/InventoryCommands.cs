@@ -195,7 +195,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !surgery <item>";
+                return "Usage: !surgery <implant> [left/right] [quantity] - Example: !surgery bionic arm left 1";
             }
             var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
                            if (cooldownManager == null)

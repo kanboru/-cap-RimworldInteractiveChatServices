@@ -142,10 +142,17 @@ namespace CAP_ChatInteractive
         public bool AllowExcellentQuality = true;
         public bool AllowMasterworkQuality = true;
         public bool AllowLegendaryQuality = true;
+        // multiplyiers
+        public float AwfulQuality = 0.5f;
+        public float PoorQuality = 0.75f;
+        public float NormalQuality = 1.0f;
+        public float GoodQuality = 1.5f;
+        public float ExcellentQuality = 2.0f;
+        public float MasterworkQuality = 3.0f;
+        public float LegendaryQuality = 5.0f;
 
         // Research settings
-        public bool RequireResearch = false;
-        public bool AllowUnresearchedItems = true;
+        public bool RequireResearch = true;
 
         // Passion Settings
         public int MinPassionWager = 10;
@@ -223,10 +230,16 @@ namespace CAP_ChatInteractive
             Scribe_Values.Look(ref AllowExcellentQuality, "allowExcellentQuality", true);
             Scribe_Values.Look(ref AllowMasterworkQuality, "allowMasterworkQuality", true);
             Scribe_Values.Look(ref AllowLegendaryQuality, "allowLegendaryQuality", true);
+            Scribe_Values.Look(ref AwfulQuality, "awfulQuality", 0.5f);
+            Scribe_Values.Look(ref PoorQuality, "poorQuality", 0.75f);
+            Scribe_Values.Look(ref NormalQuality, "normalQuality", 1.0f);
+            Scribe_Values.Look(ref GoodQuality, "goodQuality", 1.5f);
+            Scribe_Values.Look(ref ExcellentQuality, "excellentQuality", 2.0f);
+            Scribe_Values.Look(ref MasterworkQuality, "masterworkQuality", 3.0f);
+            Scribe_Values.Look(ref LegendaryQuality, "legendaryQuality", 5.0f);
 
             // Research settings
             Scribe_Values.Look(ref RequireResearch, "requireResearch", false);
-            Scribe_Values.Look(ref AllowUnresearchedItems, "allowUnresearchedItems", true);
 
             // Passion Command
             Scribe_Values.Look(ref MinPassionWager, "minPassionWager", 10);

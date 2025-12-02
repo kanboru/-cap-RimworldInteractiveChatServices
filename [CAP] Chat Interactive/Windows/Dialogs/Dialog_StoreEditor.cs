@@ -1042,7 +1042,7 @@ namespace CAP_ChatInteractive
                 if (thingDef != null)
                 {
                     item.BasePrice = (int)(thingDef.BaseMarketValue);
-                    item.Enabled = true;
+                    // item.Enabled = true;  // Lets just reset the prices not enable them all
                 }
             }
             StoreInventory.SaveStoreToJson();

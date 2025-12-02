@@ -16,8 +16,6 @@
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 // A unified wrapper for chat messages from different platforms (Twitch, YouTube)
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace CAP_ChatInteractive
 {
