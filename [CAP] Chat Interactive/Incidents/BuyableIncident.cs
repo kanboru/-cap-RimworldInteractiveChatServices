@@ -139,11 +139,11 @@ namespace CAP_ChatInteractive.Incidents
         private bool ShouldSkipByDefName(IncidentDef incidentDef)
         {
             string[] skipDefNames = {
-        "RaidEnemy", "RaidFriendly","MechCluster", "DeepDrillInfestation", 
-        "GiveQuest_EndGame_ShipEscape", "GiveQuest_EndGame_ArchonexusVictory",
-             };
+                "RaidEnemy", "RaidFriendly", "MechCluster", "DeepDrillInfestation",
+                "GiveQuest_EndGame_ShipEscape", "GiveQuest_EndGame_ArchonexusVictory",
+            };
 
-            return skipDefNames.Contains(incidentDef.defName);
+            return skipDefNames.Contains(incidentDef.defName, StringComparer.OrdinalIgnoreCase);
         }
 
         private bool ShouldSkipBySpecialCriteria(IncidentDef incidentDef)
@@ -173,15 +173,14 @@ namespace CAP_ChatInteractive.Incidents
         // Determine if the incident should be available for command use, disables combat incidents with dedicated commands
         private bool DetermineCommandAvailability(IncidentDef incidentDef)
         {
-            string defName = incidentDef.defName.ToLower();
+            string defName = incidentDef.defName;
 
-            // ONLY filter combat incidents that have dedicated commands
             string[] combatIncidentsToFilter = {
-        "RaidEnemy", "RaidFriendly","MechCluster", "DeepDrillInfestation",
-        "GiveQuest_EndGame_ShipEscape", "GiveQuest_EndGame_ArchonexusVictory",
+                "raidenemy", "raidFriendly", "MechCluster", "DeepDrillInfestation",
+                "GiveQuest_EndGame_ShipEscape", "GiveQuest_EndGame_ArchonexusVictory",
             };
 
-            return !combatIncidentsToFilter.Contains(defName);
+            return !combatIncidentsToFilter.Contains(defName, StringComparer.OrdinalIgnoreCase);
         }
 
         public void UpdateCommandAvailability()
@@ -356,7 +355,7 @@ namespace CAP_ChatInteractive.Incidents
 
             // Enable official DLCs
             string[] officialDLCs = {
-        "Royalty", "Ideology", "Biotech", "Anomaly", "Odyssey"
+        "Royalty", "Ideology", "Biotech", "Odyssey"  // Removed "Anomaly" to be disabled by default
     };
 
             if (officialDLCs.Any(dlc => ModSource.Contains(dlc)))
