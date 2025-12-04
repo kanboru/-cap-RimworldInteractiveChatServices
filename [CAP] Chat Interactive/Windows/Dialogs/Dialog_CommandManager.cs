@@ -415,7 +415,7 @@ namespace CAP_ChatInteractive
                 }
 
                 string cooldownBuffer = numericBuffers[cooldownKey];
-                Widgets.TextFieldNumeric(cooldownInputRect, ref settings.CooldownSeconds, ref cooldownBuffer, 1, 60);
+                Widgets.TextFieldNumeric(cooldownInputRect, ref settings.CooldownSeconds, ref cooldownBuffer, 1f, 60f);
                 numericBuffers[cooldownKey] = cooldownBuffer;
 
                 // Description below
@@ -621,7 +621,7 @@ namespace CAP_ChatInteractive
                         numericBuffers[coinMinKey] = settingsGlobalChat.LootBoxRandomCoinRange.min.ToString();
                     }
                     string coinMinBuffer = numericBuffers[coinMinKey];
-                    Widgets.TextFieldNumeric(coinMinInputRect, ref settingsGlobalChat.LootBoxRandomCoinRange.min, ref coinMinBuffer, 1, 10000);
+                    Widgets.TextFieldNumeric(coinMinInputRect, ref settingsGlobalChat.LootBoxRandomCoinRange.min, ref coinMinBuffer, 1f, 10000f);
                     numericBuffers[coinMinKey] = coinMinBuffer;
 
                     // Max coin input
@@ -636,7 +636,7 @@ namespace CAP_ChatInteractive
                         numericBuffers[coinMaxKey] = settingsGlobalChat.LootBoxRandomCoinRange.max.ToString();
                     }
                     string coinMaxBuffer = numericBuffers[coinMaxKey];
-                    Widgets.TextFieldNumeric(coinMaxInputRect, ref settingsGlobalChat.LootBoxRandomCoinRange.max, ref coinMaxBuffer, 1, 10000);
+                    Widgets.TextFieldNumeric(coinMaxInputRect, ref settingsGlobalChat.LootBoxRandomCoinRange.max, ref coinMaxBuffer, 1f, 10000f);
                     numericBuffers[coinMaxKey] = coinMaxBuffer;
 
                     y += sectionHeight;

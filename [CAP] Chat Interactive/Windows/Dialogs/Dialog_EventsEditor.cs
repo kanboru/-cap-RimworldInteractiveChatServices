@@ -568,7 +568,8 @@ namespace CAP_ChatInteractive
 
             // Use standard Widgets.TextFieldNumeric with the buffer from dictionary
             string _numBufferString = numericBuffers[bufferKey];
-            Widgets.TextFieldNumeric(inputRect, ref costBuffer, ref _numBufferString, 0, 1000000);
+            Widgets.TextFieldNumeric(inputRect, ref costBuffer, ref _numBufferString, 0f, 1000000f);
+            numericBuffers[bufferKey] = _numBufferString; // Store back the updated buffer
 
             if (costBuffer != incident.BaseCost)
             {
@@ -1175,13 +1176,13 @@ namespace CAP_ChatInteractive
                 "When enabled, events will go on cooldown after being purchased");
 
             // Cooldown days
-            NumericField(listing, "Event cooldown duration (days):", ref settings.EventCooldownDays, 1, 30);
+            NumericField(listing, "Event cooldown duration (days):", ref settings.EventCooldownDays, 1f, 30f);
             Text.Font = GameFont.Tiny;
             listing.Label($"Events will be unavailable for {settings.EventCooldownDays} in-game days after purchase");
             Text.Font = GameFont.Small;
 
             // Events per cooldown period
-            NumericField(listing, "Events per cooldown period:", ref settings.EventsperCooldown, 1, 50);
+            NumericField(listing, "Events per cooldown period:", ref settings.EventsperCooldown, 1f, 50f);
             Text.Font = GameFont.Tiny;
             listing.Label($"Limit of {settings.EventsperCooldown} event purchases per cooldown period");
             Text.Font = GameFont.Small;
@@ -1195,9 +1196,9 @@ namespace CAP_ChatInteractive
             if (settings.KarmaTypeLimitsEnabled)
             {
                 listing.Gap(4f);
-                NumericField(listing, "Max bad event purchases:", ref settings.MaxBadEvents, 1, 20);
-                NumericField(listing, "Max good event purchases:", ref settings.MaxGoodEvents, 1, 20);
-                NumericField(listing, "Max neutral event purchases:", ref settings.MaxNeutralEvents, 1, 20);
+                NumericField(listing, "Max bad event purchases:", ref settings.MaxBadEvents, 1f, 20f);
+                NumericField(listing, "Max good event purchases:", ref settings.MaxGoodEvents, 1f, 20f);
+                NumericField(listing, "Max neutral event purchases:", ref settings.MaxNeutralEvents, 1f, 20f);
             }
 
             listing.Gap(12f);
@@ -1210,7 +1211,7 @@ namespace CAP_ChatInteractive
         }
 
 
-        private void NumericField(Listing_Standard listing, string label, ref int value, int min, int max)
+        private void NumericField(Listing_Standard listing, string label, ref int value, float min, float max)
         {
             Rect rect = listing.GetRect(30f);
             Rect leftRect = rect.LeftHalf().Rounded();
@@ -1224,8 +1225,13 @@ namespace CAP_ChatInteractive
             {
                 numericBuffers[bufferKey] = value.ToString();
             }
+
             string _numBufferString = numericBuffers[bufferKey];
             Widgets.TextFieldNumeric(rightRect, ref value, ref _numBufferString, min, max);
+
+            // CRITICAL: Store the modified buffer back into the dictionary
+            numericBuffers[bufferKey] = _numBufferString;
+
             listing.Gap(2f);
         }
     }
