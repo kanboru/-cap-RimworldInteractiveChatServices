@@ -33,7 +33,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         public override string Name => "buy";
         
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
             if (args.Length == 0)
             {
@@ -45,7 +45,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             {
                 var pawnArgs = args.Skip(1).ToArray();
                 var pawnCommand = new Pawn();
-                return pawnCommand.Execute(user, pawnArgs);
+                return pawnCommand.Execute(messageWrapper, pawnArgs);
             }
 
             try
@@ -63,7 +63,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                   return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
                 }
 
-                return BuyItemCommandHandler.HandleBuyItem(user, args, false, false,false);
+                return BuyItemCommandHandler.HandleBuyItem(messageWrapper, args, false, false,false);
             }
             catch (Exception ex)
             {

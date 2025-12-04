@@ -148,8 +148,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             catch (Exception ex)
             {
                 Logger.Error($"Error handling buy pawn command: {ex}");
-                MessageHandler.SendFailureLetter("Pawn Purchase Error",
-                    $"Error purchasing pawn: {ex.Message}");
                 return "Error purchasing pawn. Please try again.";
             }
         }

@@ -16,8 +16,6 @@
 //
 // Command handler for buying items from Rimazon store
 using CAP_ChatInteractive.Commands.Cooldowns;
-using CAP_ChatInteractive.Commands.ViewerCommands;
-using CAP_ChatInteractive.Store;
 using CAP_ChatInteractive.Utilities;
 using RimWorld;
 using System;

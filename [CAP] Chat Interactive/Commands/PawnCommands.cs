@@ -34,7 +34,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            Logger.Debug($"Pawn command executed by {user.Username} with args: [{string.Join(", ", args)}]");
+            // Logger.Debug($"Pawn command executed by {user.Username} with args: [{string.Join(", ", args)}]");
 
             // Handle different argument patterns
             if (args.Length == 0)

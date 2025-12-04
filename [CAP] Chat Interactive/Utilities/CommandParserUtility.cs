@@ -140,7 +140,7 @@ namespace CAP_ChatInteractive.Utilities
                                  //  .Replace("(", " ")
                                  //  .Replace(")", " ")
                                    .Replace(",", " ")
-                                   .Replace(".", " ")
+                                 //  .Replace(".", " ")
                                    .Replace(";", " ")
                                    .Trim();
 
