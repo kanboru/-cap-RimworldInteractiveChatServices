@@ -103,9 +103,29 @@ namespace CAP_ChatInteractive
                 if (!string.IsNullOrEmpty(commandDef.commandText))
                 {
                     string commandKey = commandDef.commandText.ToLowerInvariant();
+
                     if (!commandSettings.ContainsKey(commandKey))
                     {
-                        commandSettings[commandKey] = new CommandSettings();
+                        // Create new settings with XML defaults
+                        var settings = new CommandSettings();
+                        settings.PermissionLevel = commandDef.permissionLevel; // ← IMPORTANT!
+                        settings.CooldownSeconds = commandDef.cooldownSeconds;
+                        // Set other defaults from XML as needed
+
+                        commandSettings[commandKey] = settings;
+                    }
+                    else
+                    {
+                        // Update existing settings if they're still at defaults
+                        var existing = commandSettings[commandKey];
+                        if (existing.PermissionLevel == "everyone") // Still default
+                        {
+                            existing.PermissionLevel = commandDef.permissionLevel;
+                        }
+                        if (existing.CooldownSeconds == 0) // Still default
+                        {
+                            existing.CooldownSeconds = commandDef.cooldownSeconds;
+                        }
                     }
                 }
             }

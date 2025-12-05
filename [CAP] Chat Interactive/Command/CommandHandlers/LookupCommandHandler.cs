@@ -70,7 +70,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 var response = $"🔍 {searchType.ToUpper()} results for '{searchTerm}': ";
                 response += string.Join(" | ", results.Select(r =>
-                    $"{r.Name} ({r.Type}): {r.Cost}{currencySymbol}"));
+                    $"{TextUtilities.StripTags(r.Name)} ({r.Type}): {r.Cost}{currencySymbol}"));
 
                 return response;
             }
@@ -83,10 +83,18 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static IEnumerable<LookupResult> SearchItems(string searchTerm, int maxResults)
         {
+            var normalizedSearchTerm = searchTerm.ToLower();
+
             return StoreInventory.GetEnabledItems()
-                .Where(item => (item.CustomName?.ToLower().Contains(searchTerm) == true ||
-                               GetItemDisplayName(item)?.ToLower().Contains(searchTerm) == true ||
-                               item.DefName?.ToLower().Contains(searchTerm) == true))
+                .Where(item => {
+                    string customName = TextUtilities.CleanAndNormalize(item.CustomName);
+                    string displayName = TextUtilities.CleanAndNormalize(GetItemDisplayName(item));
+                    string defName = item.DefName?.ToLower() ?? "";
+
+                    return customName.Contains(normalizedSearchTerm) ||
+                           displayName.Contains(normalizedSearchTerm) ||
+                           defName.Contains(normalizedSearchTerm);
+                })
                 .Take(maxResults)
                 .Select(item => new LookupResult
                 {
@@ -99,10 +107,12 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static IEnumerable<LookupResult> SearchEvents(string searchTerm, int maxResults)
         {
+            var normalizedSearchTerm = searchTerm.ToLower();
+
             return IncidentsManager.AllBuyableIncidents.Values
                 .Where(incident => incident.Enabled &&
-                       (incident.Label?.ToLower().Contains(searchTerm) == true ||
-                        incident.DefName?.ToLower().Contains(searchTerm) == true))
+                       (TextUtilities.CleanAndNormalize(incident.Label).Contains(normalizedSearchTerm) ||
+                        (incident.DefName?.ToLower().Contains(normalizedSearchTerm) == true)))
                 .Take(maxResults)
                 .Select(incident => new LookupResult
                 {
@@ -115,10 +125,12 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static IEnumerable<LookupResult> SearchWeather(string searchTerm, int maxResults)
         {
+            var normalizedSearchTerm = searchTerm.ToLower();
+
             return BuyableWeatherManager.AllBuyableWeather.Values
                 .Where(w => w.Enabled &&
-                       (w.Label?.ToLower().Contains(searchTerm) == true ||
-                        w.DefName.ToLower().Contains(searchTerm)))
+                       (TextUtilities.CleanAndNormalize(w.Label).Contains(normalizedSearchTerm) ||
+                        w.DefName.ToLower().Contains(normalizedSearchTerm)))
                 .Take(maxResults)
                 .Select(w => new LookupResult
                 {
@@ -131,13 +143,22 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static IEnumerable<LookupResult> SearchTraits(string searchTerm, int maxResults)
         {
+            var normalizedSearchTerm = searchTerm.ToLower();
+
             return TraitsManager.GetEnabledTraits()
-                .Where(trait => trait.Name?.ToLower().Contains(searchTerm) == true ||
-                               trait.DefName?.ToLower().Contains(searchTerm) == true)
+                .Where(trait => {
+                    // Clean the trait name for searching
+                    string cleanedName = TextUtilities.CleanAndNormalize(trait.Name);
+                    string cleanedDefName = trait.DefName?.ToLower() ?? "";
+
+                    // Search in both cleaned name and defName
+                    return cleanedName.Contains(normalizedSearchTerm) ||
+                           cleanedDefName.Contains(normalizedSearchTerm);
+                })
                 .Take(maxResults)
                 .Select(trait => new LookupResult
                 {
-                    Name = trait.Name,
+                    Name = trait.Name, // Keep original name with colors for display
                     Type = "Trait",
                     Cost = trait.AddPrice,
                     DefName = trait.DefName
@@ -158,5 +179,27 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         public string Type { get; set; }
         public int Cost { get; set; }
         public string DefName { get; set; }
+    }
+
+    // Add this static class for text utilities
+    public static class TextUtilities
+    {
+        public static string StripTags(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            // Simple regex to remove HTML/XML tags
+            return System.Text.RegularExpressions.Regex.Replace(
+                input,
+                @"<[^>]+>",
+                string.Empty
+            ).Trim();
+        }
+
+        public static string CleanAndNormalize(string input)
+        {
+            return StripTags(input)?.ToLower() ?? "";
+        }
     }
 }

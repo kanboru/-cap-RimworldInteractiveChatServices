@@ -55,7 +55,9 @@ namespace CAP_ChatInteractive.Traits
             Degree = degreeData?.degree ?? 0;
 
             // Use the degree-specific label if available, otherwise use trait def label
-            Name = degreeData?.label?.CapitalizeFirst() ?? traitDef.LabelCap;
+            // Name = degreeData?.label?.CapitalizeFirst() ?? traitDef.LabelCap;
+            // Remove 
+            Name = StripHtmlTags(degreeData?.label?.CapitalizeFirst() ?? traitDef.LabelCap);
 
             // Replace [PAWN_nameDef] with [PAWN_name] in description
             Description = (degreeData?.description ?? traitDef.description)?.Replace("[PAWN_nameDef]", "[PAWN_name]");
@@ -100,6 +102,19 @@ namespace CAP_ChatInteractive.Traits
 
             // Set default prices based on trait impact
             SetDefaultPrices(traitDef, degreeData);
+        }
+
+        private static string StripHtmlTags(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            // Simple regex to remove HTML tags
+            return System.Text.RegularExpressions.Regex.Replace(
+                input,
+                @"<[^>]+>",
+                string.Empty
+            ).Trim();
         }
 
         private void SetDefaultPrices(TraitDef traitDef, TraitDegreeData degreeData)

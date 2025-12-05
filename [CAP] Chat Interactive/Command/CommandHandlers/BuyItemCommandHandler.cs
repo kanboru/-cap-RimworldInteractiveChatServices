@@ -576,11 +576,12 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     quantity = 1;
                 }
 
-                // Check quantity limits
-                if (storeItem.HasQuantityLimit && quantity > storeItem.QuantityLimit)
+                // SPECIAL HANDLING FOR SURGERY ITEMS: Allow up to 2 for body parts
+                int surgeryQuantityLimit = Math.Max(storeItem.QuantityLimit, 2);
+                if (quantity > surgeryQuantityLimit)
                 {
-                    Logger.Debug($"Quantity {quantity} exceeds limit of {storeItem.QuantityLimit} for {itemName}, clamping to maximum");
-                    quantity = storeItem.QuantityLimit;
+                    Logger.Debug($"Quantity {quantity} exceeds surgery limit of {surgeryQuantityLimit} for {itemName}, clamping");
+                    quantity = surgeryQuantityLimit;
                 }
 
                 // Calculate final price (no quality/material for surgery items)

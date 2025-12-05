@@ -16,6 +16,7 @@
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 //
 // Initializes chat commands when a game is loaded or started.
+using LudeonTK;
 using Newtonsoft.Json;
 using RimWorld;
 using System;
@@ -54,12 +55,10 @@ namespace CAP_ChatInteractive
             {
                 Logger.Debug("Initializing commands via GameComponent...");
 
-                // Add debug logging to see defs
-                var totalDefs = DefDatabase<Def>.AllDefsListForReading.Count;
-                var commandDefs = DefDatabase<ChatCommandDef>.AllDefsListForReading;
-                Logger.Debug($"Total defs: {totalDefs}, ChatCommandDefs: {commandDefs.Count}");
+                // Validate and fix JSON permissions BEFORE initialization
+                ValidateAndFixJsonPermissions();
 
-                // Initialize settings first
+                // Initialize settings
                 CAP_InitializeCommandSettings();
 
                 // Then register commands
@@ -181,5 +180,100 @@ namespace CAP_ChatInteractive
                 Logger.Error($"Error ensuring raid settings are initialized: {ex}");
             }
         }
+
+        // Add this method to GameComponent_CommandsInitializer.cs
+        private void ValidateAndFixJsonPermissions()
+        {
+            try
+            {
+                Logger.Message("[CAP] Validating JSON permissions against XML Defs...");
+
+                // Load current JSON
+                string jsonContent = JsonFileManager.LoadFile("CommandSettings.json");
+                if (string.IsNullOrEmpty(jsonContent))
+                {
+                    Logger.Debug("No CommandSettings.json found, will be created from XML");
+                    return;
+                }
+
+                var currentSettings = JsonConvert.DeserializeObject<Dictionary<string, CommandSettings>>(jsonContent);
+                if (currentSettings == null)
+                {
+                    Logger.Debug("CommandSettings.json is empty or invalid");
+                    return;
+                }
+
+                bool fixedAny = false;
+                var commandDefs = DefDatabase<ChatCommandDef>.AllDefsListForReading;
+
+                foreach (var def in commandDefs)
+                {
+                    if (string.IsNullOrEmpty(def.commandText))
+                        continue;
+
+                    string commandKey = def.commandText.ToLowerInvariant();
+
+                    if (currentSettings.TryGetValue(commandKey, out var settings))
+                    {
+                        // Check if JSON permission matches XML
+                        if (settings.PermissionLevel != def.permissionLevel)
+                        {
+                            Logger.Debug($"Fixing permission for '{commandKey}': JSON='{settings.PermissionLevel}' -> XML='{def.permissionLevel}'");
+                            settings.PermissionLevel = def.permissionLevel;
+                            fixedAny = true;
+                        }
+
+                        // Also ensure other XML values are set
+                        if (settings.CooldownSeconds == 0 && def.cooldownSeconds > 0)
+                        {
+                            settings.CooldownSeconds = def.cooldownSeconds;
+                            fixedAny = true;
+                        }
+                    }
+                }
+
+                if (fixedAny)
+                {
+                    // Save the fixed JSON
+                    string fixedJson = JsonConvert.SerializeObject(currentSettings, Formatting.Indented);
+                    JsonFileManager.SaveFile("CommandSettings.json", fixedJson);
+                    Logger.Message("[CAP] Fixed JSON permissions to match XML Defs");
+                }
+                else
+                {
+                    Logger.Debug("[CAP] All JSON permissions match XML Defs");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error validating JSON permissions: {ex}");
+            }
+        }
+
+
+        [DebugAction("CAP", "Fix JSON Permissions", allowedGameStates = AllowedGameStates.Playing)]
+        public static void DebugFixJsonPermissions()
+        {
+            try
+            {
+                var comp = Current.Game.GetComponent<GameComponent_CommandsInitializer>();
+                if (comp != null)
+                {
+                    // Call the validation method directly
+                    typeof(GameComponent_CommandsInitializer)
+                        .GetMethod("ValidateAndFixJsonPermissions",
+                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                        ?.Invoke(comp, null);
+
+                    Messages.Message("JSON permissions fixed to match XML Defs", MessageTypeDefOf.TaskCompletion);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error in debug action: {ex}");
+                Messages.Message($"Error fixing permissions: {ex.Message}", MessageTypeDefOf.NegativeEvent);
+            }
+        }
     }
+
 }

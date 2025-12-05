@@ -15,6 +15,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 // Manages the loading, saving, and retrieval of buyable traits for pawns.
+
+/// <summary>
+/// Manages the loading, saving, and retrieval of buyable traits for pawns.
+/// Handles JSON persistence, trait validation/updates, and DLC-specific defaults.
+/// Anomaly DLC traits are disabled by default to accommodate streamer preferences.
+/// </summary>
+
 using LudeonTK;
 using RimWorld;
 using System;
@@ -31,6 +38,9 @@ namespace CAP_ChatInteractive.Traits
         private static bool isInitialized = false;
         private static readonly object lockObject = new object();
 
+        // Add constant for Anomaly DLC identification
+        private const string ANOMALY_DLC_NAME = "Anomaly";
+
         public static void InitializeTraits()
         {
             if (isInitialized) return;
@@ -41,7 +51,9 @@ namespace CAP_ChatInteractive.Traits
 
                 Logger.Debug("Initializing Traits System...");
 
-                if (!LoadTraitsFromJson())
+                bool loadedFromJson = LoadTraitsFromJson();
+
+                if (!loadedFromJson)
                 {
                     CreateDefaultTraits();
                     SaveTraitsToJson();
@@ -88,10 +100,14 @@ namespace CAP_ChatInteractive.Traits
             var allTraitDefs = DefDatabase<TraitDef>.AllDefs.ToList();
 
             int traitsCreated = 0;
+            int anomalyTraitsDisabled = 0;
+
             foreach (var traitDef in allTraitDefs)
             {
                 try
                 {
+                    bool isAnomalyTrait = IsAnomalyDlcTrait(traitDef);
+
                     if (traitDef.degreeDatas != null)
                     {
                         foreach (var degree in traitDef.degreeDatas)
@@ -100,6 +116,15 @@ namespace CAP_ChatInteractive.Traits
                             if (!AllBuyableTraits.ContainsKey(key))
                             {
                                 var buyableTrait = new BuyableTrait(traitDef, degree);
+
+                                // Disable Anomaly DLC traits by default
+                                if (isAnomalyTrait)
+                                {
+                                    buyableTrait.CanAdd = false;
+                                    buyableTrait.CanRemove = false;
+                                    anomalyTraitsDisabled++;
+                                }
+
                                 AllBuyableTraits[key] = buyableTrait;
                                 traitsCreated++;
                             }
@@ -111,6 +136,15 @@ namespace CAP_ChatInteractive.Traits
                         if (!AllBuyableTraits.ContainsKey(key))
                         {
                             var buyableTrait = new BuyableTrait(traitDef);
+
+                            // Disable Anomaly DLC traits by default
+                            if (isAnomalyTrait)
+                            {
+                                buyableTrait.CanAdd = false;
+                                buyableTrait.CanRemove = false;
+                                anomalyTraitsDisabled++;
+                            }
+
                             AllBuyableTraits[key] = buyableTrait;
                             traitsCreated++;
                         }
@@ -121,6 +155,11 @@ namespace CAP_ChatInteractive.Traits
                     Logger.Error($"Error creating buyable trait for {traitDef.defName}: {ex.Message}");
                 }
             }
+
+            if (anomalyTraitsDisabled > 0)
+            {
+                Logger.Message($"[CAP] Anomaly DLC: {anomalyTraitsDisabled} traits disabled by default");
+            }
         }
 
         private static void ValidateAndUpdateTraits()
@@ -129,10 +168,13 @@ namespace CAP_ChatInteractive.Traits
             int addedTraits = 0;
             int removedTraits = 0;
             int updatedTraits = 0;
+            int anomalyTraitsDisabled = 0;
 
             // Add any new traits that aren't in our system
             foreach (var traitDef in allTraitDefs)
             {
+                bool isAnomalyTrait = IsAnomalyDlcTrait(traitDef);
+
                 if (traitDef.degreeDatas != null)
                 {
                     foreach (var degree in traitDef.degreeDatas)
@@ -141,6 +183,15 @@ namespace CAP_ChatInteractive.Traits
                         if (!AllBuyableTraits.ContainsKey(key))
                         {
                             var buyableTrait = new BuyableTrait(traitDef, degree);
+
+                            // Disable new Anomaly DLC traits by default when adding them during validation
+                            if (isAnomalyTrait)
+                            {
+                                buyableTrait.CanAdd = false;
+                                buyableTrait.CanRemove = false;
+                                anomalyTraitsDisabled++;
+                            }
+
                             AllBuyableTraits[key] = buyableTrait;
                             addedTraits++;
                         }
@@ -171,6 +222,15 @@ namespace CAP_ChatInteractive.Traits
                     if (!AllBuyableTraits.ContainsKey(key))
                     {
                         var buyableTrait = new BuyableTrait(traitDef);
+
+                        // Disable new Anomaly DLC traits by default when adding them during validation
+                        if (isAnomalyTrait)
+                        {
+                            buyableTrait.CanAdd = false;
+                            buyableTrait.CanRemove = false;
+                            anomalyTraitsDisabled++;
+                        }
+
                         AllBuyableTraits[key] = buyableTrait;
                         addedTraits++;
                     }
@@ -223,6 +283,11 @@ namespace CAP_ChatInteractive.Traits
             {
                 AllBuyableTraits.Remove(key);
                 removedTraits++;
+            }
+
+            if (anomalyTraitsDisabled > 0)
+            {
+                Logger.Message($"[CAP] Anomaly DLC: {anomalyTraitsDisabled} new traits disabled by default");
             }
 
             if (addedTraits > 0 || removedTraits > 0 || updatedTraits > 0)
@@ -293,6 +358,13 @@ namespace CAP_ChatInteractive.Traits
             return false;
         }
 
+        private static bool IsAnomalyDlcTrait(TraitDef traitDef)
+        {
+            // Check if this trait is from the Anomaly DLC
+            // Anomaly DLC traits typically come from the "Anomaly" mod content pack
+            return traitDef.modContentPack?.Name?.Contains(ANOMALY_DLC_NAME, StringComparison.OrdinalIgnoreCase) == true;
+        }
+
         private static string GetTraitKey(TraitDef traitDef, int degree)
         {
             return $"{traitDef.defName}_{degree}";
@@ -340,6 +412,7 @@ namespace CAP_ChatInteractive.Traits
                 .Distinct()
                 .OrderBy(source => source);
         }
+
         public static (int total, int enabled, int disabled) GetTraitsStatistics()
         {
             int total = AllBuyableTraits.Count;
@@ -347,6 +420,7 @@ namespace CAP_ChatInteractive.Traits
             int disabled = total - enabled;
             return (total, enabled, disabled);
         }
+
         // Removes the traits JSON file and rebuilds the traits from scratch
         [DebugAction("CAP", "Delete JSON & Rebuild Traits", allowedGameStates = AllowedGameStates.Playing)]
         public static void DebugRebuildTraits()

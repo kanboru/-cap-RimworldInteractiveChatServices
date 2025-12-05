@@ -53,8 +53,15 @@ namespace CAP_ChatInteractive
         {
             get
             {
+                // First check if this is a Def-based command
+                if (this is DefBasedChatCommand defCommand)
+                {
+                    return defCommand.PermissionLevel;
+                }
+
+                // Fall back to JSON settings for non-Def commands
                 var settings = GetCommandSettings();
-                return settings?.PermissionLevel ?? "everyone"; // Default to everyone if no settings
+                return settings?.PermissionLevel ?? "everyone";
             }
         }
         public virtual int CooldownSeconds => 0;
