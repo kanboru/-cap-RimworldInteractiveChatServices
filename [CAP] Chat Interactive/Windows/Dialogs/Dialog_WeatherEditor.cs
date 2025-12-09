@@ -89,20 +89,69 @@ namespace CAP_ChatInteractive
             // Second row for controls - positioned below the title
             float controlsY = 35f; // Position below title with some spacing
 
-            // Search bar with label
-            Rect searchLabelRect = new Rect(0f, controlsY, 60f, 30f);
-            Widgets.Label(searchLabelRect, "Search:");
+            // Search bar with icon
+            float searchY = controlsY;
+            Rect searchIconRect = new Rect(0f, searchY, 24f, 24f);
+            Texture2D searchIcon = ContentFinder<Texture2D>.Get("UI/Widgets/Search", false);
+            if (searchIcon != null)
+            {
+                Widgets.DrawTextureFitted(searchIconRect, searchIcon, 1f);
+            }
+            else
+            {
+                // Fallback to text if icon not found
+                Widgets.Label(new Rect(0f, searchY, 40f, 30f), "Search:");
+            }
 
             Rect searchRect = new Rect(65f, controlsY, 200f, 30f);
             searchQuery = Widgets.TextField(searchRect, searchQuery);
 
             // Sort buttons
-            Rect sortRect = new Rect(270f, controlsY, 300f, 30f);
+            Rect sortRect = new Rect(270f, controlsY, 320f, 30f);
             DrawSortButtons(sortRect);
 
             // Action buttons
-            Rect actionsRect = new Rect(575f, controlsY, 400f, 30f);
+            Rect actionsRect = new Rect(615f, controlsY, 400f, 30f);
             DrawActionButtons(actionsRect);
+
+            // Settings gear icon - top right corner
+            Rect settingsRect = new Rect(rect.width - 30f, 5f, 24f, 24f);
+            Texture2D gearIcon = ContentFinder<Texture2D>.Get("UI/Icons/Options/OptionsGeneral", false);
+            if (gearIcon != null)
+            {
+                if (Widgets.ButtonImage(settingsRect, gearIcon))
+                {
+                    Find.WindowStack.Add(new Dialog_EventSettings());
+                }
+            }
+            else
+            {
+                // Fallback text button
+                if (Widgets.ButtonText(new Rect(rect.width - 80f, 5f, 75f, 24f), "Settings"))
+                {
+                    Find.WindowStack.Add(new Dialog_EventSettings());
+                }
+            }
+
+            // Info help icon - next to settings gear
+            Rect infoRect = new Rect(rect.width - 60f, 5f, 24f, 24f); // Positioned left of the gear
+            Texture2D infoIcon = ContentFinder<Texture2D>.Get("UI/Buttons/InfoButton", false);
+            if (infoIcon != null)
+            {
+                if (Widgets.ButtonImage(infoRect, infoIcon))
+                {
+                    Find.WindowStack.Add(new Dialog_WeatherEditorHelp());
+                }
+                TooltipHandler.TipRegion(infoRect, "Events Editor Help");
+            }
+            else
+            {
+                // Fallback text button
+                if (Widgets.ButtonText(new Rect(rect.width - 110f, 5f, 45f, 24f), "Help"))
+                {
+                    Find.WindowStack.Add(new Dialog_EventsEditorHelp());
+                }
+            }
 
             Widgets.EndGroup();
         }
@@ -144,9 +193,23 @@ namespace CAP_ChatInteractive
                 SortWeather();
             }
 
-            string sortIndicator = sortAscending ? " ↑" : " ↓";
-            Rect indicatorRect = new Rect(x + buttonWidth + 10f, 8f, 50f, 20f);
-            Widgets.Label(indicatorRect, sortIndicator);
+            string sortAscIconPath = sortAscending ? "UI/Buttons/ReorderUp" : "UI/Buttons/ReorderDown";
+            Texture2D sortIcon = ContentFinder<Texture2D>.Get(sortAscIconPath, false);
+
+            Rect indicatorRect = new Rect(x + buttonWidth + 5f, 5f, 20f, 20f); // Adjusted position
+            if (sortIcon != null)
+            {
+                Widgets.DrawTextureFitted(indicatorRect, sortIcon, 1f);
+                // Show tooltip indicating current sort
+                string tooltip = $"Sorted by: {sortMethod}\nDirection: {(sortAscending ? "Ascending" : "Descending")}";
+                TooltipHandler.TipRegion(indicatorRect, tooltip);
+            }
+            else
+            {
+                // Fallback to text arrows
+                string sortIndicator = sortAscending ? " ↑" : " ↓";
+                Widgets.Label(indicatorRect, sortIndicator);
+            }
 
             Widgets.EndGroup();
         }
