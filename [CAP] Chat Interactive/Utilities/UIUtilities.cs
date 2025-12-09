@@ -16,6 +16,7 @@
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 // General UI utility methods for the CAP Chat Interactive mod
 
+using System.Collections.Generic;
 using UnityEngine;
 using Verse;
 
@@ -340,6 +341,59 @@ namespace CAP_ChatInteractive
             listing.Gap(2f);
         }
     }
+
+    // Add this to UIUtilities.cs
+    public static class TextFieldHelper
+    {
+        private static Dictionary<string, string> textFieldBuffers = new Dictionary<string, string>();
+
+        /// <summary>
+        /// Draws a text field with proper buffering to prevent UI conflicts
+        /// </summary>
+        public static string DrawBufferedTextField(Rect rect, string currentValue, string uniqueKey)
+        {
+            // Initialize buffer if needed
+            if (!textFieldBuffers.ContainsKey(uniqueKey))
+            {
+                textFieldBuffers[uniqueKey] = currentValue ?? string.Empty;
+            }
+
+            // Draw text field using buffer
+            string buffer = textFieldBuffers[uniqueKey];
+            buffer = Widgets.TextField(rect, buffer);
+            textFieldBuffers[uniqueKey] = buffer;
+
+            return buffer;
+        }
+
+        /// <summary>
+        /// Updates a buffer value without drawing
+        /// </summary>
+        public static void UpdateBuffer(string uniqueKey, string value)
+        {
+            textFieldBuffers[uniqueKey] = value ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Clears a specific buffer
+        /// </summary>
+        public static void ClearBuffer(string uniqueKey)
+        {
+            if (textFieldBuffers.ContainsKey(uniqueKey))
+            {
+                textFieldBuffers.Remove(uniqueKey);
+            }
+        }
+
+        /// <summary>
+        /// Clears all buffers (call when window closes)
+        /// </summary>
+        public static void ClearAllBuffers()
+        {
+            textFieldBuffers.Clear();
+        }
+    }
+
     public static class ColorLibrary
     {
         public static readonly Color Orange = new Color(1.0f, 0.5f, 0.1f);

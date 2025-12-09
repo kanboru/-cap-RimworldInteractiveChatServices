@@ -20,7 +20,6 @@ using CAP_ChatInteractive.Incidents;
 using CAP_ChatInteractive.Incidents.Weather;
 using CAP_ChatInteractive.Store;
 using CAP_ChatInteractive.Traits;
-using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Linq;
