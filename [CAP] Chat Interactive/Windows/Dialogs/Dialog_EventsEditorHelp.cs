@@ -52,6 +52,7 @@ namespace CAP_ChatInteractive
             DrawHelpContent(contentRect);
         }
 
+        // Update Dialog_EventsEditorHelp.cs - add cooldown information
         private void DrawHelpContent(Rect rect)
         {
             StringBuilder sb = new StringBuilder();
@@ -86,6 +87,39 @@ namespace CAP_ChatInteractive
             sb.AppendLine($"• <b>Reset Prices</b> - Reset all event prices to default values");
             sb.AppendLine($"• <b>Enable →</b> - Bulk enable events by mod source");
             sb.AppendLine($"• <b>Disable →</b> - Bulk disable events by mod source");
+            sb.AppendLine($"• <b>Cooldowns →</b> - Bulk manage event cooldowns (see below)");
+            sb.AppendLine($"");
+
+            sb.AppendLine($"<b>NEW: Cooldowns System</b>");
+            sb.AppendLine($"Events can now have individual cooldowns to prevent spamming:");
+            sb.AppendLine($"");
+
+            sb.AppendLine($"<b>How Cooldowns Work:</b>");
+            sb.AppendLine($"• <b>Cooldown Days</b> - Number of game days before the same event can be triggered again");
+            sb.AppendLine($"• <b>0 Days</b> = No cooldown (infinite) - event can be used repeatedly");
+            sb.AppendLine($"• <b>1+ Days</b> = Event goes on cooldown after use");
+            sb.AppendLine($"• Cooldowns are global - if anyone triggers an event, it goes on cooldown for everyone");
+            sb.AppendLine($"• Only applies if 'Event Cooldowns Enabled' is ON in global settings");
+            sb.AppendLine($"");
+
+            sb.AppendLine($"<b>Cooldown Controls:</b>");
+            sb.AppendLine($"• <b>CD Input Box</b> - Set cooldown days for individual events");
+            sb.AppendLine($"   - Displays ∞ symbol for 0 days (no cooldown)");
+            sb.AppendLine($"   - Click ∞ to set a cooldown, or click number to set back to ∞");
+            sb.AppendLine($"   - Tooltip shows explanation and current setting");
+            sb.AppendLine($"• <b>Cooldowns → Button</b> - Bulk cooldown operations");
+            sb.AppendLine($"   - <b>Presets</b>: Quickly set 0, 1, 3, 5, 7, or 14 day cooldowns");
+            sb.AppendLine($"   - <b>Reset Filtered</b>: Reset cooldowns to defaults for filtered events");
+            sb.AppendLine($"   - <b>Reset ALL</b>: Reset ALL event cooldowns to defaults");
+            sb.AppendLine($"   - <b>Custom...</b>: Set any value (0-1000 days) with filtered-only option");
+            sb.AppendLine($"");
+
+            sb.AppendLine($"<b>Default Cooldowns:</b>");
+            sb.AppendLine($"• <b>Raids</b>: 7 days (long cooldown for major threats)");
+            sb.AppendLine($"• <b>Diseases</b>: 5 days (moderate cooldown)");
+            sb.AppendLine($"• <b>Weather Events</b>: 3 days (shorter cooldown)");
+            sb.AppendLine($"• <b>Quests</b>: 10 days (longest cooldown for rare/special events)");
+            sb.AppendLine($"• <b>Other Events</b>: 1 day (minimal cooldown)");
             sb.AppendLine($"");
 
             sb.AppendLine($"<b>Event Row Controls:</b>");
@@ -95,8 +129,8 @@ namespace CAP_ChatInteractive
             sb.AppendLine($"   - Use the Reset button to restore default price");
             sb.AppendLine($"• <b>Karma Dropdown</b> - Set karma type: Good, Bad, or Neutral");
             sb.AppendLine($"   - Affects player karma when event is purchased");
-            sb.AppendLine($"• <b>Type Indicator</b> - Shows current karma type in color");
-            sb.AppendLine($"   - Green = Good, Red = Bad, Yellow = Neutral");
+            sb.AppendLine($"• <b>Karma Type</b> - Shows current karma type in color (Good/Bad/Neutral)");
+            sb.AppendLine($"• <b>CD Input</b> - Set cooldown days (see above)");
             sb.AppendLine($"");
 
             sb.AppendLine($"<b>Event Availability:</b>");
@@ -126,12 +160,21 @@ namespace CAP_ChatInteractive
             sb.AppendLine($"• Custom labels will appear in the Events Editor and chat store");
             sb.AppendLine($"");
 
+            sb.AppendLine($"<b>Filtered Operations:</b>");
+            sb.AppendLine($"• When using Cooldowns → Custom... option:");
+            sb.AppendLine($"   - Check 'Apply to filtered events only' to affect only current filter");
+            sb.AppendLine($"   - Useful for setting different cooldowns for different event types");
+            sb.AppendLine($"   - Example: Set raids to 7 days, weather events to 3 days");
+            sb.AppendLine($"");
+
             sb.AppendLine($"<b>Tips:</b>");
             sb.AppendLine($"• Changes are saved automatically when you close the window");
             sb.AppendLine($"• Use bulk operations to quickly enable/disable mods");
             sb.AppendLine($"• Sort events by cost to find expensive or cheap events");
             sb.AppendLine($"• Search supports partial matching (case-insensitive)");
             sb.AppendLine($"• Events with 'UNAVAILABLE' tag won't appear in chat store");
+            sb.AppendLine($"• Set longer cooldowns for powerful/expensive events");
+            sb.AppendLine($"• Set 0 cooldown for minor events you want to be spammable");
 
             string fullText = sb.ToString();
 

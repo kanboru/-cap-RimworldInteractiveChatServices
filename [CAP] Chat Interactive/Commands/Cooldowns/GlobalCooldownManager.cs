@@ -57,6 +57,12 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
                 data.CommandUsage = new Dictionary<string, CommandUsageRecord>();
                 Logger.Debug("CommandUsage initialized in constructor");
             }
+
+            if (data.IncidentUsage == null) // NEW
+            {
+                data.IncidentUsage = new Dictionary<string, IncidentUsageRecord>();
+                Logger.Debug("IncidentUsage initialized in constructor");
+            }
         }
 
         public override void ExposeData()
@@ -88,6 +94,12 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
             {
                 data.CommandUsage = new Dictionary<string, CommandUsageRecord>();
                 Logger.Debug("CommandUsage dictionary initialized for backward compatibility");
+            }
+
+            if (data.IncidentUsage == null) // NEW
+            {
+                data.IncidentUsage = new Dictionary<string, IncidentUsageRecord>();
+                Logger.Debug("IncidentUsage dictionary initialized for backward compatibility");
             }
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
@@ -195,6 +207,9 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
             foreach (var record in data.CommandUsage.Values)
                 CleanupOldCommandUses(record, globalSettings.EventCooldownDays);
 
+            foreach (var record in data.IncidentUsage.Values)
+                CleanupOldIncidentUses(record, globalSettings.EventCooldownDays);
+
             lastCleanupDay = currentDay;
         }
 
@@ -208,6 +223,75 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
         {
             if (cooldownDays == 0) return;
             record.UsageDays.RemoveAll(day => (CurrentGameDay - day) > cooldownDays);
+        }
+
+        // Update GlobalCooldownManager.cs - simplify the incident cooldown methods
+        public bool CanUseIncident(string incidentDefName, int incidentCooldownDays, CAPGlobalChatSettings settings)
+        {
+            Logger.Debug($"CanUseIncident: {incidentDefName}, IncidentCooldownDays: {incidentCooldownDays}");
+
+            // If event cooldowns are disabled globally, skip all cooldown checks
+            if (!settings.EventCooldownsEnabled)
+            {
+                Logger.Debug("Event cooldowns disabled globally, allowing incident use");
+                return true;
+            }
+
+            // If this specific incident has no cooldown (CooldownDays = 0), skip further checks
+            if (incidentCooldownDays <= 0)
+            {
+                Logger.Debug($"Incident {incidentDefName} has no cooldown (CooldownDays = {incidentCooldownDays})");
+                return true;
+            }
+
+            // Get or create the incident usage record
+            var record = GetOrCreateIncidentRecord(incidentDefName);
+
+            // Clean up old records
+            CleanupOldIncidentUses(record, incidentCooldownDays);
+
+            // Check if this incident has been used within the cooldown period
+            bool incidentUsedRecently = false;
+            foreach (int usageDay in record.UsageDays)
+            {
+                int daysSinceUse = CurrentGameDay - usageDay;
+                if (daysSinceUse <= incidentCooldownDays)
+                {
+                    incidentUsedRecently = true;
+                    Logger.Debug($"Incident {incidentDefName} was used {daysSinceUse} days ago (cooldown: {incidentCooldownDays} days)");
+                    break;
+                }
+            }
+
+            return !incidentUsedRecently;
+        }
+
+        public void RecordIncidentUse(string incidentDefName)
+        {
+            var record = GetOrCreateIncidentRecord(incidentDefName);
+            record.UsageDays.Add(CurrentGameDay);
+
+            Logger.Debug($"Recorded incident use: {incidentDefName} on day {CurrentGameDay}");
+        }
+
+        private void CleanupOldIncidentUses(IncidentUsageRecord record, int cooldownDays)
+        {
+            if (cooldownDays == 0) return; // Never expire
+
+            // Remove usage days that are older than the cooldown period
+            record.UsageDays.RemoveAll(day => (CurrentGameDay - day) > cooldownDays);
+        }
+
+        private IncidentUsageRecord GetOrCreateIncidentRecord(string incidentDefName)
+        {
+            if (!data.IncidentUsage.ContainsKey(incidentDefName))
+            {
+                data.IncidentUsage[incidentDefName] = new IncidentUsageRecord
+                {
+                    IncidentDefName = incidentDefName
+                };
+            }
+            return data.IncidentUsage[incidentDefName];
         }
 
         private int CurrentGameDay => GenDate.DaysPassed;
@@ -298,4 +382,6 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
             record.PurchaseDays.RemoveAll(day => (GenDate.DaysPassed - day) > cooldownDays);
         }
     }
+
+
 }

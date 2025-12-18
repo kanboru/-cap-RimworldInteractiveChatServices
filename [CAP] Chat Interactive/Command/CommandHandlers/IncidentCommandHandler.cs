@@ -30,6 +30,9 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 {
     public static class IncidentCommandHandler
     {
+        // Update IncidentCommandHandler.cs
+        // Add the individual incident cooldown check
+
         public static string HandleIncidentCommand(ChatMessageWrapper messageWrapper, string incidentType)
         {
             try
@@ -51,16 +54,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 if (buyableIncident == null)
                 {
                     var availableTypes = GetAvailableIncidents().Take(5).Select(i => i.Key);
-                    // removed to much letter spam, just tell the viewer
-                    // MessageHandler.SendFailureLetter("Incident Failed", $"{messageWrapper.Username} tried unknown incident: {incidentType}");
                     return $"Unknown incident type: {incidentType}. Try !event list";
                 }
 
                 // Check if incident is enabled
                 if (!buyableIncident.Enabled)
                 {
-                    MessageHandler.SendFailureLetter("Incident Failed",
-                        $"{messageWrapper.Username} tried disabled incident: {buyableIncident.Label}");
+                    // MessageHandler.SendFailureLetter("Incident Failed", $"{messageWrapper.Username} tried disabled incident: {buyableIncident.Label}");
                     return $"{buyableIncident.Label} is currently disabled.";
                 }
 
@@ -70,11 +70,35 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 Logger.Debug($"DefName: {buyableIncident.DefName}");
                 Logger.Debug($"KarmaType: {buyableIncident.KarmaType}");
                 Logger.Debug($"BaseCost: {buyableIncident.BaseCost}");
+                Logger.Debug($"CooldownDays: {buyableIncident.CooldownDays}"); // NEW LOG
 
                 // Check global cooldowns using your existing system
                 var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
                 if (cooldownManager != null)
                 {
+                    // NEW: Check individual incident cooldown for this viewer
+                    if (settings.EventCooldownsEnabled && buyableIncident.CooldownDays > 0)
+                    {
+                        if (!cooldownManager.CanUseIncident(
+                            buyableIncident.DefName,
+                            buyableIncident.CooldownDays,
+                            settings))
+                        {
+                            int daysRemaining = GetRemainingCooldownDays(
+                                buyableIncident.DefName,
+                                buyableIncident.CooldownDays,
+                                cooldownManager);
+
+                            string cooldownMessage = GetIndividualCooldownMessage(
+                                buyableIncident.Label,
+                                daysRemaining,
+                                settings.EventCooldownDays);
+
+                            Logger.Debug($"Individual cooldown blocked: {cooldownMessage}");
+                            return cooldownMessage;
+                        }
+                    }
+
                     // Get command settings for the "event" command
                     var commandSettings = CommandSettingsManager.GetSettings("event");
                     if (commandSettings == null)
@@ -141,6 +165,14 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     // Record event usage for cooldowns
                     if (cooldownManager != null)
                     {
+                        // NEW: Record individual incident usage for cooldown
+                        if (settings.EventCooldownsEnabled && buyableIncident.CooldownDays > 0)
+                        {
+                            cooldownManager.RecordIncidentUse(buyableIncident.DefName);
+                            Logger.Debug($"Recorded incident use: {buyableIncident.DefName}");
+                        }
+
+                        // Record global event usage
                         string eventType = GetKarmaTypeForIncident(buyableIncident.KarmaType);
                         cooldownManager.RecordEventUse(eventType);
                         Logger.Debug($"Recorded event usage for type: {eventType}");
@@ -167,7 +199,45 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
         }
 
+        // NEW: Helper method to get remaining cooldown days
+        private static int GetRemainingCooldownDays(string incidentDefName, int incidentCooldownDays, GlobalCooldownManager cooldownManager)
+        {
+            if (cooldownManager.data.IncidentUsage == null ||
+                !cooldownManager.data.IncidentUsage.ContainsKey(incidentDefName))
+                return 0;
+
+            var record = cooldownManager.data.IncidentUsage[incidentDefName];
+            int currentDay = GenDate.DaysPassed;
+
+            // Find the most recent use of this incident
+            if (record.UsageDays.Count == 0)
+                return 0;
+
+            int mostRecentUseDay = record.UsageDays.Max();
+            int daysSinceUse = currentDay - mostRecentUseDay;
+            int daysRemaining = incidentCooldownDays - daysSinceUse;
+
+            return Math.Max(0, daysRemaining);
+        }
+
+        // NEW: Helper method for individual cooldown messages
+        private static string GetIndividualCooldownMessage(string incidentLabel, int daysRemaining, int globalCooldownDays)
+        {
+            if (daysRemaining > 0)
+            {
+                if (daysRemaining == 1)
+                    return $"❌ {incidentLabel} is on cooldown for {daysRemaining} more day";
+                else
+                    return $"❌ {incidentLabel} is on cooldown for {daysRemaining} more days";
+            }
+            else
+            {
+                return $"❌ {incidentLabel} is on cooldown (resets every {globalCooldownDays} days)";
+            }
+        }
+
         // Helper methods for cooldown integration
+
         private static string GetKarmaTypeForIncident(string karmaType)
         {
             if (string.IsNullOrEmpty(karmaType))
@@ -386,6 +456,67 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             Logger.Message($"Mods: {modIncidents.Count(i => IsIncidentSuitableForCommand(i))}/{modIncidents.Count} available");
         }
 
+        // Add this debug action to IncidentCommandHandler.cs
+        // Update the debug action
+        [DebugAction("CAP", "Test Incident Cooldowns", allowedGameStates = AllowedGameStates.Playing)]
+        public static void DebugTestIncidentCooldowns()
+        {
+            var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
+            if (cooldownManager == null)
+            {
+                Logger.Message("No GlobalCooldownManager found!");
+                return;
+            }
+
+            Logger.Message($"=== INCIDENT COOLDOWN REPORT ===");
+            Logger.Message($"Current game day: {GenDate.DaysPassed}");
+
+            if (cooldownManager.data.IncidentUsage == null || cooldownManager.data.IncidentUsage.Count == 0)
+            {
+                Logger.Message("No incident cooldown data recorded.");
+            }
+            else
+            {
+                foreach (var kvp in cooldownManager.data.IncidentUsage)
+                {
+                    Logger.Message($"Incident: {kvp.Key}");
+                    Logger.Message($"  Total uses: {kvp.Value.CurrentPeriodUses}");
+
+                    foreach (int usageDay in kvp.Value.UsageDays)
+                    {
+                        int daysAgo = GenDate.DaysPassed - usageDay;
+                        Logger.Message($"    Used {daysAgo} days ago");
+                    }
+                }
+            }
+
+            // Test a specific incident
+            var testIncident = GetAvailableIncidents().Values.FirstOrDefault();
+            if (testIncident != null)
+            {
+                Logger.Message("");
+                Logger.Message($"=== TESTING: {testIncident.DefName} ===");
+                Logger.Message($"CooldownDays: {testIncident.CooldownDays}");
+
+                var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
+                bool canUse = cooldownManager.CanUseIncident(
+                    testIncident.DefName,
+                    testIncident.CooldownDays,
+                    settings);
+
+                Logger.Message($"Can this incident be used now? {canUse}");
+
+                if (!canUse)
+                {
+                    int daysRemaining = GetRemainingCooldownDays(
+                        testIncident.DefName,
+                        testIncident.CooldownDays,
+                        cooldownManager);
+
+                    Logger.Message($"Days remaining on cooldown: {daysRemaining}");
+                }
+            }
+        }
     }
 
 }

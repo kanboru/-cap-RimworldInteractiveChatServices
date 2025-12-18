@@ -15,13 +15,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 // A dialog window for editing and managing chat-interactive events
+using _CAP__Chat_Interactive.Windows.Dialogs;
+using _CAP__Chat_Interactive.Windows.Dialogs._CAP__Chat_Interactive.Windows.Dialogs;
+using CAP_ChatInteractive.Incidents;
+using RimWorld;
 using System.Collections.Generic;
 using System.Linq;
-using RimWorld;
+using System.Text;
 using UnityEngine;
 using Verse;
-using CAP_ChatInteractive.Incidents;
-using System.Text;
 
 namespace CAP_ChatInteractive
 {
@@ -116,7 +118,7 @@ namespace CAP_ChatInteractive
             DrawSortButtons(sortRect);
 
             // Action buttons
-            Rect actionsRect = new Rect(615f, controlsY, 400f, 30f);
+            Rect actionsRect = new Rect(615f, controlsY, 525f, 30f);
             DrawActionButtons(actionsRect);
 
             // Put Info Icon on the right side next to gear  Use it to open a help dialog
@@ -249,8 +251,120 @@ namespace CAP_ChatInteractive
             {
                 ShowDisableByModSourceMenu();
             }
+            x += buttonWidth + spacing;
+
+            // Set Cooldowns button (includes reset option in menu)
+            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Cooldowns →"))
+            {
+                ShowCooldownMenu();
+            }
 
             Widgets.EndGroup();
+        }
+
+        // Show cooldown menu
+        private void ShowCooldownMenu()
+        {
+            List<FloatMenuOption> options = new List<FloatMenuOption>();
+
+            // Build filter description
+            string filterDescription = BuildFilterDescription();
+
+            // Add preset options
+            options.Add(new FloatMenuOption("No Cooldown (∞)", () => SetBulkCooldown(0, false, filterDescription)));
+            options.Add(new FloatMenuOption("1 Day", () => SetBulkCooldown(1, false, filterDescription)));
+            options.Add(new FloatMenuOption("3 Days", () => SetBulkCooldown(3, false, filterDescription)));
+            options.Add(new FloatMenuOption("5 Days", () => SetBulkCooldown(5, false, filterDescription)));
+            options.Add(new FloatMenuOption("7 Days", () => SetBulkCooldown(7, false, filterDescription)));
+            options.Add(new FloatMenuOption("14 Days", () => SetBulkCooldown(14, false, filterDescription)));
+
+            // Reset to defaults section
+            if (!string.IsNullOrEmpty(filterDescription))
+            {
+                options.Add(new FloatMenuOption($"Reset filtered to defaults", () =>
+                {
+                    Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                        $"Reset cooldowns for filtered events to default?\n\nFilter: {filterDescription}",
+                        () => ApplyResetAllCooldowns(true)
+                    ));
+                }));
+            }
+
+            options.Add(new FloatMenuOption("Reset ALL to defaults", () =>
+            {
+                Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                    "Reset ALL event cooldowns to default? This cannot be undone.",
+                    () => ApplyResetAllCooldowns(false)
+                ));
+            }));
+
+            // Custom input option
+            options.Add(new FloatMenuOption("Custom...", () => OpenCustomCooldownDialog()));
+
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        // Helper method to build filter description
+        private string BuildFilterDescription()
+        {
+            string description = "";
+
+            if (listViewType == EventListViewType.Category && selectedCategory != "All")
+            {
+                description = $"Category: {GetDisplayCategoryName(selectedCategory)}";
+            }
+            else if (listViewType == EventListViewType.ModSource && selectedModSource != "All")
+            {
+                description = $"Mod: {GetDisplayModName(selectedModSource)}";
+            }
+
+            // Check if we have a search query
+            if (!string.IsNullOrEmpty(searchQuery))
+            {
+                if (!string.IsNullOrEmpty(description))
+                    description += " + ";
+                description += $"Search: '{searchQuery}'";
+            }
+
+            return description;
+        }
+        // NEW: Apply bulk cooldown to all incidents
+        private void ApplyBulkCooldown(int days)
+        {
+            int count = 0;
+            foreach (var incident in IncidentsManager.AllBuyableIncidents.Values)
+            {
+                incident.CooldownDays = days;
+                // Also update the buffer if it exists
+                string bufferKey = $"Cooldown_{incident.DefName}";
+                if (numericBuffers.ContainsKey(bufferKey))
+                {
+                    numericBuffers[bufferKey] = days.ToString();
+                }
+                count++;
+            }
+
+            IncidentsManager.SaveIncidentsToJson();
+
+            string message = days == 0 ?
+                $"Set {count} events to have no cooldown" :
+                $"Set {count} events to {days} day{(days == 1 ? "" : "s")} cooldown";
+
+            Messages.Message(message, MessageTypeDefOf.TaskCompletion);
+
+            // Refresh the view
+            FilterEvents();
+        }
+        // NEW: Open custom cooldown dialog
+        private void OpenCustomCooldownDialog()
+        {
+            // Build filter description
+            string filterDescription = BuildFilterDescription();
+
+            Find.WindowStack.Add(new Dialog_EventSetCustomCooldown((customDays, filteredOnly) =>
+            {
+                SetBulkCooldown(customDays, filteredOnly, filterDescription);
+            }, filterDescription));
         }
 
         private void DrawContent(Rect rect)
@@ -553,12 +667,122 @@ namespace CAP_ChatInteractive
                 }
             }
 
-            // Event type indicator - moved up and adjusted spacing
-            Rect typeRect = new Rect(0f, 30f, rect.width, 25f); // Increased height from 20f to 25f
-            string typeInfo = $"Type: {incident.KarmaType}";
+            // Create a horizontal layout for Karma Type and Cooldown
+            float y = 30f;
+            float sectionHeight = 25f;
+
+            // Karma Type (left side)
+            Rect karmaRect = new Rect(0f, y, rect.width * 0.4f, sectionHeight);
+            string karmaInfo = $"{incident.KarmaType}";
             GUI.color = GetKarmaTypeColor(incident.KarmaType);
-            Widgets.Label(typeRect, typeInfo);
+            Widgets.Label(karmaRect, karmaInfo);
             GUI.color = Color.white;
+
+            // Add tooltip for karma type
+            TooltipHandler.TipRegion(karmaRect, $"Karma Type: {incident.KarmaType}\nAffects karma-type limits if enabled in global settings");
+
+            // Cooldown Days (right side)
+            Rect cooldownRect = new Rect(karmaRect.xMax + 5f, y, rect.width * 0.6f - 5f, sectionHeight);
+            DrawCooldownControl(cooldownRect, incident);
+
+            Widgets.EndGroup();
+        }
+
+        private void DrawCooldownControl(Rect rect, BuyableIncident incident)
+        {
+            Widgets.BeginGroup(rect);
+
+            // Label
+            Rect labelRect = new Rect(0f, 0f, 45f, rect.height);
+            Widgets.Label(labelRect, "CD:");
+
+            // Cooldown input field
+            Rect inputRect = new Rect(50f, 0f, 50f, rect.height);
+
+            // Create a unique buffer key for this incident's cooldown
+            string bufferKey = $"Cooldown_{incident.DefName}";
+            if (!numericBuffers.ContainsKey(bufferKey))
+            {
+                numericBuffers[bufferKey] = incident.CooldownDays.ToString();
+            }
+
+            // Check if cooldown is 0 (infinite)
+            if (incident.CooldownDays == 0)
+            {
+                // Draw infinity symbol button
+                Rect infinityRect = new Rect(inputRect.x, inputRect.y, 30f, 30f);
+
+                // Try to load infinity icon
+                Texture2D infinityIcon = ContentFinder<Texture2D>.Get("UI/Buttons/Infinity", false);
+                if (infinityIcon != null)
+                {
+                    if (Widgets.ButtonImage(infinityRect, infinityIcon))
+                    {
+                        // Toggle to enable input
+                        incident.CooldownDays = 1;
+                        numericBuffers[bufferKey] = "1";
+                        IncidentsManager.SaveIncidentsToJson();
+                    }
+                    TooltipHandler.TipRegion(infinityRect, "No cooldown (infinite)\nClick to set a cooldown");
+                }
+                else
+                {
+                    // Fallback: Draw "∞" text
+                    if (Widgets.ButtonText(infinityRect, "∞"))
+                    {
+                        incident.CooldownDays = 1;
+                        numericBuffers[bufferKey] = "1";
+                        IncidentsManager.SaveIncidentsToJson();
+                    }
+                    TooltipHandler.TipRegion(infinityRect, "No cooldown (infinite)\nClick to set a cooldown");
+                }
+            }
+            else
+            {
+                // Use numeric input for non-zero cooldown
+                int cooldownBuffer = incident.CooldownDays;
+                string _numBufferString = numericBuffers[bufferKey];
+
+                // Use TextFieldNumeric with range limits
+                Widgets.TextFieldNumeric(inputRect, ref cooldownBuffer, ref _numBufferString, 0f, 1000f);
+                numericBuffers[bufferKey] = _numBufferString;
+
+                if (cooldownBuffer != incident.CooldownDays)
+                {
+                    incident.CooldownDays = cooldownBuffer;
+                    IncidentsManager.SaveIncidentsToJson();
+                }
+
+                // Add reset to infinity button
+                Rect infinityButtonRect = new Rect(inputRect.xMax + 5f, inputRect.y, 25f, rect.height);
+                Texture2D infinityIcon = ContentFinder<Texture2D>.Get("UI/Buttons/Infinity", false);
+                if (infinityIcon != null)
+                {
+                    if (Widgets.ButtonImage(infinityButtonRect, infinityIcon))
+                    {
+                        incident.CooldownDays = 0;
+                        numericBuffers[bufferKey] = "0";
+                        IncidentsManager.SaveIncidentsToJson();
+                    }
+                }
+                else
+                {
+                    if (Widgets.ButtonText(infinityButtonRect, "∞"))
+                    {
+                        incident.CooldownDays = 0;
+                        numericBuffers[bufferKey] = "0";
+                        IncidentsManager.SaveIncidentsToJson();
+                    }
+                }
+                TooltipHandler.TipRegion(infinityButtonRect, "Reset to no cooldown (infinite)");
+            }
+
+            // Tooltip for the entire cooldown control
+            string cooldownTooltip = "Cooldown Days\n" +
+                                     "Days before this event can be triggered again\n" +
+                                     "0 = No cooldown (infinite)\n" +
+                                     "Only applies if global event cooldowns are enabled";
+            TooltipHandler.TipRegion(new Rect(labelRect.x, labelRect.y, rect.width, rect.height), cooldownTooltip);
 
             Widgets.EndGroup();
         }
@@ -576,7 +800,8 @@ namespace CAP_ChatInteractive
             DrawCostControl(costRect, incident);
             y += controlHeight + spacing;
 
-            // Karma type control
+            // NEW: Cooldown control - removed since we moved it to toggle section
+            // Karma type control remains
             Rect karmaRect = new Rect(0f, y, rect.width, controlHeight);
             DrawKarmaControl(karmaRect, incident);
 
@@ -593,16 +818,16 @@ namespace CAP_ChatInteractive
 
             // Cost input
             Rect inputRect = new Rect(65f, 0f, 80f, 25f);
-            int costBuffer = incident.BaseCost;
 
             // Create a unique buffer key for this incident's cost
             string bufferKey = $"Cost_{incident.DefName}";
             if (!numericBuffers.ContainsKey(bufferKey))
             {
-                numericBuffers[bufferKey] = costBuffer.ToString();
+                numericBuffers[bufferKey] = incident.BaseCost.ToString();
             }
 
             // Use standard Widgets.TextFieldNumeric with the buffer from dictionary
+            int costBuffer = incident.BaseCost;
             string _numBufferString = numericBuffers[bufferKey];
             Widgets.TextFieldNumeric(inputRect, ref costBuffer, ref _numBufferString, 0f, 1000000f);
             numericBuffers[bufferKey] = _numBufferString; // Store back the updated buffer
@@ -668,6 +893,134 @@ namespace CAP_ChatInteractive
         }
 
         // Bulk operations (similar to weather editor)
+        private void ApplyResetAllCooldowns(bool filteredOnly = false)
+        {
+            int count = 0;
+
+            if (filteredOnly)
+            {
+                // Reset only filtered events
+                foreach (var incident in filteredEvents)
+                {
+                    if (incident == null) continue;
+
+                    int defaultCooldown = CalculateDefaultCooldown(incident);
+                    incident.CooldownDays = defaultCooldown;
+
+                    // Update buffer
+                    string bufferKey = $"Cooldown_{incident.DefName}";
+                    if (numericBuffers.ContainsKey(bufferKey))
+                    {
+                        numericBuffers[bufferKey] = defaultCooldown.ToString();
+                    }
+                    count++;
+                }
+            }
+            else
+            {
+                // Reset all events
+                foreach (var incident in IncidentsManager.AllBuyableIncidents.Values)
+                {
+                    int defaultCooldown = CalculateDefaultCooldown(incident);
+                    incident.CooldownDays = defaultCooldown;
+
+                    // Update buffer
+                    string bufferKey = $"Cooldown_{incident.DefName}";
+                    if (numericBuffers.ContainsKey(bufferKey))
+                    {
+                        numericBuffers[bufferKey] = defaultCooldown.ToString();
+                    }
+                    count++;
+                }
+            }
+
+            IncidentsManager.SaveIncidentsToJson();
+            Messages.Message($"Reset cooldowns for {count} events", MessageTypeDefOf.TaskCompletion);
+            FilterEvents();
+        }
+        private void SetBulkCooldown(int days, bool filteredOnly = false, string filterDescription = "")
+        {
+            string targetDescription = filteredOnly ?
+                $"filtered events ({filterDescription})" :
+                "ALL events";
+
+            string confirmMessage = days == 0 ?
+                $"Set {targetDescription} to have NO cooldown (infinite)?" :
+                $"Set {targetDescription} to have {days} day{(days == 1 ? "" : "s")} cooldown?";
+
+            Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                confirmMessage,
+                () => ApplyBulkCooldown(days, filteredOnly)
+            ));
+        }
+        private void ApplyBulkCooldown(int days, bool filteredOnly = false)
+        {
+            int count = 0;
+
+            if (filteredOnly)
+            {
+                // Apply only to currently filtered events
+                foreach (var incident in filteredEvents)
+                {
+                    if (incident == null) continue;
+
+                    incident.CooldownDays = days;
+                    // Also update the buffer if it exists
+                    string bufferKey = $"Cooldown_{incident.DefName}";
+                    if (numericBuffers.ContainsKey(bufferKey))
+                    {
+                        numericBuffers[bufferKey] = days.ToString();
+                    }
+                    count++;
+                }
+            }
+            else
+            {
+                // Apply to all events
+                foreach (var incident in IncidentsManager.AllBuyableIncidents.Values)
+                {
+                    incident.CooldownDays = days;
+                    // Also update the buffer if it exists
+                    string bufferKey = $"Cooldown_{incident.DefName}";
+                    if (numericBuffers.ContainsKey(bufferKey))
+                    {
+                        numericBuffers[bufferKey] = days.ToString();
+                    }
+                    count++;
+                }
+            }
+
+            IncidentsManager.SaveIncidentsToJson();
+
+            string message = days == 0 ?
+                $"Set {count} events to have no cooldown" :
+                $"Set {count} events to {days} day{(days == 1 ? "" : "s")} cooldown";
+
+            Messages.Message(message, MessageTypeDefOf.TaskCompletion);
+
+            // Refresh the view
+            FilterEvents();
+        }
+
+        // NEW: Calculate default cooldown based on incident type (similar to your BuyableIncident logic)
+        private int CalculateDefaultCooldown(BuyableIncident incident)
+        {
+            // This should match the logic in BuyableIncident.SetDefaultCooldown
+            // Since we don't have that method yet, let's create a simple default
+
+            // You can adjust these defaults based on your preferences
+            if (incident.IsRaidIncident)
+                return 7;
+            else if (incident.IsDiseaseIncident)
+                return 5;
+            else if (incident.IsWeatherIncident)
+                return 3;
+            else if (incident.IsQuestIncident)
+                return 10;
+            else
+                return 1;
+        }
+
         private void ShowEnableByModSourceMenu()
         {
             List<FloatMenuOption> options = new List<FloatMenuOption>();
@@ -872,7 +1225,6 @@ namespace CAP_ChatInteractive
                     break;
             }
         }
-
         private void SaveOriginalSettings()
         {
             originalSettings.Clear();
@@ -881,7 +1233,6 @@ namespace CAP_ChatInteractive
                 originalSettings[incident.DefName] = (incident.BaseCost, incident.KarmaType);
             }
         }
-
         private void ResetAllPrices()
         {
             foreach (var incident in IncidentsManager.AllBuyableIncidents.Values)
@@ -891,13 +1242,11 @@ namespace CAP_ChatInteractive
             IncidentsManager.SaveIncidentsToJson();
             FilterEvents();
         }
-
         public override void PostClose()
         {
             IncidentsManager.SaveIncidentsToJson();
             base.PostClose();
         }
-
         private void ShowDefInfoWindow(BuyableIncident incident)
         {
             Find.WindowStack.Add(new EventsDefInfoWindow(incident));

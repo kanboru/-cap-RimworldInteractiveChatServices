@@ -21,16 +21,36 @@ using Verse;
 
 namespace CAP_ChatInteractive.Commands.Cooldowns
 {
+    // Update GlobalCooldownData.cs
+    // Add this new class for incident-specific cooldowns
+    public class IncidentUsageRecord : IExposable
+    {
+        public string IncidentDefName;
+        public List<int> UsageDays = new List<int>(); // Game days when incidents were used
+
+        public int CurrentPeriodUses => UsageDays.Count;
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref IncidentDefName, "incidentDefName");
+            Scribe_Collections.Look(ref UsageDays, "usageDays", LookMode.Value);
+        }
+    }
+
+    // Update GlobalCooldownData class to include incident tracking
     public class GlobalCooldownData : IExposable
     {
         public Dictionary<string, EventUsageRecord> EventUsage;
         public Dictionary<string, CommandUsageRecord> CommandUsage;
         public Dictionary<string, BuyUsageRecord> BuyUsage;
+        public Dictionary<string, IncidentUsageRecord> IncidentUsage; // NEW: Add incident usage tracking
+
         public void ExposeData()
         {
             Scribe_Collections.Look(ref EventUsage, "eventUsage", LookMode.Value, LookMode.Deep);
             Scribe_Collections.Look(ref CommandUsage, "commandUsage", LookMode.Value, LookMode.Deep);
             Scribe_Collections.Look(ref BuyUsage, "buyUsage", LookMode.Value, LookMode.Deep);
+            Scribe_Collections.Look(ref IncidentUsage, "incidentUsage", LookMode.Value, LookMode.Deep); // NEW
 
             // Backward compatibility: Initialize any missing dictionaries after loading
             if (EventUsage == null)
@@ -48,16 +68,21 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
                 BuyUsage = new Dictionary<string, BuyUsageRecord>();
                 Logger.Debug("BuyUsage initialized in GlobalCooldownData.ExposeData");
             }
+            if (IncidentUsage == null) // NEW: Initialize IncidentUsage
+            {
+                IncidentUsage = new Dictionary<string, IncidentUsageRecord>();
+                Logger.Debug("IncidentUsage initialized in GlobalCooldownData.ExposeData");
+            }
         }
-    
+
         public GlobalCooldownData()
         {
             // Ensure all dictionaries are initialized
             EventUsage = new Dictionary<string, EventUsageRecord>();
             CommandUsage = new Dictionary<string, CommandUsageRecord>();
             BuyUsage = new Dictionary<string, BuyUsageRecord>();
+            IncidentUsage = new Dictionary<string, IncidentUsageRecord>(); // NEW
         }
-
     }
 
     public class EventUsageRecord : IExposable
