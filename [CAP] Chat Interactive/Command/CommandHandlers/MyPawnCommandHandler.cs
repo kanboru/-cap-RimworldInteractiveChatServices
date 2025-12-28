@@ -144,8 +144,8 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
             foreach (var partGroup in groupedImplants)
             {
-                string partName = partGroup.Key?.LabelCap ?? "Whole Body";
-                report.AppendLine($"• {partName}:");
+                //string partName = partGroup.Key?.LabelCap ?? "Whole Body";
+                //eport.AppendLine($"• {partName}:");
 
                 foreach (var implant in partGroup.OrderBy(h => h.def.label))
                 {
@@ -402,10 +402,11 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 report.Append($"• {partName}: ");
 
                 var conditions = new List<string>();
+                var hediffsList = partGroup.ToList(); // Get as list for parent checking
 
-                foreach (var hediff in partGroup)
+                foreach (var hediff in hediffsList)
                 {
-                    string condition = GetHediffDisplay(hediff);
+                    string condition = GetHediffDisplay(hediff, hediffsList);
                     if (!string.IsNullOrEmpty(condition))
                     {
                         conditions.Add(condition);
@@ -436,7 +437,37 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         {
             var finalHediffs = new List<Hediff>();
 
-            foreach (var hediff in pawn.health.hediffSet.hediffs)
+            // Get all visible hediffs first
+            var allVisibleHediffs = pawn.health.hediffSet.hediffs
+                .Where(h => h.Visible)
+                .ToList();
+
+            // Get all missing parts
+            var missingPartsDict = new Dictionary<BodyPartRecord, Hediff_MissingPart>();
+            foreach (var hediff in allVisibleHediffs.OfType<Hediff_MissingPart>())
+            {
+                if (hediff.Part != null)
+                {
+                    missingPartsDict[hediff.Part] = hediff;
+                }
+            }
+
+            // Function to check if a part has a missing ancestor
+            bool HasMissingAncestor(BodyPartRecord part)
+            {
+                if (part == null) return false;
+
+                BodyPartRecord parent = part.parent;
+                while (parent != null)
+                {
+                    if (missingPartsDict.ContainsKey(parent))
+                        return true;
+                    parent = parent.parent;
+                }
+                return false;
+            }
+
+            foreach (var hediff in allVisibleHediffs)
             {
                 if (!hediff.Visible) continue;
 
@@ -447,14 +478,25 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 // Handle missing parts
                 if (hediff is Hediff_MissingPart missingPart)
                 {
-                    if (HasAnyImplantOnPartOrChildren(pawn, missingPart.Part))
-                        continue; // Skip - replaced by implant
+                    // Skip if this part has a missing ancestor (parent, grandparent, etc.)
+                    if (HasMissingAncestor(missingPart.Part))
+                        continue;
 
-                    finalHediffs.Add(hediff); // Keep - truly missing
+                    // Check if replaced by implant
+                    if (HasAnyImplantOnPartOrChildren(pawn, missingPart.Part))
+                        continue;
+
+                    finalHediffs.Add(hediff);
                 }
                 else
                 {
-                    // Keep all other visible hediffs
+                    // For other hediffs on parts with missing ancestors, only include if they're implants
+                    if (HasMissingAncestor(hediff.Part))
+                    {
+                        if (!IsImplantOrAddedPart(hediff) || hediff.def.isBad)
+                            continue;
+                    }
+
                     finalHediffs.Add(hediff);
                 }
             }
@@ -515,22 +557,41 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
         }
 
-        private static string GetHediffDisplay(Hediff hediff)
+        private static string GetHediffDisplay(Hediff hediff, List<Hediff> allHediffsOnSamePart = null)
         {
             if (hediff == null) return string.Empty;
 
-            // Skip healthy implants in body report (they'll be shown separately in inplants)
+            // Skip healthy implants in body report (they'll be shown separately in implants)
             if (!hediff.def.isBad && IsImplantOrAddedPart(hediff))
             {
                 return string.Empty; // Don't show healthy implants in body report
             }
 
+            // For missing parts, check if parent is also missing
+            if (hediff is Hediff_MissingPart missingPart)
+            {
+                if (missingPart.Part != null)
+                {
+                    // Check if any parent part is also missing
+                    BodyPartRecord parent = missingPart.Part.parent;
+                    while (parent != null)
+                    {
+                        if (allHediffsOnSamePart?.Any(h =>
+                            h is Hediff_MissingPart mp && mp.Part == parent) == true)
+                        {
+                            return string.Empty; // Skip, parent is already missing
+                        }
+                        parent = parent.parent;
+                    }
+                }
+            }
+
             string display = System.Text.RegularExpressions.Regex.Replace(hediff.LabelCap, @"<[^>]*>", "");
 
             // Add emoji indicators
-            if (hediff is Hediff_MissingPart missingPart)
+            if (hediff is Hediff_MissingPart missingPart2)
             {
-                string bodyPartEmoji = GetBodyPartEmoji(missingPart.Part);
+                string bodyPartEmoji = GetBodyPartEmoji(missingPart2.Part);
                 return $"{bodyPartEmoji} {display}";
             }
 
@@ -545,19 +606,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
 
             return display;
-            // Add severity indicators for injuries
-            //if (hediff.Severity > 0.7f)
-            //{
-            //    return $"🔴 {display}"; // Severe
-            //}
-            //else if (hediff.Severity > 0.3f)
-            //{
-            //    return $"🟡 {display}"; // Moderate
-            //}
-            //else
-            //{
-            //    return $"🟢 {display}"; // Mild
-            //}
         }
 
         private static string GetBodyPartEmoji(BodyPartRecord part)

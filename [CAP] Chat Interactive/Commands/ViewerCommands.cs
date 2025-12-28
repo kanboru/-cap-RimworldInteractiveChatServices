@@ -18,10 +18,12 @@
 // Commands that viewers can use to interact with the game
 using CAP_ChatInteractive.Commands.CommandHandlers;
 using RimWorld;
+using RimWorld.BaseGen;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Verse;
+using CAP_ChatInteractive;
 
 namespace CAP_ChatInteractive.Commands.ViewerCommands
 {
@@ -31,9 +33,6 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            // Get command settings
-            var settingsCommand = GetCommandSettings();
-
             var viewer = Viewers.GetViewer(messageWrapper.Username);
             if (viewer != null)
             {
@@ -46,9 +45,59 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 // Use the shared karma emoji method
                 string karmaEmoji = GetKarmaEmoji(viewer.Karma);
 
-                return $"You have  {formattedCoins}  {currencySymbol}  and {viewer.Karma} karma! {karmaEmoji}";
+                // Calculate coins earned per award cycle (every 2 minutes)
+                int baseCoins = settings.BaseCoinReward;
+                float karmaMultiplier = (float)viewer.Karma / 100f;
+
+                // Apply role multipliers
+                int coinsPerAward = (int)(baseCoins * karmaMultiplier);
+
+                if (viewer.IsSubscriber)
+                    coinsPerAward += settings.SubscriberExtraCoins;
+                if (viewer.IsVip)
+                    coinsPerAward += settings.VipExtraCoins;
+                if (viewer.IsModerator)
+                    coinsPerAward += settings.ModExtraCoins;
+
+                // Calculate coins per hour (30 cycles per hour)
+                int coinsPerHour = coinsPerAward * 30;
+
+                // Calculate remaining active time
+                string activeTimeInfo = GetRemainingActiveTimeInfo(viewer, settings);
+
+                return $"💰 Balance: {formattedCoins} {currencySymbol}\n" +
+                       $"📊 Karma: {viewer.Karma} {karmaEmoji}\n" +
+                       $"💸 Earnings: {coinsPerAward} {currencySymbol} every 2 minutes\n" +
+                       $"⏱️ Rate: ~{coinsPerHour} {currencySymbol}/hour" +
+                       activeTimeInfo;
             }
             return "Could not find your viewer data.";
+        }
+
+        private string GetRemainingActiveTimeInfo(Viewer viewer, CAPGlobalChatSettings settings)
+        {
+            try
+            {
+
+                // Use LastSeen instead of LastActivityTime
+                var timeSinceLastActivity = DateTime.UtcNow - viewer.LastSeen;
+                int minutesActive = (int)timeSinceLastActivity.TotalMinutes;
+                int minutesRemaining = Math.Max(0, settings.MinutesForActive - minutesActive);
+
+                if (minutesRemaining > 0)
+                {
+                    return $"\n⏰ Active for: {minutesRemaining} more minutes";
+                }
+                else
+                {
+                    return "\n⚠️ Not currently active (chat to become active!)";
+                }
+            }
+            catch
+            {
+                // If we can't calculate it, that's okay
+                return "";
+            }
         }
     }
 
@@ -259,6 +308,15 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             var globalChatSettings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
             return $"RICS ver {globalChatSettings.modVersion} --- GitHub Releases:  https://github.com/ekudram/-cap-RimworldInteractiveChatServices/releases";
+        }
+    }
+
+    public class Wealth : ChatCommand
+    {
+        public override string Name => "wealth";
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
+        {
+            return WealthCommandHandler.HandleWealthCommand(messageWrapper, args);
         }
     }
 }

@@ -149,7 +149,6 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         }
     }
 
-    // ReplaceTrait Command - Complete Implementation
     public class ReplaceTrait : ChatCommand
     {
         public override string Name => "replacetrait";

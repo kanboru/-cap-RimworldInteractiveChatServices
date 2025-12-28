@@ -68,7 +68,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 bool successColorDef = SetPawnFavoriteColor(viewerPawn, colorDefFromName.color);
                 if (successColorDef)
                 {
-                    return $"Your pawn's favorite color has been set to {colorDefFromName.label} HSV {colorDefFromName.color}!";
+                    return $"Your pawn's favorite color has been set to {colorDefFromName.label}!";
                 }
             }
 
@@ -83,7 +83,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                     bool successParseColor = SetPawnFavoriteColor(viewerPawn, colorDefFromName.color);
                     if (successParseColor)
                     {
-                        return $"Your pawn's favorite color has been set to {colorDefFromName.label}!";
+                        return $"Your pawn's favorite color has been set to {colorDefFromName.label} HSV {colorDefFromName.color}!";
                     }
                 }
 
