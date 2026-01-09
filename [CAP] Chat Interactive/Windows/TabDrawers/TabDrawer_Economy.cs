@@ -65,7 +65,7 @@ namespace _CAP__Chat_Interactive
 
             // Max Karma with validation  
             int originalMaxKarma = settings.MaxKarma;
-            UIUtilities.NumericField(listing, "RICS.Economy.MaximumKarma".Translate(), "RICS.Economy.MaximumKarmaDesc".Translate(), ref settings.MaxKarma, 0, 200);
+            UIUtilities.NumericField(listing, "RICS.Economy.MaximumKarma".Translate(), "RICS.Economy.MaximumKarmaDesc".Translate(), ref settings.MaxKarma, 0, 1000);
             if (settings.MaxKarma != originalMaxKarma && settings.MaxKarma < settings.MinKarma)
             {
                 settings.MaxKarma = settings.MinKarma;

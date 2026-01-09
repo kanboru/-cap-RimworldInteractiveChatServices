@@ -94,7 +94,7 @@ namespace CAP_ChatInteractive
         public int VipExtraCoins = 3;
         public int ModExtraCoins = 2;
         public int MinKarma = 0;
-        public int MaxKarma = 200;
+        public int MaxKarma = 999;
         public int MinutesForActive = 30;
         public int MaxTraits = 4;
         public string CurrencyName = " 💰 ";
