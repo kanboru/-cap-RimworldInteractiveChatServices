@@ -44,7 +44,7 @@ namespace CAP_ChatInteractive.Utilities
 
             if (args.Length == 0)
             {
-                result.Error = "Usage: !command<buy use equip wear surgery> <item> [quality] [material] [side] [quantity]";
+                result.Error = "Usage: ! [buy use equip wear surgery] [item] [quality] [material] [side] [quantity]";
                 return result;
             }
 

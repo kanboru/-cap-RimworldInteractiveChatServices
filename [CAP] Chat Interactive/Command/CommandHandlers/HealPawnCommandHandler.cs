@@ -42,7 +42,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 // Get the Healer Mech Serum store item for pricing
                 var healerSerum = StoreInventory.GetStoreItem("MechSerumHealer");
-                if (healerSerum == null || !healerSerum.Enabled)
+                if (healerSerum == null)
+                {
+                    return "Healer Mech Serum is not available for healing services.";
+                }
+
+                // Check if the item is usable (IsUsable = true) OR if it's enabled (Enabled = true)
+                if (!healerSerum.IsUsable && !healerSerum.Enabled)
                 {
                     return "Healer Mech Serum is not available for healing services.";
                 }

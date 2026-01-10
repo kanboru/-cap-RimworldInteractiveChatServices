@@ -34,7 +34,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         {
             try
             {
-                Logger.Debug($"HandleBuyItem called for user: {messageWrapper.Username}, args: {string.Join(", ", args)}, requireEquippable: {requireEquippable}, requireWearable: {requireWearable}, addToInventory: {addToInventory}");
+                Logger.Debug($"HandleBuyItem called for user: {messageWrapper.Username}, command {messageWrapper.Message}, args: {string.Join(", ", args)}, requireEquippable: {requireEquippable}, requireWearable: {requireWearable}, addToInventory: {addToInventory}");
 
 
                 // REPLACE all the parsing code (about 80 lines) with just:
@@ -61,10 +61,22 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     return $"Item '{itemName}' not found in Rimazon.";
                 }
 
-                if (!storeItem.Enabled)
+                if (!storeItem.Enabled && !requireEquippable && !requireWearable)
                 {
                     Logger.Debug($"Item disabled: {itemName}");
                     return $"Item '{itemName}' is not available for purchase.";
+                }
+
+                if (requireEquippable && !storeItem.IsEquippable)
+                {
+                    Logger.Debug($"Item not equippable: {itemName}");
+                    return $"{itemName} is not availible to be equiped.";
+                }
+
+                if (requireWearable && !storeItem.IsWearable)
+                {
+                    Logger.Debug($"Item not wearable: {itemName}");
+                    return $"{itemName} iis not availible to be worn.";
                 }
 
                 // Check item type requirements
@@ -350,10 +362,11 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     return $"Item '{itemName}' not found in Rimazon.";
                 }
 
-                if (!storeItem.Enabled)
-                {
-                    return $"Item '{itemName}' is not available for purchase.";
-                }
+                // only check if isusable for use commands
+                // if (!storeItem.Enabled)
+                //{
+                //    return $"Item '{itemName}' is not available for purchase.";
+                //}
 
                 if (!storeItem.IsUsable)
                 {

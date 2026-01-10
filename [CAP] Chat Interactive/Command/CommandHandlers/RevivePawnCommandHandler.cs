@@ -39,7 +39,12 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 // Get the Resurrector Mech Serum store item for pricing
                 var resurrectorSerum = StoreInventory.GetStoreItem("MechSerumResurrector");
-                if (resurrectorSerum == null || !resurrectorSerum.Enabled)
+                if (resurrectorSerum == null)
+                {
+                    return "Resurrector Mech Serum is not available for revival services.";
+                }
+
+                if (!resurrectorSerum.IsUsable && !resurrectorSerum.Enabled)
                 {
                     return "Resurrector Mech Serum is not available for revival services.";
                 }
