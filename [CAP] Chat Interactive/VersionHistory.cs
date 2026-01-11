@@ -31,11 +31,13 @@ namespace CAP_ChatInteractive
         public static Dictionary<string, string> UpdateNotes = new Dictionary<string, string>
         {
             {
-                "1.0.14",
+                "Version 1.0.14a Hotfix",
                 @"Xenotype Pricing System Update 
 
 CRITICAL MIGRATION REQUIRED
-If you were using the previous version (1.0.13 before 2026.01.11), you MUST reset all xenotype prices!
+If you updated to 1.0.14 you can skip this step.
+If you are updating directly from 1.0.13 or earlier, you MUST follow the migration steps below to reset all xenotype prices!
+If you were using the previous version (1.0.13 before 2026.01.10), you MUST reset all xenotype prices!
 The old system used arbitrary multipliers (0.5x-8x), but the new system uses actual silver prices based on Rimworld's gene market values.
 
 Immediate Action Required:
@@ -84,6 +86,32 @@ New Features Added:
    - Debug actions now show actual silver values
    - 'Recalculate All Xenotype Prices' updates to new system
    - Gene details show marketValueFactor contributions
+
+--------------------------------------------------
+Combat Extended Compatibility Fix 1.0.14a
+Problem: Store Editor was crashing when Combat Extended was installed.
+
+Root Cause: Combat Extended adds ammunition and other items that don't
+have properly defined categories in RimWorld's item definitions. 
+When the store editor tried to use null categories as dictionary keys,
+it caused a System.ArgumentNullException.
+
+Solution: Added defensive null-handling throughout the store system.
+Items with null categories are now automatically assigned to ""Uncategorized"" instead of causing crashes.
+
+Changes Made:
+
+- Store Editor UI now handles null categories gracefully
+- Category filtering and display updated to work with mods that don't follow vanilla conventions
+- Store item creation ensures ""Uncategorized"" as fallback for null categories
+
+Result:
+- Store Editor opens without crashing with Combat Extended
+- Combat Extended items with null categories appear in ""Uncategorized"" section
+- Better compatibility with mods that have non-standard item definitions
+- Existing store data automatically migrates to handle null categories
+
+Note: If you see items in ""Uncategorized"" that should have proper categories, this is working as intended - they're from mods that don't define categories properly.
 
 --------------------------------------------------
 Mech Faction Fix

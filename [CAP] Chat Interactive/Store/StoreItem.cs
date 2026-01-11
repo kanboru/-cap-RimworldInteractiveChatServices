@@ -53,7 +53,7 @@ namespace CAP_ChatInteractive.Store
             CustomName = thingDef.label.CapitalizeFirst();
             // CustomName = thingDef.label.CapitalizeFirst().Replace("(", "").Replace(")", "");
             BasePrice = CalculateBasePrice(thingDef);
-            Category = GetCategoryFromThingDef(thingDef);  // This needs fixing
+            Category = GetCategoryFromThingDef(thingDef) ?? "Uncategorized";  // Handle null here
             ModSource = thingDef.modContentPack?.Name ?? "RimWorld";
 
             // Set default properties based on thing type - IMPROVED LOGIC

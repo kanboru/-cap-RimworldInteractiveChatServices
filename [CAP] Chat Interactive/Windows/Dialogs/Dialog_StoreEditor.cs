@@ -311,7 +311,9 @@ namespace CAP_ChatInteractive
             int enabledCount = 0;
             foreach (var item in StoreInventory.AllStoreItems.Values)
             {
-                if (item.Category == category && !item.Enabled)
+                // Handle null categories
+                string itemCategory = item.Category ?? "Uncategorized";
+                if (itemCategory == category && !item.Enabled)
                 {
                     item.Enabled = true;
                     enabledCount++;
@@ -392,7 +394,9 @@ namespace CAP_ChatInteractive
             int disabledCount = 0;
             foreach (var item in StoreInventory.AllStoreItems.Values)
             {
-                if (item.Category == category && item.Enabled)
+                // Handle null categories
+                string itemCategory = item.Category ?? "Uncategorized";
+                if (itemCategory == category && item.Enabled)
                 {
                     item.Enabled = false;
                     disabledCount++;
@@ -466,6 +470,7 @@ namespace CAP_ChatInteractive
                         // Group Apparel categories together
                         if (cat == "Apparel") return 1;
                         if (cat == "Children's Apparel") return 2;
+                        if (cat == "Uncategorized") return 998; // Put uncategorized near the bottom
                         // Everything else alphabetically after
                         return 3;
                     })
@@ -1365,10 +1370,17 @@ namespace CAP_ChatInteractive
 
             foreach (var item in StoreInventory.AllStoreItems.Values)
             {
-                if (categoryCounts.ContainsKey(item.Category))
-                    categoryCounts[item.Category]++;
+                if (item.Category == null)
+                {
+                    Log.Warning($"[CAP] Store item '{item.DefName}' from mod '{item.ModSource}' has null category");
+                }
+                // Handle null categories - this is the fix!
+                string categoryKey = item.Category ?? "Uncategorized";
+
+                if (categoryCounts.ContainsKey(categoryKey))
+                    categoryCounts[categoryKey]++;
                 else
-                    categoryCounts[item.Category] = 1;
+                    categoryCounts[categoryKey] = 1;
             }
         }
 
@@ -1379,10 +1391,11 @@ namespace CAP_ChatInteractive
 
             var allItems = StoreInventory.AllStoreItems.Values.AsEnumerable();
 
-            // Category filter
+            // Category filter - handle null categories
             if (selectedCategory != "All")
             {
-                allItems = allItems.Where(item => item.Category == selectedCategory);
+                allItems = allItems.Where(item =>
+                    (item.Category ?? "Uncategorized") == selectedCategory);
             }
 
             // Search filter
@@ -1392,7 +1405,7 @@ namespace CAP_ChatInteractive
                 allItems = allItems.Where(item =>
                     item.DefName.ToLower().Contains(searchLower) ||
                     (GetThingDefLabel(item.DefName) ?? "").ToLower().Contains(searchLower) ||
-                    item.Category.ToLower().Contains(searchLower) ||
+                    (item.Category ?? "").ToLower().Contains(searchLower) ||  // Handle null category
                     item.ModSource.ToLower().Contains(searchLower)
                 );
             }
