@@ -692,9 +692,22 @@ namespace CAP_ChatInteractive
             return $"{username.ToLowerInvariant()}";
         }
 
+        /// <summary>
+        /// Finds and returns platform ID by username
+        /// improved and fixed to prevent spoofing and ensure accurate assignments
+        /// version 1.0.15
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
         private string FindViewerIdentifier(string username, ChatMessageWrapper message = null)
         {
-            // If we have a message with platform info, use that first
+            if (string.IsNullOrEmpty(username))
+                return null;
+
+            string legacyId = GetLegacyIdentifier(username);
+
+            // Priority: If message provided, check its platform ID first (prevents spoofing)
             if (message != null)
             {
                 string platformId = GetViewerIdentifier(message);
@@ -702,13 +715,38 @@ namespace CAP_ChatInteractive
                     return platformId;
             }
 
-            // Try legacy username identifier
-            string legacyId = GetLegacyIdentifier(username);
+            // Check legacy username assignment
             if (viewerPawnAssignments.ContainsKey(legacyId))
                 return legacyId;
 
-            // If no assignments found, return the best available identifier
-            return message != null ? GetViewerIdentifier(message) : legacyId;
+            // Lookup the viewer and check all their known platform IDs
+            var viewer = Viewers.GetViewerNoAdd(username);
+            if (viewer != null)
+            {
+                // Check each platform ID associated with this viewer
+                foreach (var platformEntry in viewer.PlatformUserIds)
+                {
+                    string platId = $"{platformEntry.Key.ToLowerInvariant()}:{platformEntry.Value}";
+                    if (viewerPawnAssignments.ContainsKey(platId))
+                    {
+                        Logger.Debug($"Found assignment under platform ID: {platId} for username: {username}");
+                        return platId;
+                    }
+                }
+
+                // As fallback, check primary platform ID explicitly
+                string primaryId = viewer.GetPrimaryPlatformIdentifier();
+                if (viewerPawnAssignments.ContainsKey(primaryId))
+                {
+                    Logger.Debug($"Found assignment under primary ID: {primaryId} for username: {username}");
+                    return primaryId;
+                }
+            }
+
+            // Final fallback: Return the best available identifier (will likely not find an assignment)
+            string fallback = message != null ? GetViewerIdentifier(message) : legacyId;
+            Logger.Debug($"No assignment found for {username}, falling back to: {fallback}");
+            return fallback;
         }
 
         // Fix Viewer Pawns

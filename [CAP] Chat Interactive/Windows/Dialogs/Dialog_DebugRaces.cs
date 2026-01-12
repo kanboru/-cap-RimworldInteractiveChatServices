@@ -29,7 +29,7 @@ public class Dialog_DebugRaces : Window
     private List<ThingDef> allHumanlikeRaces;
     private int totalHumanlike;
 
-    private CAPGlobalChatSettings settingsGlobalChat;
+    //private CAPGlobalChatSettings settingsGlobalChat;
     private Dictionary<string, string> numericBuffers = new Dictionary<string, string>();
 
 

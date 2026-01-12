@@ -43,7 +43,7 @@ namespace CAP_ChatInteractive
         private Dictionary<string, (int baseCost, string karmaType)> originalSettings = new Dictionary<string, (int, string)>();
         private EventListViewType listViewType = EventListViewType.ModSource;
 
-        private CAPGlobalChatSettings settingsGlobalChat;
+        //private CAPGlobalChatSettings settingsGlobalChat;
         private Dictionary<string, string> numericBuffers = new Dictionary<string, string>();
 
         public override Vector2 InitialSize => new Vector2(1200f, 700f);

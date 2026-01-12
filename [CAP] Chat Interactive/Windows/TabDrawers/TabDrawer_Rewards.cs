@@ -26,7 +26,7 @@ namespace _CAP__Chat_Interactive
     {
         private static Vector2 _scrollPosition = Vector2.zero;
         private static float _lineHeight = 30f;
-        private static float _iconWidth = 24f;
+        // private static float _iconWidth = 24f;
 
         public static void Draw(Rect region)
         {
