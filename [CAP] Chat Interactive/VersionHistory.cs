@@ -31,7 +31,7 @@ namespace CAP_ChatInteractive
         public static Dictionary<string, string> UpdateNotes = new Dictionary<string, string>
         {
             {
-                "Version 1.0.14a Hotfix",
+                "1.0.14a",
                 @"Xenotype Pricing System Update 
 
 CRITICAL MIGRATION REQUIRED

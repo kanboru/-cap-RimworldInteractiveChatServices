@@ -160,10 +160,10 @@ namespace CAP_ChatInteractive
             if (VersionHistory.UpdateNotes.ContainsKey(newVersion))
             {
                 // Special handling for critical migrations
-                if (newVersion == "1.0.14" && (string.IsNullOrEmpty(oldVersion) || oldVersion != "1.0.14"))
-                {
-                    return VersionHistory.GetMigrationNotes(oldVersion, newVersion);
-                }
+                //if (newVersion == "1.0.14" && (string.IsNullOrEmpty(oldVersion) || oldVersion != "1.0.14"))
+                //{
+                //    return VersionHistory.GetMigrationNotes(oldVersion, newVersion);
+                //}
 
                 return VersionHistory.UpdateNotes[newVersion];
             }
