@@ -613,20 +613,20 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 return IntVec3.Invalid;
             }
 
-            // 1. Highest priority: Ship landing beacon (tells shuttles exactly where to land)
-            Building shipBeacon = map.listerBuildings.AllBuildingsColonistOfDef(ThingDefOf.ShipLandingBeacon).FirstOrDefault();
-            if (shipBeacon != null)
-            {
-                Logger.Debug($"Using Ship Landing Beacon position: {shipBeacon.Position}");
-                return shipBeacon.Position;
-            }
-
-            // 2. Orbital trade beacon (good for drop pods/trade behavior)
+            // 1. Orbital trade beacon (good for drop pods/trade behavior)
             Building tradeBeacon = map.listerBuildings.AllBuildingsColonistOfDef(ThingDefOf.OrbitalTradeBeacon).FirstOrDefault();
             if (tradeBeacon != null)
             {
                 Logger.Debug($"Using Orbital Trade Beacon position: {tradeBeacon.Position}");
                 return tradeBeacon.Position;
+            }
+
+            // 2. Highest priority: Ship landing beacon (tells shuttles exactly where to land)
+            Building shipBeacon = map.listerBuildings.AllBuildingsColonistOfDef(ThingDefOf.ShipLandingBeacon).FirstOrDefault();
+            if (shipBeacon != null)
+            {
+                Logger.Debug($"Using Ship Landing Beacon position: {shipBeacon.Position}");
+                return shipBeacon.Position;
             }
 
             // 3. Caravan hitching spot (good general gathering point)

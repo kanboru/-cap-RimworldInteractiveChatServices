@@ -39,20 +39,24 @@ namespace _CAP__Chat_Interactive
 
             // Channel Points Section
             Text.Font = GameFont.Medium;
-            listing.Label("Twitch Channel Points");
+            // OLD: listing.Label("Twitch Channel Points");
+            listing.Label("RICS.Rewards.ChannelPointsSettingsHeader".Translate());
             Text.Font = GameFont.Small;
             listing.GapLine(6f);
 
             // Important note about channel points
             Text.Font = GameFont.Tiny;
             GUI.color = Color.yellow;
-            listing.Label("Important: Twitch rewards must be set to 'Require Viewer to Enter Text' or they won't be detected!");
+            //listing.Label("Important: Twitch rewards must be set to 'Require Viewer to Enter Text' or they won't be detected!");
+            listing.Label("RICS.Rewards.ChannelPointsImportantNote".Translate());
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
             listing.Gap(8f);
 
-            listing.CheckboxLabeled("Enable Channel Points Rewards", ref settings.ChannelPointsEnabled);
-            listing.CheckboxLabeled("Show Channel Points Debug Messages", ref settings.ShowChannelPointsDebugMessages);
+            // OLD: listing.CheckboxLabeled("Enable Channel Points Rewards", ref settings.ChannelPointsEnabled);
+            listing.CheckboxLabeled("RICS.Rewards.ChannelPointsDebugMessagesLabel".Translate(), ref settings.ShowChannelPointsDebugMessages);
+            // OLD: listing.CheckboxLabeled("Show Channel Points Debug Messages", ref settings.ShowChannelPointsDebugMessages);
+            listing.CheckboxLabeled("RICS.Rewards.EnableChannelPointsRewardsLabel".Translate(), ref settings.ChannelPointsEnabled);
 
             listing.Gap(12f);
 
@@ -63,12 +67,14 @@ namespace _CAP__Chat_Interactive
 
             // Lootbox Section
             Text.Font = GameFont.Medium;
-            listing.Label("Loot Box Settings");
+            // OLD: listing.Label("Loot Box Settings");
+            listing.Label("RICS.Rewards.LootBoxSettingsHeader".Translate());
             Text.Font = GameFont.Small;
             listing.GapLine(6f);
 
             // Coin range
-            listing.Label("Coin Range (1-10000):");
+            // OLD: listing.Label("Coin Range (1-10000):");
+            listing.Label("RICS.Rewards.LootBoxCoinRangeDescription".Translate());
             listing.Gap(4f);
 
             // Create a horizontal layout for min/max inputs
@@ -78,11 +84,13 @@ namespace _CAP__Chat_Interactive
             var coinMaxLabelRect = new Rect(coinMinInputRect.xMax + 8f, coinRangeRect.y, 80f, Text.LineHeight);
             var coinMaxInputRect = new Rect(coinMaxLabelRect.xMax + 4f, coinRangeRect.y, 60f, Text.LineHeight);
 
-            Widgets.Label(coinMinRect, "Min:");
+            // OLD: Widgets.Label(coinMinRect, "Min:");
+            Widgets.Label(coinMinRect, "RICS.Rewards.LootBoxCoinRangeMinLabel".Translate());
             string coinMinBuffer = settings.LootBoxRandomCoinRange.min.ToString();
             UIUtilities.TextFieldNumericFlexible(coinMinInputRect, ref settings.LootBoxRandomCoinRange.min, ref coinMinBuffer, 1, 10000);
 
-            Widgets.Label(coinMaxLabelRect, "Max:");
+            // OLD: Widgets.Label(coinMaxLabelRect, "Max:");
+            Widgets.Label(coinMaxLabelRect, "RICS.Rewards.LootBoxCoinRangeMaxLabel".Translate());
             string coinMaxBuffer = settings.LootBoxRandomCoinRange.max.ToString();
             UIUtilities.TextFieldNumericFlexible(coinMaxInputRect, ref settings.LootBoxRandomCoinRange.max, ref coinMaxBuffer, 1, 10000);
 
