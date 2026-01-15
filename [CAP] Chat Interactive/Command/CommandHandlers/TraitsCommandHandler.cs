@@ -227,7 +227,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 }
 
                 // NEW CHECK: Prevent removal of forced traits (e.g., from genes)
-                if (existingTrait.ScenForced)
+                if (existingTrait.sourceGene != null || existingTrait.ScenForced)
                 {
                     return $"❌ The trait '{buyableTrait.Name}' is forced (e.g., from genes) and cannot be removed.";
                 }
@@ -344,7 +344,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 }
 
                 // NEW CHECK: Prevent removal of forced traits (e.g., from genes)
-                if (existingTrait.ScenForced)
+                if (existingTrait.sourceGene != null || existingTrait.ScenForced)
                 {
                     return $"❌ The trait '{oldBuyableTrait.Name}' is forced (e.g., from genes) and cannot be replaced.";
                 }
@@ -394,6 +394,183 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             {
                 Logger.Error($"Error in ReplaceTrait command handler: {ex}");
                 return "An error occurred while replacing the trait.";
+            }
+        }
+
+        public static string HandleSetTraitsCommand(ChatMessageWrapper messageWrapper, string[] args)
+        {
+            try
+            {
+                if (args.Length < 1)
+                {
+                    return "Usage: !settraits <trait_name> <trait_name>. Add and replace traits in bulk.";
+                }
+
+                var viewer = Viewers.GetViewer(messageWrapper);
+                if (viewer == null)
+                {
+                    return "Could not find your viewer data.";
+                }
+
+                var assignmentManager = CAPChatInteractiveMod.GetPawnAssignmentManager();
+                Pawn pawn = assignmentManager.GetAssignedPawn(messageWrapper);
+
+                if (pawn == null || pawn.Dead)
+                {
+                    return "You don't have an active pawn in the colony. Use !pawn to purchase one!";
+                }
+
+                var resolvedTraits = new List<BuyableTrait>();
+                int bypassCount = 0;
+                //Find traits, and check validity
+                for (int i = 0; i < args.Length; i++)
+                {
+                    BuyableTrait trait = FindBuyableTrait(args[i].ToLower());
+
+                    // Try joining with next word
+                    if (trait == null && i + 1 < args.Length)
+                    {
+                        string joined = $"{args[i]} {args[i + 1]}".ToLower();
+                        trait = FindBuyableTrait(joined);
+
+                        if (trait != null)
+                            i++; // consume second word
+
+                        if (!trait.CanAdd)
+                        {
+                            return $"The trait '{trait.Name}' cannot be added to pawns.";
+                        }
+
+                        if (trait.BypassLimit == true)
+                            bypassCount++;
+                    }
+
+                    if (trait == null)
+                    {
+                        return $"Trait '{args[i]}' not found. Use !traits to see available traits.";
+                    }
+
+                    resolvedTraits.Add(trait);
+                }
+
+                //Check for conflicts in trait list
+                for (int i = 0; i < resolvedTraits.Count; i++)
+                {
+                    var traitA = resolvedTraits[i];
+
+                    for (int j = i + 1; j < resolvedTraits.Count; j++)
+                    {
+                        var traitB = resolvedTraits[j];
+
+                        // Only check traitA conflicts with traitB (one direction)
+                        if (traitA.Conflicts.Any(c => c.Equals(traitB.Name, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            return $"❌ {traitA.Name} conflicts with {traitB.Name}.";
+                        }
+                    }
+                }
+
+                //Check trait count
+                var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
+                int maxTraits = settings?.MaxTraits ?? 4;
+                int traitsCount = resolvedTraits.Count - bypassCount;
+                if (traitsCount > maxTraits)
+                    return $"Too many traits({traitsCount}).Max {maxTraits}";
+
+                //Remove matches from both lists
+                var existingTraits = pawn.story.traits.allTraits.Where(existing => !resolvedTraits.Any(rt => rt.DefName == existing.def.defName && rt.Degree == existing.Degree)).ToList();
+
+                resolvedTraits = resolvedTraits.Where(rt => !existingTraits.Any(et => et.def.defName == rt.DefName && et.Degree == rt.Degree)).ToList();
+
+                int totalCost = 0;
+
+                // List of forced traits
+                var forcedList = existingTraits
+                    .Where(t => t.ScenForced || t.sourceGene != null)
+                    .ToList();
+
+                // List of unremovable traits
+                var unremovableList = existingTraits
+                    .Where(existing =>
+                    {
+                        var buyable = TraitsManager.AllBuyableTraits.Values
+                            .FirstOrDefault(t => t.DefName == existing.def.defName && t.Degree == existing.Degree);
+                        return buyable != null && !buyable.CanRemove;
+                    })
+                    .ToList();
+                
+                // Check for conflict in locked/unremovable traits
+                if (forcedList.Count > 0 || unremovableList.Count > 0)
+                {
+                    var protectedTraits = forcedList.Concat(unremovableList).Select(existing => TraitsManager.AllBuyableTraits.Values.FirstOrDefault(bt => bt.DefName == existing.def.defName && bt.Degree == existing.Degree))
+                       .Where(bt => bt != null)
+                       .ToList();
+                    //Check for conflicts again
+                    foreach (var cTrait in resolvedTraits)
+                    {
+                        foreach (var protectedTrait in protectedTraits)
+                        {
+                            if (cTrait.Conflicts.Any(c => c.Equals(protectedTrait.Name, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                return $"❌ {cTrait.Name} conflicts with protected trait {protectedTrait.Name}.";
+                            }
+                        }
+                    }
+                }                   
+
+                var cleanList = existingTraits.Except(forcedList).Except(unremovableList).ToList();
+                
+                if (cleanList.Count - traitsCount >= 0)
+                {
+                    foreach(var t in cleanList)
+                    {
+                        BuyableTrait bT = TraitsManager.AllBuyableTraits.Values.FirstOrDefault(bt => bt.DefName == t.def.defName && bt.Degree == t.Degree);
+                        totalCost += bT.RemovePrice;
+                    }
+                    foreach(var t in resolvedTraits)
+                    {
+                        totalCost += t.AddPrice;
+                    }
+                    if (viewer.Coins < totalCost)
+                    {
+                        return $"You need {totalCost} coins, but you only have {viewer.Coins} coins.";
+                    }
+                    else
+                    {
+                        // add and remove traits
+                        foreach(var t in cleanList)
+                        {
+                            pawn.story.traits.RemoveTrait(t);
+                        }
+                        foreach (var t in resolvedTraits)
+                        {
+                            TraitDef newTraitDef = DefDatabase<TraitDef>.GetNamedSilentFail(t.DefName);
+                            if (newTraitDef == null)
+                            {
+                                return $"Error: Trait definition for '{t.Name}' not found.";
+                            }
+                            Trait newTrait = new Trait(newTraitDef, t.Degree, false);
+                            pawn.story.traits.GainTrait(newTrait);
+                        }
+
+                        // Deduct coins
+                        viewer.TakeCoins(totalCost);
+                        return $"✅ Set new traits: {string.Join(", ", resolvedTraits.Select(t => t.Name))}";
+                    }
+                }
+                else
+                {
+                    int newMax = maxTraits - (forcedList.Count + unremovableList.Count);
+                    return $"Too many traits({traitsCount}). Some traits are forced or cannot be removed, so your trait max is {newMax}";
+                }
+                             
+
+                
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error in SetTraits command handler: {ex}");
+                return "An error occurred while setting traits.";
             }
         }
 
