@@ -23,6 +23,7 @@ using RimWorld;
 using System.Linq;
 using UnityEngine;
 using Verse;
+using Verse.Noise;
 using ColorLibrary = CAP_ChatInteractive.ColorLibrary;
 
 namespace CAP_ChatInteractive
@@ -43,16 +44,18 @@ namespace CAP_ChatInteractive
             var listing = new Listing_Standard();
             listing.Begin(view);
 
-            // Header
+            // === HEADER ===
             Text.Font = GameFont.Medium;
-            GUI.color = ColorLibrary.Orange;
-            listing.Label("Game Events & Cooldowns");
+            GUI.color = ColorLibrary.HeaderAccent;
+            // OLD: listing.Label("Game Events & Cooldowns");
+            listing.Label("RICS.GameEvents.Header".Translate());           // ← NEW
             Text.Font = GameFont.Small;
-            GUI.color = ColorLibrary.White;
+            GUI.color = Color.white;
             listing.GapLine(6f);
 
-            // Description
-            listing.Label("Configure cooldowns for events, traits, and store purchases. Manage all game interactions in one place.");
+            // === DESCRIPTION ===
+            // OLD: listing.Label("Configure cooldowns for events, traits, and store purchases. Manage all game interactions in one place.");
+            listing.Label("RICS.GameEvents.MainDescription".Translate());   // ← NEW
             listing.Gap(12f);
 
             // COOLDOWN SETTINGS SECTION (Always available - no game required)
@@ -125,88 +128,111 @@ namespace CAP_ChatInteractive
 
         private static void DrawCooldownSettings(Listing_Standard listing, CAPGlobalChatSettings settings)
         {
+            // === SECTION TITLE ===
             Text.Font = GameFont.Medium;
-            GUI.color = ColorLibrary.Orange;
-            listing.Label("Global Cooldown Settings");
+            GUI.color = ColorLibrary.HeaderAccent;
+            // OLD: listing.Label("Global Cooldown Settings");
+            listing.Label("RICS.GameEvents.GlobalCooldownSettings".Translate());   // ← NEW
             Text.Font = GameFont.Small;
-            GUI.color = ColorLibrary.White;
+            GUI.color = Color.white;
             listing.GapLine(6f);
 
-            // Event cooldown toggle
-            listing.CheckboxLabeled("Enable event cooldowns", ref settings.EventCooldownsEnabled,
-                "Turn on/off all event cooldowns. When off, events can be purchased without limits.");
+            // === MAIN TOGGLE ===
+            // OLD:
+            // listing.CheckboxLabeled("Enable event cooldowns", ref settings.EventCooldownsEnabled,
+            //     "Turn on/off all event cooldowns. When off, events can be purchased without limits.");
+            listing.CheckboxLabeled(
+                "RICS.GameEvents.EnableEventCooldowns".Translate(),
+                ref settings.EventCooldownsEnabled,
+                "RICS.GameEvents.EnableEventCooldownsDesc".Translate()
+            );
 
             // Only show the rest if event cooldowns are enabled
             if (settings.EventCooldownsEnabled)
             {
                 // Cooldown days
-                NumericField(listing, "Event cooldown duration in game days:", ref settings.EventCooldownDays, 1, 90);
-                GUI.color = ColorLibrary.LightGray;
-                listing.Label($"How many in-game days to count events. Affects: !event, !raid, !militaryaid, !weather");
-                GUI.color = ColorLibrary.White;
+                NumericField(listing,
+                        "RICS.GameEvents.EventCooldownDays".Translate(),
+                        ref settings.EventCooldownDays, 1, 90);
+
+                GUI.color = ColorLibrary.LightText;
+// OLD: listing.Label($"How many in-game days to count events. Affects: !event, !raid, !militaryaid, !weather");
+    listing.Label("RICS.GameEvents.EventCooldownDaysDesc".Translate()); // ← NEW
+                GUI.color = Color.white;
 
                 // Events per cooldown period
-                NumericField(listing, "Events per cooldown period:", ref settings.EventsperCooldown, 1, 1000);
-                GUI.color = ColorLibrary.LightGray;
-                listing.Label($"Maximum events allowed in {settings.EventCooldownDays} days. 0 = unlimited");
-                GUI.color = ColorLibrary.White;
+                // OLD: NumericField(listing, "Events per cooldown period:", ref settings.EventsperCooldown, 1, 1000);
+                NumericField(listing,
+                    "RICS.GameEvents.EventsPerCooldown".Translate(),
+                    ref settings.EventsperCooldown, 1, 1000);
+                GUI.color = ColorLibrary.LightText;
+                // OLD: listing.Label($"Maximum events allowed in {settings.EventCooldownDays} days. 0 = unlimited");
+                listing.Label("RICS.GameEvents.EventsPerCooldownDesc".Translate(settings.EventCooldownDays)); // ← NEW with param
+                GUI.color = Color.white;
 
                 listing.Gap(12f);
 
                 // Karma type limits toggle
-                listing.CheckboxLabeled("Limit events by karma type", ref settings.KarmaTypeLimitsEnabled,
-                    "Set different limits for good, bad, and neutral events");
-
+                // OLD: listing.CheckboxLabeled("Limit events by karma type", ref settings.KarmaTypeLimitsEnabled,"Set different limits for good, bad, and neutral events");
+                listing.CheckboxLabeled("RICS.GameEvents.LimitEventsByKarmaType".Translate(), ref settings.KarmaTypeLimitsEnabled, "RICS.GameEvents.LimitEventsByKarmaTypeDesc".Translate());
                 if (settings.KarmaTypeLimitsEnabled)
                 {
                     listing.Gap(4f);
-                    NumericField(listing, "Maximum bad event purchases:", ref settings.MaxBadEvents, 1, 100);
-                    GUI.color = ColorLibrary.LightGray;
-                    listing.Label($"Bad events: !raid and other harmful events");
-                    GUI.color = ColorLibrary.White;
+                    // OLD (error): NumericField(listing, "RICS.GameEvents.MaxBadEvents:".Translate(), ref settings.MaxBadEvents, 1, 1000);
+                    NumericField(listing, "RICS.GameEvents.MaxBadEvents".Translate(), ref settings.MaxBadEvents, 1, 1000);  // ← FIXED (no extra :)
+                    GUI.color = ColorLibrary.LightText;
+                    listing.Label("RICS.GameEvents.MaxBadEventsDesc".Translate());
+                    GUI.color = Color.white;
 
-                    NumericField(listing, "Maximum good event purchases:", ref settings.MaxGoodEvents, 1, 100);
-                    GUI.color = ColorLibrary.LightGray;
-                    listing.Label($"Good events: !militaryaid and other helpful events");
-                    GUI.color = ColorLibrary.White;
+                    NumericField(listing, "RICS.GameEvents.MaxGoodEvents".Translate(), ref settings.MaxGoodEvents, 1, 1000);  // ← FIXED
+                    GUI.color = ColorLibrary.LightText;
+                    listing.Label("RICS.GameEvents.MaxGoodEventsDesc".Translate());
+                    GUI.color = Color.white;
 
-                    NumericField(listing, "Maximum neutral event purchases:", ref settings.MaxNeutralEvents, 1, 100);
-                    GUI.color = ColorLibrary.LightGray;
-                    listing.Label($"Neutral events: !weather and other neutral events");
-                    GUI.color = ColorLibrary.White;
+                    NumericField(listing, "RICS.GameEvents.MaxNeutralEvents".Translate(), ref settings.MaxNeutralEvents, 1, 1000);  // ← FIXED
+                    GUI.color = ColorLibrary.LightText;
+                    listing.Label("RICS.GameEvents.MaxNeutralEventsDesc".Translate());
+                    GUI.color = Color.white;
                 }
 
                 listing.Gap(12f);
 
                 // Store purchase limits
-                NumericField(listing, "Maximum item purchases per period:", ref settings.MaxItemPurchases, 1, 1000);
-                GUI.color = ColorLibrary.LightGray;
-                listing.Label($"Maximum !buy, !equip, !wear, !healpawn, !revivepawn commands in {settings.EventCooldownDays} days");
-                GUI.color = ColorLibrary.White;
+                // OLD: NumericField(listing, "Maximum item purchases per period:", ref settings.MaxItemPurchases, 1, 1000);
+                NumericField(listing, "RICS.GameEvents.MaxItemPurchases".Translate(), ref settings.MaxItemPurchases, 1, 1000);
+                GUI.color = ColorLibrary.LightText;
+                // OLD: listing.Label($"Maximum !buy, !equip, !wear, !healpawn, !revivepawn commands in {settings.EventCooldownDays} days");
+                listing.Label("RICS.GameEvents.MaxItemPurchasesDesc".Translate(settings.EventCooldownDays)); // ← NEW
+                GUI.color = Color.white;
             }
             else
             {
                 // Show a message when cooldowns are disabled
                 listing.Gap(8f);
-                GUI.color = ColorLibrary.LightGray;
-                listing.Label("Event cooldowns are disabled. All events can be purchased without limits.");
-                GUI.color = ColorLibrary.White;
+                GUI.color = ColorLibrary.LightText;
+                // OLD (error): listing.Label("RICS.GameEvents.EventCooldownDaysDesc".Translate());
+                listing.Label("RICS.GameEvents.CooldownsDisabledMessage".Translate());  // ← FIXED
+                GUI.color = Color.white;
             }
         }
 
         private static void DrawOtherSettings(Listing_Standard listing, CAPGlobalChatSettings settings)
         {
             Text.Font = GameFont.Medium;
-            GUI.color = ColorLibrary.Orange;
-            listing.Label("Other Settings");
+            GUI.color = ColorLibrary.HeaderAccent;
+            // OLD: listing.Label("Other Settings");
+            listing.Label("RICS.GameEvents.OtherSettings".Translate());
             Text.Font = GameFont.Small;
-            GUI.color = ColorLibrary.White;
+            GUI.color = Color.white;
             listing.GapLine(6f);
 
             // Max Traits setting
-            NumericField(listing, "Max traits for a pawn:", ref settings.MaxTraits, 1, 20);
+
+            // OLD: NumericField(listing, "Max traits for a pawn:", ref settings.MaxTraits, 1, 20);
+            NumericField(listing, "RICS.GameEvents.MaxTraits".Translate(), ref settings.MaxTraits, 1, 20);
             Text.Font = GameFont.Tiny;
-            listing.Label($"Maximum number of traits a single pawn can have");
+            // OLD: listing.Label($"Maximum number of traits a single pawn can have");
+            listing.Label("RICS.GameEvents.MaxTraitsDesc".Translate()); // ← NEW)
             Text.Font = GameFont.Small;
         }
 
@@ -215,10 +241,11 @@ namespace CAP_ChatInteractive
             bool gameLoaded = Current.ProgramState == ProgramState.Playing;
 
             Text.Font = GameFont.Medium;
-            GUI.color = ColorLibrary.Orange;
-            listing.Label("Event Management");
+            GUI.color = ColorLibrary.HeaderAccent;
+            // OLD: listing.Label("Event Management");
+            listing.Label("RICS.GameEvents.EventManagement".Translate()); // ← NEW
             Text.Font = GameFont.Small;
-            GUI.color = ColorLibrary.White;
+            GUI.color = Color.white;
 
             listing.GapLine(6f);
             GUI.color = Color.white;
@@ -226,7 +253,8 @@ namespace CAP_ChatInteractive
             if (!gameLoaded)
             {
                 GUI.color = Color.white;
-                listing.Label("Load a game to access event editors and statistics");
+                // OLD: listing.Label("Load a game to access event editors and statistics");
+                listing.Label("RICS.GameEvents.LoadGameToAccessEditors".Translate()); // ← NEW)
                 listing.Gap(12f);
                 return;
             }
@@ -261,14 +289,20 @@ namespace CAP_ChatInteractive
             int enabledEvents = IncidentsManager.AllBuyableIncidents?.Values.Count(e => e.Enabled) ?? 0;
 
             Text.Font = GameFont.Small;
-            GUI.color = ColorLibrary.SkyBlue;
-            listing.Label("Current Statistics:");
+            GUI.color = ColorLibrary.SubHeader;
+            // OLD: listing.Label("Current Statistics:");
+            listing.Label("RICS.GameEvents.CurrentStatistics".Translate()); // ← NEW)
             Text.Font = GameFont.Tiny;
 
-            listing.Label($"  • Store: {enabledStoreItems}/{totalStoreItems} items enabled");
-            listing.Label($"  • Traits: {enabledTraits}/{totalTraits} traits enabled");
-            listing.Label($"  • Weather: {enabledWeather}/{totalWeather} types enabled");
-            listing.Label($"  • Events: {enabledEvents}/{totalEvents} events enabled"); // ADD THIS LINE
+            //listing.Label($"  • Store: {enabledStoreItems}/{totalStoreItems} items enabled");
+            //listing.Label($"  • Traits: {enabledTraits}/{totalTraits} traits enabled");
+            //listing.Label($"  • Weather: {enabledWeather}/{totalWeather} types enabled");
+            //listing.Label($"  • Events: {enabledEvents}/{totalEvents} events enabled");
+
+            listing.Label("RICS.GameEvents.StoreStats".Translate(enabledStoreItems, totalStoreItems)); // ← NEW)
+            listing.Label("RICS.GameEvents.TraitsStats".Translate(enabledTraits, totalTraits)); // ← NEW)   
+            listing.Label("RICS.GameEvents.WeatherStats".Translate(enabledWeather, totalWeather)); // ← NEW)    
+            listing.Label("RICS.GameEvents.EventsStats".Translate(enabledEvents, totalEvents)); // ← NEW)
 
             Text.Font = GameFont.Small;
         }
@@ -277,32 +311,33 @@ namespace CAP_ChatInteractive
         {
             // Create a rect for the button row
             Rect buttonRow = listing.GetRect(30f);
-            float buttonWidth = (buttonRow.width - 30f) / 4f; // Changed from 20f/3f to 30f/4f for 4 buttons
+            float buttonWidth = (buttonRow.width - 30f) / 4f;
 
             // Store Editor Button
             Rect storeRect = new Rect(buttonRow.x, buttonRow.y, buttonWidth, 30f);
-            if (Widgets.ButtonText(storeRect, "Store Editor"))
+            // OLD (error): if (Widgets.ButtonText(storeRect, "RICS.GameEvents.StoreEditor".Translate()))
+            if (Widgets.ButtonText(storeRect, "RICS.GameEvents.StoreEditorButton".Translate()))  // ← FIXED
             {
                 Find.WindowStack.Add(new Dialog_StoreEditor());
             }
 
             // Traits Editor Button  
             Rect traitsRect = new Rect(buttonRow.x + buttonWidth + 10f, buttonRow.y, buttonWidth, 30f);
-            if (Widgets.ButtonText(traitsRect, "Traits Editor"))
+            if (Widgets.ButtonText(traitsRect, "RICS.GameEvents.TraitsEditorButton".Translate()))  // ← FIXED
             {
                 Find.WindowStack.Add(new Dialog_TraitsEditor());
             }
 
             // Weather Editor Button
             Rect weatherRect = new Rect(buttonRow.x + (buttonWidth + 10f) * 2, buttonRow.y, buttonWidth, 30f);
-            if (Widgets.ButtonText(weatherRect, "Weather Editor"))
+            if (Widgets.ButtonText(weatherRect, "RICS.GameEvents.WeatherEditorButton".Translate()))  // ← FIXED
             {
                 Find.WindowStack.Add(new Dialog_WeatherEditor());
             }
 
-            // Events Editor Button - NEW
+            // Events Editor Button
             Rect eventsRect = new Rect(buttonRow.x + (buttonWidth + 10f) * 3, buttonRow.y, buttonWidth, 30f);
-            if (Widgets.ButtonText(eventsRect, "Events Editor"))
+            if (Widgets.ButtonText(eventsRect, "RICS.GameEvents.EventsEditorButton".Translate()))  // ← FIXED
             {
                 Find.WindowStack.Add(new Dialog_EventsEditor());
             }
@@ -324,20 +359,29 @@ namespace CAP_ChatInteractive
             listing.Gap(12f);
 
             Rect buttonRect = listing.GetRect(30f);
-            if (Widgets.ButtonText(buttonRect, "Reset to Default Values"))
+            // OLD: if (Widgets.ButtonText(buttonRect, "Reset to Default Values"))
+            if (Widgets.ButtonText(buttonRect, "RICS.GameEvents.ResetButton".Translate()))
             {
                 // Create confirmation dialog
+                //Find.WindowStack.Add(new Dialog_MessageBox(
+                //    "Reset all cooldown settings to default values?\n\nThis will reset:\n• Event cooldown days\n• Event limits\n• Karma type limits\n• Purchase limits",
+                //    "Reset",
+                //    () => ResetToDefaults(settings),
+                //    "Cancel"
+                //));
+
                 Find.WindowStack.Add(new Dialog_MessageBox(
-                    "Reset all cooldown settings to default values?\n\nThis will reset:\n• Event cooldown days\n• Event limits\n• Karma type limits\n• Purchase limits",
-                    "Reset",
+                    "RICS.GameEvents.ResetConfirmDesc".Translate(), // ← NEW
+                    "RICS.GameEvents.Reset".Translate(),       // ← NEW
                     () => ResetToDefaults(settings),
-                    "Cancel"
+                    "RICS.GameEvents.Cancel".Translate()         // ← NEW
                 ));
             }
 
-            GUI.color = ColorLibrary.LightGray;
-            listing.Label("Reset all cooldown settings back to default values");
-            GUI.color = ColorLibrary.White;
+            GUI.color = ColorLibrary.LightText;
+            // OLD: listing.Label("Reset all cooldown settings back to default values");
+            listing.Label("RICS.GameEvents.ResetAllCooldowns".Translate()); // ← NEW
+            GUI.color = Color.white;
         }
 
         private static void ResetToDefaults(CAPGlobalChatSettings settings)
@@ -355,7 +399,8 @@ namespace CAP_ChatInteractive
             // Save the changes
             CAPChatInteractiveMod.Instance.Settings.Write();
 
-            Messages.Message("Cooldown settings reset to defaults", MessageTypeDefOf.PositiveEvent);
+            // OLD: Messages.Message("Cooldown settings reset to defaults", MessageTypeDefOf.PositiveEvent);
+            Messages.Message("RICS.GameEvents.ResetMessage".Translate(), MessageTypeDefOf.PositiveEvent); // ← NEW
         }
     }
 }

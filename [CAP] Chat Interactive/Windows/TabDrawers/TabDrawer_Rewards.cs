@@ -39,20 +39,24 @@ namespace _CAP__Chat_Interactive
 
             // Channel Points Section
             Text.Font = GameFont.Medium;
-            listing.Label("Twitch Channel Points");
+            // OLD: listing.Label("Twitch Channel Points");
+            listing.Label("RICS.Rewards.ChannelPointsSettingsHeader".Translate());
             Text.Font = GameFont.Small;
             listing.GapLine(6f);
 
             // Important note about channel points
             Text.Font = GameFont.Tiny;
             GUI.color = Color.yellow;
-            listing.Label("Important: Twitch rewards must be set to 'Require Viewer to Enter Text' or they won't be detected!");
+            //listing.Label("Important: Twitch rewards must be set to 'Require Viewer to Enter Text' or they won't be detected!");
+            listing.Label("RICS.Rewards.ChannelPointsImportantNote".Translate());
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
             listing.Gap(8f);
 
-            listing.CheckboxLabeled("Enable Channel Points Rewards", ref settings.ChannelPointsEnabled);
-            listing.CheckboxLabeled("Show Channel Points Debug Messages", ref settings.ShowChannelPointsDebugMessages);
+            // OLD: listing.CheckboxLabeled("Enable Channel Points Rewards", ref settings.ChannelPointsEnabled);
+            listing.CheckboxLabeled("RICS.Rewards.EnableChannelPointsRewardsLabel".Translate(), ref settings.ChannelPointsEnabled);
+            // OLD: listing.CheckboxLabeled("Show Channel Points Debug Messages", ref settings.ShowChannelPointsDebugMessages);
+            listing.CheckboxLabeled("RICS.Rewards.ChannelPointsDebugMessagesLabel".Translate(), ref settings.ShowChannelPointsDebugMessages);
 
             listing.Gap(12f);
 
@@ -63,12 +67,14 @@ namespace _CAP__Chat_Interactive
 
             // Lootbox Section
             Text.Font = GameFont.Medium;
-            listing.Label("Loot Box Settings");
+            // OLD: listing.Label("Loot Box Settings");
+            listing.Label("RICS.Rewards.LootBoxSettingsHeader".Translate());
             Text.Font = GameFont.Small;
             listing.GapLine(6f);
 
             // Coin range
-            listing.Label("Coin Range (1-10000):");
+            // OLD: listing.Label("Coin Range (1-10000):");
+            listing.Label("RICS.Rewards.LootBoxCoinRangeDescription".Translate());
             listing.Gap(4f);
 
             // Create a horizontal layout for min/max inputs
@@ -78,11 +84,13 @@ namespace _CAP__Chat_Interactive
             var coinMaxLabelRect = new Rect(coinMinInputRect.xMax + 8f, coinRangeRect.y, 80f, Text.LineHeight);
             var coinMaxInputRect = new Rect(coinMaxLabelRect.xMax + 4f, coinRangeRect.y, 60f, Text.LineHeight);
 
-            Widgets.Label(coinMinRect, "Min:");
+            // OLD: Widgets.Label(coinMinRect, "Min:");
+            Widgets.Label(coinMinRect, "RICS.Rewards.LootBoxCoinRangeMinLabel".Translate());
             string coinMinBuffer = settings.LootBoxRandomCoinRange.min.ToString();
             UIUtilities.TextFieldNumericFlexible(coinMinInputRect, ref settings.LootBoxRandomCoinRange.min, ref coinMinBuffer, 1, 10000);
 
-            Widgets.Label(coinMaxLabelRect, "Max:");
+            // OLD: Widgets.Label(coinMaxLabelRect, "Max:");
+            Widgets.Label(coinMaxLabelRect, "RICS.Rewards.LootBoxCoinRangeMaxLabel".Translate());
             string coinMaxBuffer = settings.LootBoxRandomCoinRange.max.ToString();
             UIUtilities.TextFieldNumericFlexible(coinMaxInputRect, ref settings.LootBoxRandomCoinRange.max, ref coinMaxBuffer, 1, 10000);
 
@@ -93,18 +101,21 @@ namespace _CAP__Chat_Interactive
             var perDayLabelRect = new Rect(perDayRect.x, perDayRect.y, 150f, Text.LineHeight);
             var perDayInputRect = new Rect(perDayLabelRect.xMax + 8f, perDayRect.y, 80f, Text.LineHeight);
 
-            Widgets.Label(perDayLabelRect, "Lootboxes Per Day:");
+            // OLD: Widgets.Label(perDayLabelRect, "Lootboxes Per Day:");
+            Widgets.Label(perDayLabelRect, "RICS.Rewards.LootBoxesPerDayLabel".Translate());
             string perDayBuffer = settings.LootBoxesPerDay.ToString();
             UIUtilities.TextFieldNumericFlexible(perDayInputRect, ref settings.LootBoxesPerDay, ref perDayBuffer, 1, 20);
 
             listing.Gap(8f);
 
             // Show welcome message
-            listing.CheckboxLabeled("Show Welcome Message", ref settings.LootBoxShowWelcomeMessage);
+            // OLD: listing.CheckboxLabeled("Show Welcome Message", ref settings.LootBoxShowWelcomeMessage);
+            listing.CheckboxLabeled("RICS.Rewards.ShowWelcomeMessageLabel".Translate(), ref settings.LootBoxShowWelcomeMessage);
             listing.Gap(4f);
 
             // Force open all at once
-            listing.CheckboxLabeled("Force Open All At Once", ref settings.LootBoxForceOpenAllAtOnce);
+            // OLD: listing.CheckboxLabeled("Force Open All At Once", ref settings.LootBoxForceOpenAllAtOnce);
+            listing.CheckboxLabeled("RICS.Rewards.ForceOpenAllAtOnceLabel".Translate(), ref settings.LootBoxForceOpenAllAtOnce);    
 
             listing.End();
             Widgets.EndScrollView();
@@ -128,12 +139,19 @@ namespace _CAP__Chat_Interactive
             var deleteWidth = headerRect.width * 0.05f;
 
             var headerRow = new WidgetRow(headerRect.x, headerRect.y, UIDirection.RightThenDown);
-            headerRow.Label("Reward Name", nameWidth);
-            headerRow.Label("Reward UUID", uuidWidth);
-            headerRow.Label("Coins", coinsWidth);
-            headerRow.Label("Auto", autoWidth);
-            headerRow.Label("Enabled", enabledWidth);
+            // OLD: headerRow.Label("Reward Name", nameWidth);
+            headerRow.Label("RICS.Rewards.RewardNameHeader".Translate(), nameWidth);    
+            // OLD: headerRow.Label("Reward UUID", uuidWidth);
+            headerRow.Label("RICS.Rewards.RewardUUIDHeader".Translate(), uuidWidth);
+            // OLD: headerRow.Label("Coins", coinsWidth);
+            headerRow.Label("RICS.Rewards.CoinsHeader".Translate(), coinsWidth);
+            // OLD: headerRow.Label("Auto", autoWidth);
+            headerRow.Label("RICS.Rewards.AutoCaptureHeader".Translate(), autoWidth);
+            // OLD: headerRow.Label("Enabled", enabledWidth);
+            headerRow.Label("RICS.Rewards.EnabledHeader".Translate(), enabledWidth);
             headerRow.Label("", deleteWidth);
+
+
 
             listing.Gap(4f);
 
@@ -141,7 +159,8 @@ namespace _CAP__Chat_Interactive
             if (settings.RewardSettings.Count == 0)
             {
                 var emptyRect = listing.GetRect(_lineHeight);
-                Widgets.Label(emptyRect, "No rewards configured. Add one below.");
+                // OLD: Widgets.Label(emptyRect, "No rewards configured. Add one below.");
+                Widgets.Label(emptyRect, "RICS.Rewards.NoRewardsConfigured".Translate());
                 listing.Gap(8f);
             }
             else
@@ -181,7 +200,7 @@ namespace _CAP__Chat_Interactive
 
                     // Delete button
                     var deleteRect = new Rect(enabledRect.xMax, rowRect.y, deleteWidth, _lineHeight);
-                    if (Widgets.ButtonText(deleteRect, "X"))
+                    if (Widgets.ButtonText(deleteRect, "RICS.Rewards.DeleteRewardButton".Translate()))
                     {
                         settings.RewardSettings.RemoveAt(i);
                         i--; // Adjust index after removal
@@ -193,7 +212,8 @@ namespace _CAP__Chat_Interactive
 
             // Add new reward button
             var addButtonRect = listing.GetRect(30f);
-            if (Widgets.ButtonText(addButtonRect, "Add New Reward"))
+            // OLD: if (Widgets.ButtonText(addButtonRect, "Add New Reward"))
+            if (Widgets.ButtonText(addButtonRect, "RICS.Rewards.AddNewRewardButton".Translate()))
             {
                 // Ensure list is initialized
                 if (settings.RewardSettings == null)
@@ -202,7 +222,8 @@ namespace _CAP__Chat_Interactive
                 }
 
                 settings.RewardSettings.Add(new ChannelPoints_RewardSettings(
-                    "New Reward",
+                    // OLD: "New Reward",
+                    "RICS.Rewards.NewRewardDefaultName".Translate(),
                     "",
                     "300",
                     false,
@@ -215,7 +236,8 @@ namespace _CAP__Chat_Interactive
             // Auto-capture explanation
             Text.Font = GameFont.Tiny;
             GUI.color = new Color(0.7f, 0.7f, 0.7f);
-            listing.Label("Auto Capture: When enabled, this reward will automatically capture the next UUID redeemed on Twitch");
+            // OLD: listing.Label("Auto Capture: When enabled, this reward will automatically capture the next UUID redeemed on Twitch");
+            listing.Label("RICS.Rewards.AutoCaptureExplanation".Translate());
             Text.Font = GameFont.Small;
             GUI.color = Color.white;
         }
