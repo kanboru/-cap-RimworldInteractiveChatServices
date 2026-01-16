@@ -379,7 +379,21 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
             return $"There are {colonistCount}({viewerCount} viewers) and {animalCount} colony animals.";
         }
+    }
 
+    public class Stockpile : ChatCommand
+    {
+        public override string Name => "stockpile";
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
+        {
+            var assignmentManager = CAPChatInteractiveMod.GetPawnAssignmentManager();
+            //var colonistList = Current.Game.PlayerHomeMaps.SelectMany(m => m.mapPawns.FreeColonistsSpawned);
+            //var animalsList = Current.Game.PlayerHomeMaps.SelectMany(m => m.mapPawns.ColonyAnimals);
+            int colonistCount = Current.Game.PlayerHomeMaps.Sum(m => m.mapPawns.FreeColonistsSpawnedCount);
+            int animalCount = Current.Game.PlayerHomeMaps.Sum(m => m.mapPawns.ColonyAnimals.Count);
+            int viewerCount = assignmentManager.viewerPawnAssignments.Count;
 
+            return $"There are {colonistCount} colonists({viewerCount} viewers) and {animalCount} colony animals.";
+        }
     }
 }
