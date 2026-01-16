@@ -17,6 +17,9 @@
 //
 // Defines moderator commands for giving coins, setting karma, and toggling coin earning.
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Verse;
 
 namespace CAP_ChatInteractive.Commands.ModCommands
 {
@@ -128,5 +131,146 @@ namespace CAP_ChatInteractive.Commands.ModCommands
             return $"MOD {messageWrapper.Username} Fix all pawns executed.";
         }
     }
+    // Cleans up orphaned lootbox entries from viewers no longer present in chat.
+    // Usage: !cleanlootboxes [orphans|all|dryrun]
+    // TODO: Add to command registry
+    public class CleanLootboxes : ChatCommand
+    {
+        public override string Name => "cleanlootboxes";
 
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
+        {
+            var component = Current.Game?.GetComponent<LootBoxComponent>();
+            if (component == null) return "Lootbox system not available.";
+
+            var mode = args.Length > 0 ? args[0].ToLowerInvariant() : "orphans";
+            var realViewers = Viewers.All.Select(v => v.Username.ToLowerInvariant()).ToHashSet();
+
+            int cleaned = 0;
+
+            switch (mode)
+            {
+                case "dry":
+                case "dryrun":
+                    // Just count, don't delete
+                    int wouldClean = component.ViewersLootboxes.Keys.Count(k => !realViewers.Contains(k));
+                    return $"Dry run: {wouldClean} orphaned entries would be removed.";
+
+                case "all":
+                    // Dangerous – removes everything!
+                    if (args.Length < 2 || args[1] != "confirm")
+                        return "Dangerous operation! Use !cleanlootboxes all confirm to wipe ALL lootbox data.";
+
+                    component.ViewersLootboxes.Clear();
+                    component.ViewersLastSeenDate.Clear();
+                    component.ViewersWhoHaveReceivedLootboxesToday.Clear();
+                    return "ALL lootbox data has been wiped! (mod action)";
+
+                case "orphans":
+                default:
+                    // Normal cleanup - remove entries not matching any current viewer
+                    foreach (var key in component.ViewersLootboxes.Keys.ToList())
+                    {
+                        if (!realViewers.Contains(key))
+                        {
+                            Logger.Warning($"Removing orphaned lootbox entry: {key} ({component.ViewersLootboxes[key]} boxes)");
+                            component.ViewersLootboxes.Remove(key);
+                            cleaned++;
+                        }
+                    }
+
+                    // Also clean other dictionaries
+                    component.ViewersLastSeenDate.Keys
+                        .Where(k => !realViewers.Contains(k))
+                        .ToList()
+                        .ForEach(k => component.ViewersLastSeenDate.Remove(k));
+
+                    component.ViewersWhoHaveReceivedLootboxesToday.RemoveAll(u => !realViewers.Contains(u));
+
+                    if (cleaned > 0)
+                        return $"Cleaned {cleaned} orphaned/invalid lootbox entries.";
+
+                    return "No orphaned entries found.";
+            }
+        }
+    }
+
+    public class CleanViewers : ChatCommand
+    {
+        public override string Name => "cleanviewers";
+        public override string PermissionLevel => "moderator";
+        public override string Description => "Clean viewer database. Usage: !cleanviewers [dry|noplat|all]";
+
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
+        {
+            string mode = args.Length > 0 ? args[0].ToLowerInvariant() : "noplat";
+
+            var assignmentMgr = CAPChatInteractiveMod.GetPawnAssignmentManager();
+            var protectedPawnIds = assignmentMgr?.viewerPawnAssignments.Values.ToHashSet() ?? new HashSet<string>();
+
+            int count = 0;
+            var removed = new List<string>();
+
+            lock (Viewers._lock)
+            {
+                var candidates = Viewers.All.ToList();
+
+                foreach (var viewer in candidates)
+                {
+                    bool shouldRemove = false;
+
+                    switch (mode)
+                    {
+                        case "dry":
+                        case "dryrun":
+                            if (viewer.PlatformUserIds.Count == 0)
+                                count++;
+                            continue;
+
+                        case "noplat":
+                        case "noplatform":
+                            shouldRemove = viewer.PlatformUserIds.Count == 0;
+                            break;
+
+                        case "all":
+                            if (args.Length < 2 || args[1] != "really")
+                                return "DANGEROUS! Use !cleanviewers all really to wipe EVERY viewer";
+                            shouldRemove = true;
+                            break;
+
+                        default:
+                            return "Unknown mode. Use: dry | noplat | all really";
+                    }
+
+                    if (shouldRemove)
+                    {
+                        // Extra safety nets
+                        if (viewer.Coins > 5 || viewer.Karma != 0)
+                            continue;
+
+                        if (protectedPawnIds.Contains(viewer.AssignedPawnId))
+                            continue;
+
+                        removed.Add(viewer.Username);
+                        Viewers.All.Remove(viewer);
+                        count++;
+                    }
+                }
+            }
+
+            if (mode == "dry" || mode == "dryrun")
+            {
+                return $"Dry run: {count} viewers without platform IDs would be removed.";
+            }
+
+            if (count > 0)
+            {
+                Viewers.SaveViewers();
+                Logger.Message($"[CleanViewers] Removed {count} viewers: {string.Join(", ", removed)}");
+                return $"Removed {count} invalid viewer entr{(count == 1 ? "y" : "ies")}. ({string.Join(", ", removed.Take(5))}... )";
+            }
+
+            return "No viewers matching cleanup criteria found.";
+        }
+    }
 }

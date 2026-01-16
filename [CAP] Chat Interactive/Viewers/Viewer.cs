@@ -363,6 +363,7 @@ namespace CAP_ChatInteractive
             // 2. (Optional) Future hooks: update UI, rename save data, etc.
             // ───────────────────────────────────────────────────────
 
+            Viewers.SaveViewers();
             return true;
         }
 
