@@ -210,7 +210,6 @@ namespace CAP_ChatInteractive
             Logger.Debug($"Permission result: {result}");
             return result;
         }
-
         public void UpdateFromMessage(ChatMessageWrapper message)
         {
             UpdateActivity();
@@ -221,15 +220,18 @@ namespace CAP_ChatInteractive
                 AddPlatformUserId(message.Platform, message.PlatformUserId);
             }
 
-            // Update display name if different
-            if (!string.IsNullOrEmpty(message.DisplayName) && message.DisplayName != Username)
+            // ────────────────────────────────────────────────
+            //  Name change detection & propagation
+            // ────────────────────────────────────────────────
+            if (!string.IsNullOrEmpty(message.DisplayName))
             {
-                DisplayName = message.DisplayName;
+                UpdateDisplayName(message.DisplayName);
             }
 
             // Update platform-specific roles from the message
             UpdatePlatformRoles(message);
         }
+
         private void UpdatePlatformRoles(ChatMessageWrapper message)
         {
             switch (message.Platform.ToLowerInvariant())
@@ -316,6 +318,70 @@ namespace CAP_ChatInteractive
                 return storedId == message.PlatformUserId;
             }
             return Username.Equals(message.Username, StringComparison.OrdinalIgnoreCase);
+        }
+
+        // In Viewer.cs
+
+        /// <summary>
+        /// Updates display name if changed and handles all dependent systems (pawn name, etc.)
+        /// </summary>
+        /// <returns>true if name was actually changed, false if same or no change needed</returns>
+        public bool UpdateDisplayName(string newDisplayName)
+        {
+            if (string.IsNullOrWhiteSpace(newDisplayName))
+                return false;
+
+            string normalizedNew = newDisplayName.Trim();
+            string current = DisplayName?.Trim() ?? "";
+
+            // Same name (including case) → nothing to do
+            if (normalizedNew.Equals(current, StringComparison.Ordinal))
+                return false;
+
+            string oldName = DisplayName;
+            DisplayName = normalizedNew;
+
+            Logger.Message($"Viewer '{Username}' changed display name: '{oldName}' → '{normalizedNew}'");
+
+            // ───────────────────────────────────────────────────────
+            // 1. Update pawn nickname if this viewer has an assigned pawn
+            // ───────────────────────────────────────────────────────
+            var assignmentMgr = Current.Game.GetComponent<GameComponent_PawnAssignmentManager>();
+            if (assignmentMgr != null)
+            {
+                string primaryId = GetPrimaryPlatformIdentifier();
+
+                Pawn assignedPawn = assignmentMgr.GetAssignedPawnIdentifier(primaryId);
+                if (assignedPawn != null && !assignedPawn.Destroyed)
+                {
+                    UpdatePawnNickname(assignedPawn, normalizedNew);
+                    Logger.Message($"Updated pawn nickname for {Username} → {normalizedNew}");
+                }
+            }
+
+            // ───────────────────────────────────────────────────────
+            // 2. (Optional) Future hooks: update UI, rename save data, etc.
+            // ───────────────────────────────────────────────────────
+
+            return true;
+        }
+
+        private void UpdatePawnNickname(Pawn pawn, string newNick)
+        {
+            if (pawn.Name is NameTriple triple)
+            {
+                // Keep first/last, change only nick
+                pawn.Name = new NameTriple(triple.First, newNick, triple.Last);
+            }
+            else if (pawn.Name is NameSingle single)
+            {
+                pawn.Name = new NameSingle(newNick);
+            }
+            else
+            {
+                // Fallback - create triple with new nick in middle
+                pawn.Name = new NameTriple("", newNick, "");
+            }
         }
     }
 }

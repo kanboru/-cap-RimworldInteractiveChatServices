@@ -40,7 +40,21 @@ namespace CAP_ChatInteractive
             Logger.Debug($"Processing message from {message.Username} on {message.Platform}: {message.Message}");
             try
             {
+                // add validate viewer name here
+                // In ChatCommandProcessor.cs / ProcessMessage
+                var viewer = Viewers.GetViewer(message);
+                if (viewer != null)
+                {
+                    bool nameChanged = viewer.UpdateDisplayName(message.DisplayName);
 
+                    // Optional: you could send a fun message only on actual change
+                    if (nameChanged && Rand.Chance(0.4f))
+                    {
+                        ChatCommandProcessor.SendMessageToUsername(
+                            message.Username,
+                            $"✨ {viewer.DisplayName} just got a fresh new name! Welcome back!");
+                    }
+                }
 
                 // Process lootbox welcome for ALL messages (commands and regular chat)
                 // This ensures viewers get daily lootboxes when they first chat each day
