@@ -199,7 +199,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 var body = pawn.story.bodyType;
                 return $"Current body:{body.defName} | Usage: !setbody <bodytype_name> OR !setbody list";
             }
-                
 
             if (args[0].ToLower() == "list")
                 return ListAvailableBodyTypes(pawn);
@@ -233,49 +232,44 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             if (bodyType == BodyTypeDefOf.Child || bodyType == BodyTypeDefOf.Baby)
                 return false;
 
-            bool hasBody = false;
-            // Check if body type is gene-locked (Biotech)
-            if (ModsConfig.BiotechActive && pawn.genes != null)
-            {
-                // Check xenogenes first (they override germline)
-                
-                var xenogenes = pawn.genes.Xenogenes;
-                if (xenogenes != null && xenogenes.Any())
-                {
-                    foreach (var gene in xenogenes)
-                    {
-                        if (gene.def.endogeneCategory == EndogeneCategory.BodyType)
-                        {
-                            var requiredBodyType = GeneticBodyTypeToBodyTypeDef(gene.def.bodyType.Value, pawn.gender);
-                            if (requiredBodyType != null && bodyType == requiredBodyType)
-                            {
-                                hasBody = true;
-                                break;
-                            }
-                        }
-                    }
-                }
+            if (!ModsConfig.BiotechActive || pawn.genes == null)
+                return true;
 
-                // Then check germline genes (only if no xenogene override)
-                var germlineGenes = pawn.genes.Endogenes;
-                if (germlineGenes != null && !hasBody)
+            // Check xenogenes first (they override germline)
+            var xenoBodyGenes = pawn.genes.Xenogenes
+                .Where(g => g.def.endogeneCategory == EndogeneCategory.BodyType && g.def.bodyType.HasValue)
+                .ToList();
+
+            if (xenoBodyGenes.Count > 0)
+            {
+                // If xenogenes define body type, check if this body type matches
+                foreach (var gene in xenoBodyGenes)
                 {
-                    foreach (var gene in germlineGenes)
-                    {
-                        if (gene.def.endogeneCategory == EndogeneCategory.BodyType) 
-                        {
-                            var requiredBodyType = GeneticBodyTypeToBodyTypeDef(gene.def.bodyType.Value, pawn.gender);
-                            if (requiredBodyType != null && bodyType == requiredBodyType)
-                            {
-                                hasBody = true;
-                                break;
-                            }
-                        }
-                    }
+                    var requiredBodyType = GeneticBodyTypeToBodyTypeDef(gene.def.bodyType.Value, pawn.gender);
+                    if (requiredBodyType != null && bodyType == requiredBodyType)
+                        return true;
                 }
+                return false; // Xenogenes force body type, and this isn't it
             }
 
-            return hasBody;
+            // Check germline genes
+            var endoBodyGenes = pawn.genes.Endogenes
+                .Where(g => g.def.endogeneCategory == EndogeneCategory.BodyType && g.def.bodyType.HasValue)
+                .ToList();
+
+            if (endoBodyGenes.Count > 0)
+            {
+                foreach (var gene in endoBodyGenes)
+                {
+                    var requiredBodyType = GeneticBodyTypeToBodyTypeDef(gene.def.bodyType.Value, pawn.gender);
+                    if (requiredBodyType != null && bodyType == requiredBodyType)
+                        return true;
+                }
+                return false; // Genes force body type, and this isn't it
+            }
+
+            // No gene restrictions, allow it
+            return true;
         }
 
         private static BodyTypeDef GeneticBodyTypeToBodyTypeDef(GeneticBodyType geneticBodyType, Gender gender)
@@ -287,14 +281,13 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 bodyTypeName = gender == Gender.Female ? "Female" : "Male";
             }
 
-            // Try to find the body type def by name
             var bodyTypeDef = DefDatabase<BodyTypeDef>.AllDefs.FirstOrDefault(b =>
                 b.defName.Equals(bodyTypeName, StringComparison.OrdinalIgnoreCase));
 
             if (bodyTypeDef != null)
                 return bodyTypeDef;
 
-            // Fallback
+            // Fallback fuzzy match
             bodyTypeDef = DefDatabase<BodyTypeDef>.AllDefs.FirstOrDefault(b =>
                 b.defName.IndexOf(bodyTypeName, StringComparison.OrdinalIgnoreCase) >= 0 ||
                 bodyTypeName.IndexOf(b.defName, StringComparison.OrdinalIgnoreCase) >= 0);
@@ -304,9 +297,9 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static string ListAvailableBodyTypes(Pawn pawn)
         {
-            List<BodyTypeDef> compatible = null;
+            List<BodyTypeDef> compatible = new List<BodyTypeDef>();
 
-            // HAR
+            // HAR compatibility
             if (ModsConfig.IsActive("erdelf.HumanoidAlienRaces")
                 && pawn?.def != null
                 && pawn.def.GetType().Name.Contains("AlienRace"))
@@ -315,17 +308,18 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 var general = Get(alienRace, "generalSettings");
                 var partGen = Get(general, "alienPartGenerator");
 
-                compatible = Get(partGen, "bodyTypes") as List<BodyTypeDef>;
-            }
-            else
-            {
-
-                foreach(var body in DefDatabase<BodyTypeDef>.AllDefs.ToList())
+                var harBodies = Get(partGen, "bodyTypes") as List<BodyTypeDef>;
+                if (harBodies != null)
                 {
-                    if (CanUseBodyType(pawn, body))
-                        compatible.Add(body);                       
+                    compatible = harBodies.Where(b => CanUseBodyType(pawn, b)).ToList();
                 }
+            }
 
+            if (compatible.Count == 0)
+            {
+                compatible = DefDatabase<BodyTypeDef>.AllDefs
+                    .Where(b => CanUseBodyType(pawn, b))
+                    .ToList();
             }
 
             if (compatible.Count == 0)
