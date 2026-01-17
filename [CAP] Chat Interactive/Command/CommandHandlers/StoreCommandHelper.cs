@@ -472,21 +472,44 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 }
                 else if (addToInventory && pawn != null && pawn.Map != null)
                 {
-                    // Add to pawn's inventory
-                    if (!pawn.inventory.innerContainer.TryAdd(thing))
+                    // Create multiple stacks if necessary, like in drop pod delivery
+                    int remainingQuantity = quantity;
+                    while (remainingQuantity > 0)
                     {
-                        // If inventory full, drop at pawn's position
-                        Logger.Debug($"Inventory full, dropping at pawn position");
-                        GenPlace.TryPlaceThing(thing, pawn.Position, pawn.Map, ThingPlaceMode.Near);
-                        // BuyItemCommandHandler.TrySetItemOwnership(thing, pawn); // Set ownership here
-                        deliveryPos = pawn.Position; // Use pawn position for targeting
+                        Thing thingExtras = ThingMaker.MakeThing(thingDef, finalMaterial);
+                        int stackSize = Math.Min(remainingQuantity, thingDef.stackLimit);
+                        thingExtras.stackCount = stackSize;
+                        int addedCount = 0;
+                        int droppedCount = 0;
+
+                        // Set quality if applicable and the item supports quality
+                        if (quality.HasValue && thingDef.HasComp(typeof(CompQuality)))
+                        {
+                            if (thingExtras.TryGetQuality(out QualityCategory existingQuality))
+                            {
+                                thingExtras.TryGetComp<CompQuality>()?.SetQuality(quality.Value, ArtGenerationContext.Outsider);
+                            }
+                        }
+
+                        // Add to pawn's inventory
+                        if (!pawn.inventory.innerContainer.TryAdd(thingExtras))
+                        {
+                            // If inventory full, drop at pawn's position
+                            droppedCount += stackSize;
+                            GenPlace.TryPlaceThing(thingExtras, pawn.Position, pawn.Map, ThingPlaceMode.Near);
+                            FleckMaker.ThrowDustPuff(pawn.Position, pawn.Map, 0.8f); // has proper overload and DustPuff makes sense if I drop something
+                        }
+                        else
+                        {
+                            addedCount += stackSize;
+                            Logger.Debug($"Stack added to pawn inventory");
+                        }
+
+                        Logger.Debug($"Backpack delivery: {addedCount} added to inventory, {droppedCount} dropped near pawn");
+                        spawnedThings.Add(thingExtras);
+                        remainingQuantity -= stackSize;
                     }
-                    else
-                    {
-                        Logger.Debug($"Item added to pawn inventory");
-                        deliveryPos = pawn.Position; // Use pawn position for targeting
-                    }
-                    spawnedThings.Add(thing);
+                    deliveryPos = pawn.Position; // Use pawn position for targeting
                 }
                 else
                 {

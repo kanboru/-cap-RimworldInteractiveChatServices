@@ -50,7 +50,7 @@ namespace CAP_ChatInteractive
     public static class Viewers
     {
         public static List<Viewer> All = new List<Viewer>();
-        private static readonly object _lock = new object();
+        public static readonly object _lock = new object();
         private static string _dataFilePath;
 
         static Viewers()

@@ -403,7 +403,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             {
                 if (args.Length < 1)
                 {
-                    return "Usage: !settraits <trait_name> <trait_name>. Add and replace traits in bulk.";
+                    return "Usage: !settraits [trait_name] [trait_name]. Add and replace traits in bulk.";  // oops use [] not <>, the later gets stripped from chat messages
                 }
 
                 var viewer = Viewers.GetViewer(messageWrapper);

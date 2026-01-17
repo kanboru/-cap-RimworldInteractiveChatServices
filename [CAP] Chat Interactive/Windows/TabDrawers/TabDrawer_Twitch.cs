@@ -17,6 +17,7 @@
 // Draws the Twitch settings tab in the mod settings window
 using CAP_ChatInteractive;
 using RimWorld;
+using System;
 using UnityEngine;
 using Verse;
 using ColorLibrary = CAP_ChatInteractive.ColorLibrary;
@@ -177,6 +178,24 @@ namespace _CAP__Chat_Interactive
             );
 
             // Bot account status - fixed to not get cut off
+
+            bool usingSeparateBot =
+                !string.IsNullOrEmpty(settings.BotUsername) &&
+                string.Equals(settings.BotUsername, settings.ChannelName, StringComparison.OrdinalIgnoreCase) == false;
+            Rect botStatusRect = listing.GetRect(20f);
+
+            if (usingSeparateBot)
+            {
+                GUI.color = Color.green;
+                Widgets.Label(botStatusRect, "RICS.Twitch.BotAccountStatus.Separate".Translate());
+            }
+            else
+            {
+                GUI.color = Color.yellow;
+                Widgets.Label(botStatusRect, "RICS.Twitch.BotAccountStatus.Main".Translate());
+            }
+            GUI.color = Color.white;
+            /*
             if (!string.IsNullOrEmpty(settings.BotUsername) &&
                 !string.IsNullOrEmpty(settings.ChannelName))
             {
@@ -198,6 +217,7 @@ namespace _CAP__Chat_Interactive
                     GUI.color = Color.white;
                 }
             }
+            */
 
             listing.Gap(16f);
 
@@ -261,7 +281,7 @@ namespace _CAP__Chat_Interactive
             }
 
             // Draw the read-only field
-            Widgets.TextField(tokenFieldRect, tokenDisplay);  // ← Add readOnly: true for clarity (optional but good)
+            Widgets.TextField(tokenFieldRect, tokenDisplay);  
 
             // Tooltip with translatable text
             TooltipHandler.TipRegion(tokenFieldRect,
@@ -306,14 +326,14 @@ namespace _CAP__Chat_Interactive
             if (Widgets.ButtonText(getTokenRect, "RICS.Twitch.GetTokenButton".Translate()))
             {
                 string message =
-                    "<b>" + "RICS.Twitch.TokenGeneratorTitle".Translate() + "</b>\n\n" +
-                    "🔐 <b>" + "RICS.Twitch.TokenGeneratorStepsHeader".Translate() + "</b>\n" +
+                    "<b>" + UIUtilities.Colorize("RICS.Twitch.TokenGeneratorTitle".Translate(), ColorLibrary.HeaderAccent) + "</b>\n\n" +
+                    "🔐 <b>" + UIUtilities.Colorize("RICS.Twitch.TokenGeneratorStepsHeader".Translate(), ColorLibrary.SubHeader) + "</b>\n" +
                     "RICS.Twitch.TokenGeneratorStep1".Translate() + "\n" +
                     "RICS.Twitch.TokenGeneratorStep2".Translate() + "\n" +
                     "RICS.Twitch.TokenGeneratorStep3".Translate() + "\n" +
                     "RICS.Twitch.TokenGeneratorStep4".Translate() + "\n" +
                     "RICS.Twitch.TokenGeneratorStep5".Translate() + "\n\n" +
-                    "🔒 <b>" + "RICS.Twitch.TokenGeneratorSecurityHeader".Translate() + "</b>\n" +
+                    "🔒 <b>" + UIUtilities.Colorize("RICS.Twitch.TokenGeneratorSecurityHeader".Translate(), ColorLibrary.SubHeader) + "</b>\n" +
                     "RICS.Twitch.TokenGeneratorSecurityNote1".Translate() + "\n" +
                     "RICS.Twitch.TokenGeneratorSecurityNote2".Translate() + "\n" +
                     "RICS.Twitch.TokenGeneratorSecurityNote3".Translate() + "\n\n" +
@@ -344,10 +364,13 @@ namespace _CAP__Chat_Interactive
                 Rect tokenTypeRect = listing.GetRect(18f);
                 bool isBotToken = !string.IsNullOrEmpty(settings.BotUsername) &&
                                   settings.BotUsername.ToLower() != settings.ChannelName.ToLower();
+
                 // OLD: string tokenType = isBotToken ? "Bot account token" : "Main account token";
                 string tokenTypeKey = isBotToken ? "RICS.Twitch.TokenType.Bot" : "RICS.Twitch.TokenType.Main";
+
                 // OLD: Widgets.Label(tokenTypeRect, $"Token type: {tokenType}");
                 Widgets.Label(tokenTypeRect, "RICS.Twitch.TokenTypePrefix".Translate() + " " + tokenTypeKey.Translate());
+
                 // OLD: TooltipHandler.TipRegion(tokenTypeRect, "Shows which account this token belongs to");
                 TooltipHandler.TipRegion(tokenTypeRect,
                     "RICS.Twitch.TokenTypeTooltip".Translate()
@@ -365,36 +388,19 @@ namespace _CAP__Chat_Interactive
 
             listing.Gap(20f);
 
-            // Connection Settings
+            // === Connection Settings ===
             Text.Font = GameFont.Medium;
-            // OLD: listing.Label("Twitch Connection Settings");
+            GUI.color = ColorLibrary.SubHeader;
             listing.Label("RICS.Twitch.ConnectionSettingsHeader".Translate());  
             Text.Font = GameFont.Small;
+            GUI.color = Color.white;
             listing.GapLine(6f);
             listing.Gap(4f);
 
-            // Auto-connect with proper tooltip
+            // Auto-connect checkbox 
             Rect autoConnectRect = listing.GetRect(30f);
-            // OLD: Widgets.CheckboxLabeled(autoConnectRect, "Auto-connect on startup", ref settings.AutoConnect);
-            Widgets.CheckboxLabeled(autoConnectRect,
-                "RICS.Twitch.AutoConnectLabel".Translate(),
-                ref settings.AutoConnect);
-            /* OLD:
-            TooltipHandler.TipRegion(autoConnectRect,
-                "<b>Auto-connect on Startup</b>\n\n" +
-                "When enabled, the mod will automatically connect to\n" +
-                "Twitch when RimWorld loads.\n\n" +
-                "✅ <b>Good for:</b>\n" +
-                "• Regular streamers\n" +
-                "• Set-and-forget setup\n\n" +
-                "❌ <b>Disable if:</b>\n" +
-                "• You only stream occasionally\n" +
-                "• Testing different configurations\n" +
-                "• Using multiple streaming platforms");
-            */
-
-            TooltipHandler.TipRegion(autoConnectRect,
-                "RICS.Twitch.AutoConnectTooltip".Translate()
+            Widgets.CheckboxLabeled(autoConnectRect, "RICS.Twitch.AutoConnectLabel".Translate(), ref settings.AutoConnect);
+            TooltipHandler.TipRegion(autoConnectRect, "RICS.Twitch.AutoConnectTooltip".Translate()
             );
 
             // Connection status and controls
@@ -406,91 +412,128 @@ namespace _CAP__Chat_Interactive
                 // OLD: Widgets.Label(statusRect, "Status: <color=green>Connected to Twitch</color>");
                 string connectedLabel = "RICS.Twitch.ConnectionStatus".Translate() +
                     "<color=green>" + "RICS.Twitch.ConnectedLabel".Translate() + "</color>"; // "Connected to Twitch"
-                Widgets.Label(statusRect, connectedLabel); // "Connected to Twitch")
+                Widgets.Label(statusRect, connectedLabel); // "Connected to Twitch"
                 TooltipHandler.TipRegion(statusRect,
-                    "<b>Connected to Twitch</b>\n\n" +
-                    "✅ Successfully connected to:\n" +
-                    $"• Channel: {settings.ChannelName}\n" +
-                    $"• Bot: {settings.BotUsername}\n\n" +
-                    "The mod is now listening for chat commands\n" +
-                    "and processing viewer interactions.");
+                    UIUtilities.Colorize("RICS.Twitch.ConnectedTooltip1".Translate(), ColorLibrary.Success) + "\n" +
+                    "RICS.Twitch.ConnectedTooltipChannel".Translate(settings.ChannelName) +
+                    "RICS.Twitch.ConnectedTooltipBot".Translate(settings.BotUsername) +
+                    "RICS.Twitch.ConnectedTooltip4".Translate()
+                );
 
                 Rect disconnectRect = listing.GetRect(30f);
-                if (Widgets.ButtonText(disconnectRect, "Disconnect from Twitch"))
+                //if (Widgets.ButtonText(disconnectRect, "Disconnect from Twitch"))
+                if (Widgets.ButtonText(disconnectRect, "RICS.Twitch.DisconnectButton".Translate()))
                 {
                     CAPChatInteractiveMod.Instance.TwitchService.Disconnect();
-                    Messages.Message("Disconnected from Twitch chat", MessageTypeDefOf.SilentInput);
+                    // Messages.Message("Disconnected from Twitch chat", MessageTypeDefOf.SilentInput);
+                    Messages.Message("RICS.Twitch.DisconnectedMessage".Translate(), MessageTypeDefOf.SilentInput);
                 }
-                TooltipHandler.TipRegion(disconnectRect, "Disconnect from Twitch chat");
+                // TooltipHandler.TipRegion(disconnectRect, "Disconnect from Twitch chat");
+                TooltipHandler.TipRegion(disconnectRect,"RICS.Twitch.DisconnectButtonTooltip".Translate());
             }
             else
             {
                 Rect statusRect = listing.GetRect(24f);
-                Widgets.Label(statusRect, "Status: <color=red>Disconnected</color>");
+                // Widgets.Label(statusRect, "Status: <color=red>Disconnected</color>");
+                Widgets.Label(statusRect,
+                    "RICS.Twitch.ConnectionStatus".Translate() +
+                    "<color=red>" + "RICS.Twitch.DisconnectedLabel".Translate() + "</color>"); // "Disconnected"
+
+
                 TooltipHandler.TipRegion(statusRect,
                     "<b>Disconnected from Twitch</b>\n\n" +
-                    "The mod is not currently connected to Twitch chat.\n\n" +
-                    "✅ <b>Ready to connect?</b>\n" +
+                    "RICS is not currently connected to Twitch chat.\n\n" +
                     "Make sure you have:\n" +
                     "• Channel name entered\n" +
                     "• Valid OAuth token\n" +
                     "• Bot username (optional)\n\n" +
                     "Then click 'Connect to Twitch' below.");
 
+                TooltipHandler.TipRegion(statusRect,
+                    UIUtilities.Colorize("RICS.Twitch.DisconnectedTooltipTitle".Translate(), ColorLibrary.Danger) + "\n\n" +
+                    "RICS.Twitch.DisconnectedTooltipStatus".Translate() + "\n\n" +
+                    "RICS.Twitch.DisconnectedTooltipIntro".Translate() + "\n" +
+                    "RICS.Twitch.DisconnectedTooltipReq1".Translate() + "\n" +
+                    "RICS.Twitch.DisconnectedTooltipReq2".Translate() + "\n" +
+                    "RICS.Twitch.DisconnectedTooltipReq3".Translate()
+                );
+
                 bool canConnect = settings.CanConnect;
                 Rect connectRect = listing.GetRect(30f);
 
                 if (canConnect)
                 {
-                    if (Widgets.ButtonText(connectRect, "Connect to Twitch"))
+                    //if (Widgets.ButtonText(connectRect, "Connect to Twitch"))
+                    if (Widgets.ButtonText(connectRect, "RICS.Twitch.ConnectButton".Translate()))
                     {
                         CAPChatInteractiveMod.Instance.TwitchService.Connect();
-                        Messages.Message("Connecting to Twitch...", MessageTypeDefOf.SilentInput);
+                        // Messages.Message("Connecting to Twitch...", MessageTypeDefOf.SilentInput);
+                        Messages.Message("RICS.Twitch.ConnectingMessage".Translate(), MessageTypeDefOf.SilentInput);
                     }
-                    TooltipHandler.TipRegion(connectRect, "Connect to Twitch chat");
+                    // TooltipHandler.TipRegion(connectRect, "Connect to Twitch chat");
+                    TooltipHandler.TipRegion(connectRect,
+                        "RICS.Twitch.ConnectButtonTooltip".Translate()
+                    );
                 }
                 else
                 {
                     GUI.color = Color.gray;
-                    Widgets.ButtonText(connectRect, "Connect to Twitch (Missing Settings)");
+                    // Widgets.ButtonText(connectRect, "Connect to Twitch (Missing Settings)");
+                    Widgets.ButtonText(connectRect,
+                        "RICS.Twitch.ConnectButtonDisabled".Translate()
+                    );
                     GUI.color = Color.white;
 
                     // Show what's missing - with proper spacing
                     listing.Gap(4f);
                     Rect missingRect = listing.GetRect(45f);
                     string missing = "";
-                    if (string.IsNullOrEmpty(settings.ChannelName)) missing += "• Channel name\n";
-                    if (string.IsNullOrEmpty(settings.AccessToken)) missing += "• OAuth token\n";
-                    if (string.IsNullOrEmpty(settings.BotUsername)) missing += "• Bot username\n";
+                    //if (string.IsNullOrEmpty(settings.ChannelName)) missing += "• Channel name\n";
+                    if (string.IsNullOrEmpty(settings.ChannelName)) missing += "RICS.Twitch.MissingChannelName".Translate() + "\n";
+                    //if (string.IsNullOrEmpty(settings.AccessToken)) missing += "• OAuth token\n";
+                    if (string.IsNullOrEmpty(settings.AccessToken)) missing += "RICS.Twitch.MissingOAuthToken".Translate() + "\n";
+                    //if (string.IsNullOrEmpty(settings.BotUsername)) missing += "• Bot username\n";
+                    if (string.IsNullOrEmpty(settings.BotUsername)) missing += "RICS.Twitch.MissingBotUsername".Translate() + "\n";
 
                     if (!string.IsNullOrEmpty(missing))
                     {
                         GUI.color = Color.yellow;
-                        Widgets.Label(missingRect, $"Missing requirements:\n{missing}");
+                        string missingnote = "RICS.Twitch.MissingSettingsNote".Translate() + missing; // e.g. "Please fill in the above to connect."
+                        Widgets.Label(missingRect, $"{missingnote}");
                         GUI.color = Color.white;
-                        TooltipHandler.TipRegion(missingRect, "Fix these missing settings to connect");
+                        // TooltipHandler.TipRegion(missingRect, "Fix these missing settings to connect");
+                        TooltipHandler.TipRegion(missingRect,
+                            "RICS.Twitch.MissingSettingsTooltip".Translate()
+                        );
                     }
                 }
             }
 
-            // Quick Tips Section
+            // === Quick Tips Section ===
             listing.Gap(24f);
             Text.Font = GameFont.Medium;
-            listing.Label("Quick Tips");
+            // listing.Label("Quick Tips");
+            listing.Label("RICS.Twitch.QuickTipsHeader".Translate());
             Text.Font = GameFont.Small;
             listing.GapLine(6f);
             listing.Gap(4f);
 
             Rect tipsRect = listing.GetRect(85f); // More height for tips
+            //string tips =
+            //    "💡 <b>Common Issues & Solutions:</b>\n" +
+            //    "• <b>Token not working?</b> Regenerate at Twitch Token Generator\n" +
+            //    "• <b>Bot not joining?</b> Check channel name spelling\n" +
+            //    "• <b>Connection drops?</b> Check internet stability\n" +
+            //    "• <b>See your own messages?</b> That's normal with main account";
             string tips =
-                "💡 <b>Common Issues & Solutions:</b>\n" +
-                "• <b>Token not working?</b> Regenerate at Twitch Token Generator\n" +
-                "• <b>Bot not joining?</b> Check channel name spelling\n" +
-                "• <b>Connection drops?</b> Check internet stability\n" +
-                "• <b>See your own messages?</b> That's normal with main account";
+                UIUtilities.Colorize("RICS.Twitch.TipsTitle".Translate(), Color.yellow) + "\n" +  // or any color you like for the header
+                "RICS.Twitch.TipsTokenIssue".Translate() + "\n" +
+                "RICS.Twitch.TipsBotIssue".Translate() + "\n" +
+                "RICS.Twitch.TipsConnectionDrops".Translate() + "\n" +
+                "RICS.Twitch.TipsOwnMessages".Translate();
             Widgets.Label(tipsRect, tips);
-            TooltipHandler.TipRegion(tipsRect, "Helpful tips for troubleshooting Twitch connection");
-
+            // TooltipHandler.TipRegion(tipsRect, "Helpful tips for troubleshooting Twitch connection");
+            TooltipHandler.TipRegion(tipsRect,"RICS.Twitch.QuickTipsTooltip".Translate());
             listing.End();
             Widgets.EndScrollView();
         }

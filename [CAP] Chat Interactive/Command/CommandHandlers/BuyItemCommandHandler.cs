@@ -149,13 +149,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 Logger.Debug($"Final quantity after limits: {quantity}");
 
-                // Check quantity limits and clamp to maximum allowed
-                if (storeItem.HasQuantityLimit && quantity > storeItem.QuantityLimit)
-                {
-                    Logger.Debug($"Quantity {quantity} exceeds limit of {storeItem.QuantityLimit} for {itemName}, clamping to maximum");
-                    quantity = storeItem.QuantityLimit;
-                }
-
                 // Calculate final price
                 int finalPrice = StoreCommandHelper.CalculateFinalPrice(storeItem, quantity, quality, material);
 
@@ -362,7 +355,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     return $"Item '{itemName}' not found in Rimazon.";
                 }
 
-                // only check if isusable for use commands
                 // if (!storeItem.Enabled)
                 //{
                 //    return $"Item '{itemName}' is not available for purchase.";
