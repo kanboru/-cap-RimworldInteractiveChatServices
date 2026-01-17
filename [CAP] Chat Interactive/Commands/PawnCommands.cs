@@ -399,4 +399,64 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             return result;
         }
     }
+
+    public class SetHead : ChatCommand
+    {
+        public override string Name => "sethead";
+
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
+        {
+            return PawnAppearanceCommandHandler.HandleSetHeadCommand(messageWrapper, args);
+        }
+    }
+
+    public class SetBody : ChatCommand
+    {
+        public override string Name => "setbody";
+
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
+        {
+            return PawnAppearanceCommandHandler.HandleSetBodyCommand(messageWrapper, args);
+        }
+    }
+
+    public class SetHair : ChatCommand
+    {
+        public override string Name => "sethair";
+
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
+        {
+            return PawnAppearanceCommandHandler.HandleSetHairCommand(messageWrapper, args);
+        }
+    }
+
+    public class SetBeard : ChatCommand
+    {
+        public override string Name => "setbeard";
+
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
+        {
+            return PawnAppearanceCommandHandler.HandleSetBeardCommand(messageWrapper, args);
+        }
+    }
+    //WIP
+    public class DyeHair : ChatCommand
+    {
+        public override string Name => "dyehair";
+
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
+        {
+            return PawnAppearanceCommandHandler.HandleDyeHairCommand(messageWrapper, args);
+        }
+    }
+
+    public class SetTattoo : ChatCommand
+    {
+        public override string Name => "settattoo";
+
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
+        {
+            return PawnAppearanceCommandHandler.HandleSetHairCommand(messageWrapper, args);
+        }
+    }
 }
