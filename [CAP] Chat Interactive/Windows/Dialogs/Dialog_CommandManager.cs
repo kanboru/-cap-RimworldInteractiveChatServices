@@ -445,7 +445,7 @@ namespace CAP_ChatInteractive
                 }
 
                 string cooldownBuffer = numericBuffers[cooldownKey];
-                Widgets.TextFieldNumeric(cooldownInputRect, ref settings.CooldownSeconds, ref cooldownBuffer, 1f, 300f);
+                Widgets.TextFieldNumeric(cooldownInputRect, ref settings.CooldownSeconds, ref cooldownBuffer, 0f, 300f);
                 numericBuffers[cooldownKey] = cooldownBuffer;
 
                 // Description below
