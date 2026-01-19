@@ -13,8 +13,6 @@
 // 
 // You should have received a copy of the GNU Affero General Public License
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
-using CAP_ChatInteractive.Commands.ViewerCommands;
-using CAP_ChatInteractive.Store;
 using CAP_ChatInteractive.Utilities;
 using RimWorld;
 using System;
@@ -252,12 +250,18 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 return $"You need {StoreCommandHelper.FormatCurrencyMessage(finalPrice, currencySymbol)} for {displayName} surgery! " +
                        $"You have {StoreCommandHelper.FormatCurrencyMessage(viewer.Coins, currencySymbol)}.";
             }
-
+            // Get viewer's pawn
             Verse.Pawn pawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
             if (pawn == null)
                 return "You need to have a pawn in the colony to perform surgery. Use !buy pawn first.";
             if (pawn.Dead)
                 return "Your pawn is dead. You cannot perform surgery.";
+
+            // Body validation
+            if (!IsSuitableForBodyChangingSurgery(pawn, out string restrictionReason))
+            {
+                return $"Sorry, this surgery cannot be performed: {restrictionReason}";
+            }
 
             var recipe = DefDatabase<RecipeDef>.GetNamedSilentFail(recipeDefName);
             if (recipe == null)
@@ -308,19 +312,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                    $"Your doctors will transform your pawn. Remaining balance: {StoreCommandHelper.FormatCurrencyMessage(viewer.Coins, currencySymbol)}.";
         }
 
-        // Helper to map surgeryType to BodyTypeDef (add this)
-        private static BodyTypeDef GetTargetBodyTypeForSurgery(string surgeryType)
-        {
-            switch (surgeryType.ToLower())
-            {
-                case "fat body": return BodyTypeDefOf.Fat;
-                case "feminine body": return BodyTypeDefOf.Female;
-                case "hulking body": return BodyTypeDefOf.Hulk;
-                case "masculine body": return BodyTypeDefOf.Male;
-                case "thin body": return BodyTypeDefOf.Thin;
-                default: return null;
-            }
-        }
         // New method for handling gender swap surgery
         private static string HandleGenderSwapSurgery(ChatMessageWrapper messageWrapper, Viewer viewer, string currencySymbol)
         {
@@ -335,12 +326,19 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                        $"You have {StoreCommandHelper.FormatCurrencyMessage(viewer.Coins, currencySymbol)}.";
             }
 
+            // Get viewer's pawn
             Verse.Pawn pawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
             if (pawn == null)
                 return "You need to have a pawn in the colony to perform surgery. Use !buy pawn first.";
             if (pawn.Dead)
                 return "Your pawn is dead. You cannot perform surgery.";
 
+            // Age validation
+            if (!IsAdultForBodySurgery(pawn, out string restrictionReason))
+            {
+                return $"Sorry, gender swap surgery cannot be performed: {restrictionReason}";
+            }
+            
             var recipe = DefDatabase<RecipeDef>.GetNamedSilentFail("GenderSwapSurgery");
             if (recipe == null)
             {
@@ -529,6 +527,152 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 var bill = new Bill_Medical(recipe, null) { Part = bodyPart };
                 pawn.health.surgeryBills.AddBill(bill);
                 Logger.Debug($"Scheduled {recipe.defName} on {bodyPart.Label} for pawn {pawn.Name}");
+            }
+        }
+
+        private static bool IsSuitableForBodyChangingSurgery(Verse.Pawn pawn, out string reason)
+        {
+            reason = null;
+
+            if (pawn == null)
+            {
+                reason = "No pawn found.";
+                return false;
+            }
+
+            // Age check
+            if (!IsAdultForBodySurgery(pawn, out reason))
+            {
+                return false;
+            }
+
+            // Check for HAR (Humanoid Alien Races) custom body types
+            var currentBodyType = pawn.story?.bodyType;
+            if (currentBodyType != null)
+            {
+                var vanillaBodyTypes = new HashSet<BodyTypeDef>
+        {
+            BodyTypeDefOf.Fat,
+            BodyTypeDefOf.Female,
+            BodyTypeDefOf.Hulk,
+            BodyTypeDefOf.Male,
+            BodyTypeDefOf.Thin,
+            BodyTypeDefOf.Child
+        };
+
+                if (!vanillaBodyTypes.Contains(currentBodyType))
+                {
+                    reason = $"Your pawn has a unique {currentBodyType.LabelCap} body type from their race. " +
+                            "Major body reshaping is not compatible with their physiology.";
+                    return false;
+                }
+            }
+
+            // Gene checks
+            if (pawn.genes != null)
+            {
+                // === NEW: Check for the 'Delicate' Gene (Genie Xenotype) ===
+                GeneDef delicateGene = DefDatabase<GeneDef>.GetNamedSilentFail("Delicate");
+                if (delicateGene != null && pawn.genes.HasActiveGene(delicateGene))
+                {
+                    reason = "Your pawn has the 'Delicate' gene, making major body reshaping unsafe.";
+                    return false;
+                }
+
+                // Your existing other gene checks remain here...
+                bool hasConflictingBodyGene = pawn.genes.GenesListForReading.Any(g =>
+                    g.def.defName.Contains("Body") ||
+                    g.def.defName.Contains("Furskin") ||
+                    g.def.defName.Contains("Trotter") ||
+                    g.def.defName.Contains("Waster")
+                );
+
+                if (hasConflictingBodyGene)
+                {
+                    reason = "Your pawn's unique genetic makeup (xenogenes) makes major body reshaping unsafe or incompatible. " +
+                             "Consider gene extraction/reimplantation first.";
+                    return false;
+                }
+            }
+
+            // Pregnancy check
+            if (pawn.health?.hediffSet != null)
+            {
+                var pregnancyHediff = pawn.health.hediffSet.hediffs
+                    .FirstOrDefault(h => h.def.defName.ToLower().Contains("pregnancy") || h is Hediff_Pregnant);
+
+                if (pregnancyHediff != null)
+                {
+                    reason = "Your pawn is currently pregnant. Major body-altering surgeries are not safe during pregnancy.";
+                    return false;
+                }
+
+                // Lactating block (optional - you already have it commented; keep if wanted)
+                // if (pawn.health.hediffSet.HasHediff(HediffDefOf.Lactating)) { ... }
+            }
+
+            // Ideology check (your existing code continues...)
+            if (pawn.Ideo != null && pawn.Ideo.memes.Any(m =>
+                m.defName == "FleshPurity" ||
+                m.defName.Contains("Purity") ||
+                m.defName.Contains("Purist")))
+            {
+                reason = "Your pawn follows a flesh purity ideology and refuses major artificial body modification.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsAdultForBodySurgery(Verse.Pawn pawn, out string reason)
+        {
+            if (pawn == null)
+            {
+                reason = "Error: Null Pawn.";
+                return false;
+            }
+
+            // 1. Biological age check (most reliable)
+            if (pawn.ageTracker != null)
+            {
+                float biologicalAge = pawn.ageTracker.AgeBiologicalYearsFloat;
+
+                // RimWorld vanilla adulthood threshold is usually 18
+                // You can make this configurable later if desired
+               const float MIN_ADULT_AGE = 14f;
+
+                if (biologicalAge < MIN_ADULT_AGE)
+                {
+                    reason = $"Your pawn is too young (biological age: {biologicalAge:F1}). Minimum age for body-altering surgery is {MIN_ADULT_AGE}.";
+                    Logger.Debug($"Pawn {pawn.Name} is too young (bio age: {biologicalAge:F1}) for body-changing surgery");
+                    return false;
+                }
+            }
+
+            // 2. Fallback: Check body type (useful when age tracker is missing or for modded races)
+            if (pawn.story != null && pawn.story.bodyType != null)
+            {
+                if (pawn.story.bodyType == BodyTypeDefOf.Child)
+                {
+                    reason = "Your pawn has a Child body type, indicating they are not an adult.";
+                    Logger.Debug($"Pawn {pawn.Name} has Child body type - blocking body surgery");
+                    return false;
+                }
+            }
+            reason = null;
+            return true;
+        }
+
+        private static BodyTypeDef GetTargetBodyTypeForSurgery(string surgeryType)
+        {
+            switch (surgeryType.ToLower())
+            {
+                case "fat body": return BodyTypeDefOf.Fat;
+                case "feminine body": return BodyTypeDefOf.Female;
+                case "hulking body": return BodyTypeDefOf.Hulk;
+                case "masculine body": return BodyTypeDefOf.Male;
+                case "thin body": return BodyTypeDefOf.Thin;
+                default: return null;
             }
         }
     }
