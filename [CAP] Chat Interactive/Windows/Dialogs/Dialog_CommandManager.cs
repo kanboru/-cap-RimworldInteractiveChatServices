@@ -162,7 +162,7 @@ namespace CAP_ChatInteractive
             Text.Font = GameFont.Medium;
             GUI.color = ColorLibrary.HeaderAccent;
             Rect titleRect = new Rect(0f, 0f, 200f, 30f);
-            Widgets.Label(titleRect, "Command Management");
+            Widgets.Label(titleRect, "CAP.CommandManager.Title".Translate());
 
             // Draw underline
             Rect underlineRect = new Rect(titleRect.x, titleRect.yMax - 2f, titleRect.width, 2f);
@@ -195,7 +195,7 @@ namespace CAP_ChatInteractive
             else
             {
                 // Fallback text button
-                if (Widgets.ButtonText(new Rect(rect.width - 80f, 10f, 75f, 24f), "Settings"))
+                if (Widgets.ButtonText(new Rect(rect.width - 80f, 10f, 75f, 24f), "CAP.CommandManager.Settings".Translate()))
                 {
                     ShowCommandSettingsMenu();
                 }
@@ -213,7 +213,7 @@ namespace CAP_ChatInteractive
             float x = 0f;
 
             // Sort by Name
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Name"))
+            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "CAP.CommandManager.Sort.Name".Translate()))
             {
                 if (sortMethod == CommandSortMethod.Name)
                     sortAscending = !sortAscending;
@@ -224,7 +224,7 @@ namespace CAP_ChatInteractive
             x += buttonWidth + spacing;
 
             // Sort by Category
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Category"))
+            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "CAP.CommandManager.Sort.Category".Translate()))
             {
                 if (sortMethod == CommandSortMethod.Category)
                     sortAscending = !sortAscending;
@@ -235,7 +235,7 @@ namespace CAP_ChatInteractive
             x += buttonWidth + spacing;
 
             // Sort by Status
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Status"))
+            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "CAP.CommandManager.Sort.Status".Translate()))
             {
                 if (sortMethod == CommandSortMethod.Status)
                     sortAscending = !sortAscending;
@@ -267,7 +267,7 @@ namespace CAP_ChatInteractive
             Rect headerRect = new Rect(rect.x, rect.y, rect.width, 30f);
             Text.Font = GameFont.Medium;
             Text.Anchor = TextAnchor.MiddleCenter;
-            Widgets.Label(headerRect, "Commands");
+            Widgets.Label(headerRect, "CAP.CommandManager.Commands".Translate());
             Text.Anchor = TextAnchor.UpperLeft;
             Text.Font = GameFont.Small;
 
@@ -290,7 +290,7 @@ namespace CAP_ChatInteractive
                     // Command name with status indicator
                     string displayName = $"!{command.commandText}";
                     if (!settings.Enabled)
-                        displayName += " [DISABLED]";
+                        displayName += " " + "CAP.CommandManager.Disabled".Translate().Colorize(Color.red);
 
                     // Color coding based on permission level
                     Color buttonColor = GetCommandColor(command);
@@ -346,7 +346,8 @@ namespace CAP_ChatInteractive
             {
                 Rect messageRect = new Rect(rect.x, rect.y, rect.width, rect.height);
                 Text.Anchor = TextAnchor.MiddleCenter;
-                Widgets.Label(messageRect, "Select a command to see details");
+                Widgets.Label(messageRect, "CAP.CommandManager.SelectCommand".Translate());
+
                 Text.Anchor = TextAnchor.UpperLeft;
                 return;
             }
@@ -365,7 +366,7 @@ namespace CAP_ChatInteractive
             
             string headerText = $"!{selectedCommand.commandText}";
             if (!settings.Enabled)
-                headerText += " 🚫 DISABLED";
+                headerText += " " + "CAP.CommandManager.Disabled".Translate().Colorize(Color.red);
 
             Widgets.Label(headerRect, headerText);
             Text.Font = GameFont.Small;
@@ -392,46 +393,48 @@ namespace CAP_ChatInteractive
 
                 // Basic Info section
                 Rect basicLabelRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
-                Widgets.Label(basicLabelRect, "Basic Information:");
+                Widgets.Label(basicLabelRect, "CAP.CommandManager.BasicInfo".Translate());
                 y += sectionHeight;
 
                 // Command text
                 Rect commandTextRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding, sectionHeight);
-                Widgets.Label(commandTextRect, $"Trigger: !{selectedCommand.commandText}");
+                Widgets.Label(commandTextRect, "CAP.CommandManager.Trigger".Translate() + $" !{selectedCommand.commandText}");
                 y += sectionHeight;
 
                 // Description
                 Rect descRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding, sectionHeight * 2);
                 string desc = string.IsNullOrEmpty(selectedCommand.commandDescription) ?
-                    "No description available" : selectedCommand.commandDescription;
-                Widgets.Label(descRect, $"Description: {desc}");
+                    "CAP.CommandManager.NoDescription".Translate() : selectedCommand.commandDescription;
+                Widgets.Label(descRect, "CAP.CommandManager.Description".Translate() + $" {desc}");
                 y += sectionHeight * 2;
 
                 // Permission level
                 Rect permRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding, sectionHeight);
-                Widgets.Label(permRect, $"Permission Level: {selectedCommand.permissionLevel}");
+                string permLevelTranslated = selectedCommand.permissionLevel.Translate(); // RimWorld auto-translates Def values
+                Widgets.Label(permRect, "CAP.CommandManager.PermissionLevel".Translate() + $" {permLevelTranslated}");
                 y += sectionHeight;
 
                 y += 10f;
 
                 // Basic Settings section
                 Rect settingsLabelRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
-                Widgets.Label(settingsLabelRect, "Basic Settings:");
+                Widgets.Label(settingsLabelRect, "CAP.CommandManager.BasicSettings".Translate());
                 y += sectionHeight;
 
                 // Enabled toggle
                 Rect enabledRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                Widgets.Label(enabledRect, "Enabled:");
+                Widgets.Label(enabledRect, "CAP.CommandManager.Enabled".Translate());
                 Rect enabledToggleRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
-                if (Widgets.ButtonText(enabledToggleRect, settings.Enabled ? "ON" : "OFF"))
+                string toggleText = settings.Enabled ? "CAP.CommandManager.On".Translate() : "CAP.CommandManager.Off".Translate();
+                if (Widgets.ButtonText(enabledToggleRect, toggleText))
                 {
                     settings.Enabled = !settings.Enabled;
                 }
                 y += sectionHeight;
 
-                // Cooldown setting - FIXED and simplified
+                // Cooldown setting 
                 Rect cooldownLabelRect = new Rect(leftPadding + 10f, y, 250f, sectionHeight);
-                Widgets.Label(cooldownLabelRect, "Command Cooldown (seconds):");
+                Widgets.Label(cooldownLabelRect, "CAP.CommandManager.Cooldown".Translate());
 
                 Rect cooldownInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
 
@@ -452,19 +455,17 @@ namespace CAP_ChatInteractive
                 Rect cooldownDescRect = new Rect(leftPadding + 10f, y + sectionHeight - 8f, viewRect.width - leftPadding, 14f);
                 Text.Font = GameFont.Tiny;
                 GUI.color = new Color(0.7f, 0.7f, 0.7f); // Softer gray
-                Widgets.Label(cooldownDescRect, "Prevents command spamming - reminds users to be respectful");
+                Widgets.Label(cooldownDescRect, "CAP.CommandManager.CooldownDesc".Translate());
                 Text.Font = GameFont.Small;
                 GUI.color = Color.white;
 
                 y += sectionHeight + 10f; // Extra space for description
 
-                // y += sectionHeight + 8f; // Extra space for description
-
                 // Cost setting (if applicable)
                 if (settings.SupportsCost)
                 {
                     Rect costRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(costRect, $"Cost ({settingsGlobalChat.CurrencyName}):");
+                    Widgets.Label(costRect, string.Format("CAP.CommandManager.Cost".Translate(), settingsGlobalChat.CurrencyName));
                     Rect costInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
 
                     string costKey = $"cost_{settings.GetHashCode()}";
@@ -484,12 +485,12 @@ namespace CAP_ChatInteractive
 
                 // Advanced Settings section
                 Rect advancedLabelRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
-                Widgets.Label(advancedLabelRect, "Advanced Settings:");
+                Widgets.Label(advancedLabelRect, "CAP.CommandManager.AdvancedSettings".Translate());
                 y += sectionHeight;
 
                 // Command alias - NEW: Allow custom command aliases
                 Rect aliasLabelRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                Widgets.Label(aliasLabelRect, "Command Alias:");
+                Widgets.Label(aliasLabelRect, "CAP.CommandManager.CommandAlias".Translate());
                 Rect aliasInputRect = new Rect(viewRect.width - 200f, y, 180f, sectionHeight); // Wider input
 
                 // Get global settings for prefixes
@@ -515,24 +516,25 @@ namespace CAP_ChatInteractive
                 Rect aliasDescRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding, 14f);
                 Text.Font = GameFont.Tiny;
                 GUI.color = new Color(0.8f, 0.8f, 0.8f);
-                Widgets.Label(aliasDescRect, $"Example: 'bp' for !backpack. Don't include '{globalSettings.Prefix}' or '{globalSettings.BuyPrefix}' prefix.");
+                string aliasDesc = "CAP.CommandManager.AliasDesc".Translate(globalSettings.Prefix, globalSettings.BuyPrefix);
+                Widgets.Label(aliasDescRect, aliasDesc);
                 Text.Font = GameFont.Small;
                 GUI.color = Color.white;
                 y += 20f;
 
                 // Event Command Settings - Only show for commands like raid, militaryaid
                 Rect eventHeaderRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
-                Widgets.Label(eventHeaderRect, "Command Cooldown Settings:");
+                Widgets.Label(eventHeaderRect, "CAP.CommandManager.CooldownSettings".Translate());
                 y += sectionHeight;
 
                 // Use event cooldown toggle
                 Rect eventToggleRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                Widgets.CheckboxLabeled(eventToggleRect, "Turn on for non event Commands", ref settings.useCommandCooldown);
+                Widgets.CheckboxLabeled(eventToggleRect, "CAP.CommandManager.UseCommandCooldown".Translate(), ref settings.useCommandCooldown);
                 y += sectionHeight;
 
                 // Max uses per cooldown period
                 Rect eventUsesRect = new Rect(leftPadding + 20f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                Widgets.Label(eventUsesRect, "Max uses per cooldown period 0 = infinite use of command:");
+                Widgets.Label(eventUsesRect, "CAP.CommandManager.MaxUsesPerCooldown".Translate());
                 Rect eventUsesInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
                 string eventUsesBuffer = settings.MaxUsesPerCooldownPeriod.ToString();
                 UIUtilities.TextFieldNumericFlexible(eventUsesInputRect, ref settings.MaxUsesPerCooldownPeriod, ref eventUsesBuffer, 0, 10000);
@@ -545,12 +547,12 @@ namespace CAP_ChatInteractive
                     y += 10f; // Extra spacing
 
                     Rect raidHeaderRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
-                    Widgets.Label(raidHeaderRect, "Raid Command Settings:");
+                    Widgets.Label(raidHeaderRect, "CAP.CommandManager.RaidSettings".Translate());
                     y += sectionHeight;
 
                     // Default wager
                     Rect wagerRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(wagerRect, "Default wager:");
+                    Widgets.Label(wagerRect, "CAP.CommandManager.DefaultWager".Translate());
                     Rect wagerInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
                     string wagerBuffer = settings.DefaultRaidWager.ToString();
                     UIUtilities.TextFieldNumericFlexible(wagerInputRect, ref settings.DefaultRaidWager, ref wagerBuffer,
@@ -559,14 +561,14 @@ namespace CAP_ChatInteractive
 
                     // Wager range
                     Rect minWagerRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(minWagerRect, "Min wager:");
+                    Widgets.Label(minWagerRect, "CAP.CommandManager.MinWager".Translate());
                     Rect minWagerInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
                     string minWagerBuffer = settings.MinRaidWager.ToString();
                     UIUtilities.TextFieldNumericFlexible(minWagerInputRect, ref settings.MinRaidWager, ref minWagerBuffer, 100, 5000);
                     y += sectionHeight;
 
                     Rect maxWagerRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(maxWagerRect, "Max wager:");
+                    Widgets.Label(maxWagerRect, "CAP.CommandManager.MaxWager".Translate());
                     Rect maxWagerInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
                     string maxWagerBuffer = settings.MaxRaidWager.ToString();
                     UIUtilities.TextFieldNumericFlexible(maxWagerInputRect, ref settings.MaxRaidWager, ref maxWagerBuffer,
@@ -575,7 +577,7 @@ namespace CAP_ChatInteractive
 
                     // Allowed raid types button
                     Rect raidTypesRect = new Rect(leftPadding + 10f, y, 200f, sectionHeight);
-                    if (Widgets.ButtonText(raidTypesRect, "Configure Raid Types →"))
+                    if (Widgets.ButtonText(raidTypesRect, "CAP.CommandManager.ConfigureRaidTypes".Translate()))
                     {
                         Find.WindowStack.Add(new Dialog_RaidTypesEditor(settings));
                     }
@@ -583,7 +585,7 @@ namespace CAP_ChatInteractive
 
                     // Allowed strategies button  
                     Rect strategiesRect = new Rect(leftPadding + 10f, y, 200f, sectionHeight);
-                    if (Widgets.ButtonText(strategiesRect, "Configure Strategies →"))
+                    if (Widgets.ButtonText(strategiesRect, "CAP.CommandManager.ConfigureStrategies".Translate()))
                     {
                         Find.WindowStack.Add(new Dialog_RaidStrategiesEditor(settings));
                     }
@@ -596,12 +598,12 @@ namespace CAP_ChatInteractive
                     y += 10f; // Extra spacing
 
                     Rect militaryHeaderRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
-                    Widgets.Label(militaryHeaderRect, "Military Aid Command Settings:");
+                    Widgets.Label(militaryHeaderRect, "CAP.CommandManager.MilitaryAidSettings".Translate().Colorize(ColorLibrary.SubHeader));
                     y += sectionHeight;
 
                     // Default wager
                     Rect wagerRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(wagerRect, "Default wager:");
+                    Widgets.Label(wagerRect, "CAP.CommandManager.MilitaryAidDefaultwager".Translate());
                     Rect wagerInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
                     string wagerBuffer = settings.DefaultMilitaryAidWager.ToString();
                     UIUtilities.TextFieldNumericFlexible(wagerInputRect, ref settings.DefaultMilitaryAidWager, ref wagerBuffer,
@@ -610,14 +612,14 @@ namespace CAP_ChatInteractive
 
                     // Wager range
                     Rect minWagerRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(minWagerRect, "Min wager:");
+                    Widgets.Label(minWagerRect, "CAP.CommandManager.MilitaryAidMinWager".Translate());
                     Rect minWagerInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
                     string minWagerBuffer = settings.MinMilitaryAidWager.ToString();
                     UIUtilities.TextFieldNumericFlexible(minWagerInputRect, ref settings.MinMilitaryAidWager, ref minWagerBuffer, 500, 5000);
                     y += sectionHeight;
 
                     Rect maxWagerRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(maxWagerRect, "Max wager:");
+                    Widgets.Label(maxWagerRect, "CAP.CommandManager.MilitaryAidMaxWager".Translate());
                     Rect maxWagerInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
                     string maxWagerBuffer = settings.MaxMilitaryAidWager.ToString();
                     UIUtilities.TextFieldNumericFlexible(maxWagerInputRect, ref settings.MaxMilitaryAidWager, ref maxWagerBuffer,
@@ -631,17 +633,17 @@ namespace CAP_ChatInteractive
                     y += 10f; // Extra spacing
 
                     Rect lootboxHeaderRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
-                    Widgets.Label(lootboxHeaderRect, "Loot Box Global Settings:");
+                    Widgets.Label(lootboxHeaderRect, "CAP.CommandManager.LootboxSettings".Translate().Colorize(ColorLibrary.SubHeader));
                     y += sectionHeight;
 
                     // Coin range
                     Rect coinRangeRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(coinRangeRect, "Coin Range (1-10000):");
+                    Widgets.Label(coinRangeRect, "CAP.CommandManager.LootboxCoinRange".Translate());
                     y += sectionHeight;
 
                     // Min coin input
                     Rect coinMinRect = new Rect(leftPadding + 20f, y, 80f, sectionHeight);
-                    Widgets.Label(coinMinRect, "Min:");
+                    Widgets.Label(coinMinRect, "CAP.CommandManager.Min".Translate());
                     Rect coinMinInputRect = new Rect(leftPadding + 60f, y, 60f, sectionHeight);
 
                     // Use buffer pattern for min coin
@@ -656,7 +658,7 @@ namespace CAP_ChatInteractive
 
                     // Max coin input
                     Rect coinMaxRect = new Rect(leftPadding + 140f, y, 80f, sectionHeight);
-                    Widgets.Label(coinMaxRect, "Max:");
+                    Widgets.Label(coinMaxRect, "CAP.CommandManager.Max".Translate());
                     Rect coinMaxInputRect = new Rect(leftPadding + 180f, y, 60f, sectionHeight);
 
                     // Use buffer pattern for max coin
@@ -673,7 +675,7 @@ namespace CAP_ChatInteractive
 
                     // Lootboxes per day
                     Rect perDayRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(perDayRect, "Lootboxes Per Day:");
+                    Widgets.Label(perDayRect, "CAP.CommandManager.LootboxPerDay".Translate());
                     Rect perDayInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
 
                     // Use buffer pattern for per day
@@ -690,12 +692,12 @@ namespace CAP_ChatInteractive
 
                     // Show welcome message
                     Rect welcomeRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.CheckboxLabeled(welcomeRect, "Show Welcome Message", ref settingsGlobalChat.LootBoxShowWelcomeMessage);
+                    Widgets.CheckboxLabeled(welcomeRect, "CAP.CommandManager.ShowWelcomeMessage".Translate(), ref settingsGlobalChat.LootBoxShowWelcomeMessage);
                     y += sectionHeight;
 
                     // Force open all at once
                     Rect forceOpenRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.CheckboxLabeled(forceOpenRect, "Force Open All At Once", ref settingsGlobalChat.LootBoxForceOpenAllAtOnce);
+                    Widgets.CheckboxLabeled(forceOpenRect, "CAP.CommandManager.ForceOpen".Translate(), ref settingsGlobalChat.LootBoxForceOpenAllAtOnce);
                     y += sectionHeight;
                 }
 
@@ -705,12 +707,12 @@ namespace CAP_ChatInteractive
                     y += 10f; // Extra spacing
 
                     Rect passionHeaderRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
-                    Widgets.Label(passionHeaderRect, "Passion Command Settings:");
+                    Widgets.Label(passionHeaderRect, "CAP.CommandManager.PassionSettings".Translate().Colorize(ColorLibrary.SubHeader));
                     y += sectionHeight;
 
                     // Min wager
                     Rect minWagerRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(minWagerRect, "Minimum wager:");
+                    Widgets.Label(minWagerRect, "CAP.CommandManager.PassionMinWager".Translate());
                     Rect minWagerInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
 
                     string minWagerKey = "passion_minwager";
@@ -726,7 +728,7 @@ namespace CAP_ChatInteractive
 
                     // Max wager
                     Rect maxWagerRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(maxWagerRect, "Maximum wager:");
+                    Widgets.Label(maxWagerRect, "CAP.CommandManager.PassionMaxWager".Translate());
                     Rect maxWagerInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
 
                     string maxWagerKey = "passion_maxwager";
@@ -743,7 +745,7 @@ namespace CAP_ChatInteractive
 
                     // Base success chance
                     Rect baseChanceRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(baseChanceRect, "Base success chance (%):");
+                    Widgets.Label(baseChanceRect, "CAP.CommandManager.PassionBaseSuccess".Translate());
                     Rect baseChanceInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
 
                     string baseChanceKey = "passion_basechance";
@@ -759,7 +761,7 @@ namespace CAP_ChatInteractive
 
                     // Max success chance
                     Rect maxChanceRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(maxChanceRect, "Max success chance (%):");
+                    Widgets.Label(maxChanceRect, "CAP.CommandManager.PassionMaxSuccess".Translate());
                     Rect maxChanceInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
 
                     string maxChanceKey = "passion_maxchance";
@@ -778,7 +780,7 @@ namespace CAP_ChatInteractive
                     Rect passionDescRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding, 28f);
                     Text.Font = GameFont.Tiny;
                     GUI.color = new Color(0.7f, 0.7f, 0.7f);
-                    Widgets.Label(passionDescRect, "Higher wagers = better success chances. Base chance scales with wager amount.");
+                    Widgets.Label(passionDescRect, "CAP.CommandManager.PassionDescription".Translate());
                     Text.Font = GameFont.Small;
                     GUI.color = Color.white;
                     y += 20f;
@@ -793,14 +795,14 @@ namespace CAP_ChatInteractive
                     Rect surgeryHeaderRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding, sectionHeight);
                     Text.Font = GameFont.Medium;
                     GUI.color = ColorLibrary.HeaderAccent;
-                    Widgets.Label(surgeryHeaderRect, "Surgery Settings");
+                    Widgets.Label(surgeryHeaderRect, "CAP.CommandManager.SurgerySettings".Translate().Colorize(ColorLibrary.SubHeader));
                     Text.Font = GameFont.Small;
                     GUI.color = Color.white;
                     y += sectionHeight;
 
                     // Gender Swap Cost
                     Rect genderCostLabelRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(genderCostLabelRect, "Gender Swap Cost:");
+                    Widgets.Label(genderCostLabelRect, "CAP.CommandManager.SurgeryGenderSwapCost".Translate());
                     Rect genderCostInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
 
                     string genderCostKey = "surgery_gender_swap_cost";
@@ -816,7 +818,7 @@ namespace CAP_ChatInteractive
 
                     // Body Change Cost
                     Rect bodyCostLabelRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(bodyCostLabelRect, "Body Change Cost:");
+                    Widgets.Label(bodyCostLabelRect, "CAP.CommandManager.BodyChangeCost".Translate());
                     Rect bodyCostInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
 
                     string bodyCostKey = "surgery_body_change_cost";
@@ -834,7 +836,7 @@ namespace CAP_ChatInteractive
                     Rect surgeryDescRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding, 28f);
                     Text.Font = GameFont.Tiny;
                     GUI.color = new Color(0.7f, 0.7f, 0.7f);
-                    Widgets.Label(surgeryDescRect, "These costs apply to special cosmetic surgeries like gender swap and body type changes.");
+                    Widgets.Label(surgeryDescRect, "CAP.CommandManager.SurgeryDescription".Translate());
                     Text.Font = GameFont.Small;
                     GUI.color = Color.white;
                     y += 20f;
@@ -849,7 +851,7 @@ namespace CAP_ChatInteractive
         {
             List<FloatMenuOption> options = new List<FloatMenuOption>
     {
-        new FloatMenuOption("Reset All Commands to Defaults", () => ShowResetConfirmationDialog())
+        new FloatMenuOption("CAP.CommandManager.ResetAll".Translate(), () => ShowResetConfirmationDialog())  // // Do Tranlslate
     };
 
             Find.WindowStack.Add(new FloatMenu(options));
@@ -985,6 +987,8 @@ namespace CAP_ChatInteractive
             return "Other";
         }
 
+
+
         public CommandSettings GetCommandSettings(string commandName)
         {
             if (commandSettings.ContainsKey(commandName))
@@ -996,13 +1000,13 @@ namespace CAP_ChatInteractive
 
         private void ShowResetConfirmationDialog()
         {
-            TaggedString warningText = "You are about to reset all commands to defaults.\n\nExcept the Lootbox Commands coin amounts (because they are global).\n\nThis cannot be undone.".Colorize(Verse.ColorLibrary.RedReadable);
+            TaggedString warningText = "CAP.CommandManager.ResetWarning".Translate().Colorize(Verse.ColorLibrary.RedReadable);
 
             Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
                 warningText,
                 () => ResetAllCommandsToDefaults(),
                 true,
-                "Reset Commands"
+                "CAP.CommandManager.ResetCommands".Translate()
             ));
         }
 
@@ -1021,25 +1025,23 @@ namespace CAP_ChatInteractive
                 {
                     Logger.Message("No CommandSettings.json file found to delete");
                 }
-
                 // Rebuild command settings from scratch
                 commandSettings.Clear();
-
-
                 LoadCommandSettings(); // This will recreate defaults
-
                 // Refresh the UI
                 FilterCommands();
-
                 Logger.Message("Command settings reset to defaults");
-                Messages.Message("All commands have been reset to defaults", MessageTypeDefOf.TaskCompletion);
+                Messages.Message("CAP.CommandManager.ResetMessage".Translate(), MessageTypeDefOf.TaskCompletion); // Do Tranlslate
             }
             catch (Exception ex)
             {
                 Logger.Error($"Error resetting commands: {ex.Message}");
-                Messages.Message($"Error resetting commands: {ex.Message}", MessageTypeDefOf.NegativeEvent);
+                Messages.Message(string.Format("CAP.CommandManager.ResetError".Translate(), ex.Message),
+                 MessageTypeDefOf.NegativeEvent);
             }
         }
+
+
 
         [DebugAction("CAP", "Delete JSON & Rebuild Commands", allowedGameStates = AllowedGameStates.Playing)]
         public static void DebugRebuildCommands()

@@ -1,5 +1,4 @@
 ﻿// CAPChatInteractiveMod.cs
-// Copyright (c) Captolamia. All rights reserved.
 // Copyright (c) Captolamia
 // This file is part of CAP Chat Interactive.
 // 

@@ -372,4 +372,24 @@ namespace CAP_ChatInteractive
             return $"<color=#{hex}>{text}</color>";
         }
     }
+
+    namespace CAP_ChatInteractive
+    {
+        public static class Translations
+        {
+            // Permission levels
+            public static string TranslatePermission(string permission)
+            {
+                return permission switch
+                {
+                    "broadcaster" => "CAP.Permission.Broadcaster".Translate(),
+                    "moderator" => "CAP.Permission.Moderator".Translate(),
+                    "vip" => "CAP.Permission.VIP".Translate(),
+                    "subscriber" => "CAP.Permission.Subscriber".Translate(),
+                    "everyone" => "CAP.Permission.Everyone".Translate(),
+                    _ => permission // Fallback
+                };
+            }
+        }
+    }
 }
