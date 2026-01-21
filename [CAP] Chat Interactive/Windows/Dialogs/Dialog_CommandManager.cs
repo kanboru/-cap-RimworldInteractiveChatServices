@@ -391,6 +391,12 @@ namespace CAP_ChatInteractive
                 float sectionHeight = 28f;
                 float leftPadding = 15f;
 
+                float checkBoxWidth = 28f;
+                float inputWidth = 80f;
+                float gapAfterCheck = 8f;
+                float gapBeforeInput = 12f;
+                float labelWidth = viewRect.width - leftPadding - 10f - checkBoxWidth - gapAfterCheck - inputWidth - gapBeforeInput - 10f;
+
                 // Basic Info section
                 Rect basicLabelRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
                 Widgets.Label(basicLabelRect, "CAP.CommandManager.BasicInfo".Translate());
@@ -809,7 +815,7 @@ namespace CAP_ChatInteractive
                 // SURGERY-SPECIFIC SETTINGS - Only show for surgery command
                 if (selectedCommand != null && selectedCommand.commandText.ToLower() == "surgery")
                 {
-                    y += 10f; // Extra spacing
+                    y += 18f; // Extra spacing
 
                     Rect surgeryHeaderRect = new Rect(leftPadding, y, viewRect.width, sectionHeight);
                     Text.Font = GameFont.Medium;
@@ -819,155 +825,184 @@ namespace CAP_ChatInteractive
                     GUI.color = Color.white;
                     y += sectionHeight;
 
-                    // Gender Swap Cost
-                    Rect genderCostLabelRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(genderCostLabelRect, "CAP.CommandManager.SurgeryGenderSwapCost".Translate());
-                    Rect genderCostInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
+                    // ── Gender Swap ────────────────────────────────────────────────────────────────
+                    float rowY = y;
+                    // Checkbox (left)
+                    Rect checkRect = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
+                    Widgets.Checkbox(checkRect.x, checkRect.y, ref globalSettings.SurgeryAllowGenderSwap);  // bare checkbox
 
+                    Rect genderCostLabelRect = new Rect(checkRect.xMax + gapAfterCheck, y, labelWidth, sectionHeight);
+                    Widgets.Label(genderCostLabelRect, "CAP.CommandManager.SurgeryGenderSwapCost".Translate());
+                    Rect genderCostInputRect = new Rect(viewRect.width - 90f, rowY, 80f, sectionHeight);
+
+                    // Numeric input (right)
+                    Rect genderInputRect = new Rect(viewRect.width - inputWidth - 10f, rowY, inputWidth, sectionHeight);
                     string genderCostKey = "surgery_gender_swap_cost";
                     if (!numericBuffers.ContainsKey(genderCostKey))
-                    {
                         numericBuffers[genderCostKey] = globalSettings.SurgeryGenderSwapCost.ToString();
-                    }
                     string genderCostBuffer = numericBuffers[genderCostKey];
-                    Widgets.TextFieldNumeric(genderCostInputRect, ref globalSettings.SurgeryGenderSwapCost, ref genderCostBuffer, -100000f, 100000f); // Allow negative
+                    Widgets.TextFieldNumeric(genderInputRect, ref globalSettings.SurgeryGenderSwapCost, ref genderCostBuffer, -100000f, 100000f);
                     numericBuffers[genderCostKey] = genderCostBuffer;
 
                     y += sectionHeight;
 
-                    // Body Change Cost
-                    Rect bodyCostLabelRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(bodyCostLabelRect, "CAP.CommandManager.SurgeryBodyChangeCost".Translate());
-                    Rect bodyCostInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
+                    // ── Body Change ────────────────────────────────────────────────────────────────
+                    rowY = y;
 
+                    Rect checkRectBody = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
+                    Widgets.Checkbox(checkRectBody.x, checkRectBody.y, ref globalSettings.SurgeryAllowBodyChange);
+
+                    Rect bodyCostLabelRect = new Rect(checkRectBody.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
+                    Widgets.Label(bodyCostLabelRect, "CAP.CommandManager.SurgeryBodyChangeCost".Translate());
+
+                    Rect bodyCostInputRect = new Rect(viewRect.width - inputWidth - 10f, rowY, inputWidth, sectionHeight);
                     string bodyCostKey = "surgery_body_change_cost";
                     if (!numericBuffers.ContainsKey(bodyCostKey))
-                    {
                         numericBuffers[bodyCostKey] = globalSettings.SurgeryBodyChangeCost.ToString();
-                    }
                     string bodyCostBuffer = numericBuffers[bodyCostKey];
-                    Widgets.TextFieldNumeric(bodyCostInputRect, ref globalSettings.SurgeryBodyChangeCost, ref bodyCostBuffer, -100000f, 100000f); // Allow negative
+                    Widgets.TextFieldNumeric(bodyCostInputRect, ref globalSettings.SurgeryBodyChangeCost, ref bodyCostBuffer, -100000f, 100000f);
                     numericBuffers[bodyCostKey] = bodyCostBuffer;
 
                     y += sectionHeight;
 
-                    // Sterilize Cost
-                    Rect sterilizeCostLabelRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(sterilizeCostLabelRect, "CAP.CommandManager.SurgerySterilizeCost".Translate());
-                    Rect sterilizeCostInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
+                    // ── Sterilize ──────────────────────────────────────────────────────────────────
+                    rowY = y;
 
+                    Rect checkRectSterilize = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
+                    Widgets.Checkbox(checkRectSterilize.x, checkRectSterilize.y, ref globalSettings.SurgeryAllowSterilize);
+
+                    Rect sterilizeCostLabelRect = new Rect(checkRectSterilize.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
+                    Widgets.Label(sterilizeCostLabelRect, "CAP.CommandManager.SurgerySterilizeCost".Translate());
+
+                    Rect sterilizeCostInputRect = new Rect(viewRect.width - inputWidth - 10f, rowY, inputWidth, sectionHeight);
                     string sterilizeCostKey = "surgery_sterilize_cost";
                     if (!numericBuffers.ContainsKey(sterilizeCostKey))
-                    {
                         numericBuffers[sterilizeCostKey] = globalSettings.SurgerySterilizeCost.ToString();
-                    }
                     string sterilizeCostBuffer = numericBuffers[sterilizeCostKey];
                     Widgets.TextFieldNumeric(sterilizeCostInputRect, ref globalSettings.SurgerySterilizeCost, ref sterilizeCostBuffer, -100000f, 100000f);
                     numericBuffers[sterilizeCostKey] = sterilizeCostBuffer;
 
                     y += sectionHeight;
 
-                    // IUD Cost
-                    Rect iudCostLabelRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(iudCostLabelRect, "CAP.CommandManager.SurgeryIUDCost".Translate());
-                    Rect iudCostInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
+                    // ── IUD ────────────────────────────────────────────────────────────────────────
+                    rowY = y;
 
+                    Rect checkRectIUD = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
+                    Widgets.Checkbox(checkRectIUD.x, checkRectIUD.y, ref globalSettings.SurgeryAllowIUD);
+
+                    Rect iudCostLabelRect = new Rect(checkRectIUD.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
+                    Widgets.Label(iudCostLabelRect, "CAP.CommandManager.SurgeryIUDCost".Translate());
+
+                    Rect iudCostInputRect = new Rect(viewRect.width - inputWidth - 10f, rowY, inputWidth, sectionHeight);
                     string iudCostKey = "surgery_iud_cost";
                     if (!numericBuffers.ContainsKey(iudCostKey))
-                    {
                         numericBuffers[iudCostKey] = globalSettings.SurgeryIUDCost.ToString();
-                    }
                     string iudCostBuffer = numericBuffers[iudCostKey];
                     Widgets.TextFieldNumeric(iudCostInputRect, ref globalSettings.SurgeryIUDCost, ref iudCostBuffer, -100000f, 100000f);
                     numericBuffers[iudCostKey] = iudCostBuffer;
 
                     y += sectionHeight;
 
-                    // Vas Reverse Cost
-                    Rect vasReverseCostLabelRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(vasReverseCostLabelRect, "CAP.CommandManager.SurgeryVasReverseCost".Translate());
-                    Rect vasReverseCostInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
+                    // ── Vas Reverse ────────────────────────────────────────────────────────────────
+                    rowY = y;
 
+                    Rect checkRectVas = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
+                    Widgets.Checkbox(checkRectVas.x, checkRectVas.y, ref globalSettings.SurgeryAllowVasReverse);
+
+                    Rect vasReverseCostLabelRect = new Rect(checkRectVas.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
+                    Widgets.Label(vasReverseCostLabelRect, "CAP.CommandManager.SurgeryVasReverseCost".Translate());
+
+                    Rect vasReverseCostInputRect = new Rect(viewRect.width - inputWidth - 10f, rowY, inputWidth, sectionHeight);
                     string vasReverseCostKey = "surgery_vas_reverse_cost";
                     if (!numericBuffers.ContainsKey(vasReverseCostKey))
-                    {
                         numericBuffers[vasReverseCostKey] = globalSettings.SurgeryVasReverseCost.ToString();
-                    }
                     string vasReverseCostBuffer = numericBuffers[vasReverseCostKey];
                     Widgets.TextFieldNumeric(vasReverseCostInputRect, ref globalSettings.SurgeryVasReverseCost, ref vasReverseCostBuffer, -100000f, 100000f);
                     numericBuffers[vasReverseCostKey] = vasReverseCostBuffer;
 
                     y += sectionHeight;
 
-                    // Terminate Cost
-                    Rect terminateCostLabelRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(terminateCostLabelRect, "CAP.CommandManager.SurgeryTerminateCost".Translate());
-                    Rect terminateCostInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
+                    // ── Terminate ──────────────────────────────────────────────────────────────────
+                    rowY = y;
 
+                    Rect checkRectTerminate = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
+                    Widgets.Checkbox(checkRectTerminate.x, checkRectTerminate.y, ref globalSettings.SurgeryAllowTerminate);
+
+                    Rect terminateCostLabelRect = new Rect(checkRectTerminate.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
+                    Widgets.Label(terminateCostLabelRect, "CAP.CommandManager.SurgeryTerminateCost".Translate());
+
+                    Rect terminateCostInputRect = new Rect(viewRect.width - inputWidth - 10f, rowY, inputWidth, sectionHeight);
                     string terminateCostKey = "surgery_terminate_cost";
                     if (!numericBuffers.ContainsKey(terminateCostKey))
-                    {
                         numericBuffers[terminateCostKey] = globalSettings.SurgeryTerminateCost.ToString();
-                    }
                     string terminateCostBuffer = numericBuffers[terminateCostKey];
                     Widgets.TextFieldNumeric(terminateCostInputRect, ref globalSettings.SurgeryTerminateCost, ref terminateCostBuffer, -100000f, 100000f);
                     numericBuffers[terminateCostKey] = terminateCostBuffer;
 
                     y += sectionHeight;
 
-                    // Hemogen Cost
-                    Rect hemogenCostLabelRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(hemogenCostLabelRect, "CAP.CommandManager.SurgeryHemogenCost".Translate());
-                    Rect hemogenCostInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
+                    // ── Hemogen ────────────────────────────────────────────────────────────────────
+                    rowY = y;
 
+                    Rect checkRectHemogen = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
+                    Widgets.Checkbox(checkRectHemogen.x, checkRectHemogen.y, ref globalSettings.SurgeryAllowHemogen);
+
+                    Rect hemogenCostLabelRect = new Rect(checkRectHemogen.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
+                    Widgets.Label(hemogenCostLabelRect, "CAP.CommandManager.SurgeryHemogenCost".Translate());
+
+                    Rect hemogenCostInputRect = new Rect(viewRect.width - inputWidth - 10f, rowY, inputWidth, sectionHeight);
                     string hemogenCostKey = "surgery_hemogen_cost";
                     if (!numericBuffers.ContainsKey(hemogenCostKey))
-                    {
                         numericBuffers[hemogenCostKey] = globalSettings.SurgeryHemogenCost.ToString();
-                    }
                     string hemogenCostBuffer = numericBuffers[hemogenCostKey];
                     Widgets.TextFieldNumeric(hemogenCostInputRect, ref globalSettings.SurgeryHemogenCost, ref hemogenCostBuffer, -100000f, 100000f);
                     numericBuffers[hemogenCostKey] = hemogenCostBuffer;
 
                     y += sectionHeight;
 
-                    // Transfusion Cost
-                    Rect transfusionCostLabelRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(transfusionCostLabelRect, "CAP.CommandManager.SurgeryTransfusionCost".Translate());
-                    Rect transfusionCostInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
+                    // ── Transfusion ────────────────────────────────────────────────────────────────
+                    rowY = y;
 
+                    Rect checkRectTransfusion = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
+                    Widgets.Checkbox(checkRectTransfusion.x, checkRectTransfusion.y, ref globalSettings.SurgeryAllowTransfusion);
+
+                    Rect transfusionCostLabelRect = new Rect(checkRectTransfusion.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
+                    Widgets.Label(transfusionCostLabelRect, "CAP.CommandManager.SurgeryTransfusionCost".Translate());
+
+                    Rect transfusionCostInputRect = new Rect(viewRect.width - inputWidth - 10f, rowY, inputWidth, sectionHeight);
                     string transfusionCostKey = "surgery_transfusion_cost";
                     if (!numericBuffers.ContainsKey(transfusionCostKey))
-                    {
                         numericBuffers[transfusionCostKey] = globalSettings.SurgeryTransfusionCost.ToString();
-                    }
                     string transfusionCostBuffer = numericBuffers[transfusionCostKey];
                     Widgets.TextFieldNumeric(transfusionCostInputRect, ref globalSettings.SurgeryTransfusionCost, ref transfusionCostBuffer, -100000f, 100000f);
                     numericBuffers[transfusionCostKey] = transfusionCostBuffer;
 
                     y += sectionHeight;
 
-                    // Misc Biotech Cost
-                    Rect miscCostLabelRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                    Widgets.Label(miscCostLabelRect, "CAP.CommandManager.SurgeryMiscBiotechCost".Translate());
-                    Rect miscCostInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
+                    // ── Misc Biotech ───────────────────────────────────────────────────────────────
+                    rowY = y;
 
+                    Rect checkRectMisc = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
+                    Widgets.Checkbox(checkRectMisc.x, checkRectMisc.y, ref globalSettings.SurgeryAllowMiscBiotech);
+
+                    Rect miscCostLabelRect = new Rect(checkRectMisc.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
+                    Widgets.Label(miscCostLabelRect, "CAP.CommandManager.SurgeryMiscBiotechCost".Translate());
+
+                    Rect miscCostInputRect = new Rect(viewRect.width - inputWidth - 10f, rowY, inputWidth, sectionHeight);
                     string miscCostKey = "surgery_misc_biotech_cost";
                     if (!numericBuffers.ContainsKey(miscCostKey))
-                    {
                         numericBuffers[miscCostKey] = globalSettings.SurgeryMiscBiotechCost.ToString();
-                    }
                     string miscCostBuffer = numericBuffers[miscCostKey];
                     Widgets.TextFieldNumeric(miscCostInputRect, ref globalSettings.SurgeryMiscBiotechCost, ref miscCostBuffer, -100000f, 100000f);
                     numericBuffers[miscCostKey] = miscCostBuffer;
 
-                    y += sectionHeight;
+                    y += sectionHeight + 4f;
 
                     // Optional description
                     Rect surgeryDescRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding, 28f);
                     Text.Font = GameFont.Tiny;
                     GUI.color = new Color(0.7f, 0.7f, 0.7f);
-                    Widgets.Label(surgeryDescRect, "CAP.CommandManager.SurgeryDescription".Translate() + " (Negative costs give coins, e.g. for hemogen extraction)");
+                    Widgets.Label(surgeryDescRect, "CAP.CommandManager.SurgeryDescription".Translate());
                     Text.Font = GameFont.Small;
                     GUI.color = Color.white;
                     y += 20f;

@@ -15,6 +15,7 @@
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 using CAP_ChatInteractive.Utilities;
 using RimWorld;
+using RimWorld.BaseGen;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -77,61 +78,103 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 if (parsed.HasError)
                     return parsed.Error;
 
-                string itemName = parsed.ItemName.ToLower(); // Normalize to lower for case-insensitive matching
+                //string itemName = parsed.ItemName.ToLower(); // Normalize to lower for case-insensitive matching
                 string sideStr = parsed.Side;
                 string quantityStr = parsed.Quantity.ToString();
 
                 // Special handling for custom surgeries (no ThingDef)
-                string surgeryType = null;
+
+                bool isAllowed;
+                string disabledMessage;
+
+                string itemName = parsed.ItemName.ToLowerInvariant(); // case-insensitive
+
+                // ── Determine surgery category and basic info ──
+                string surgeryCategory = null;
                 string recipeDefName = null;
                 string displayName = null;
+                string handlerType = null; // "gender", "body", "biotech"
 
-                if (itemName == "gender swap" || itemName == "genderswap" || itemName == "swapgender")
+                // ── Gender Swap (special case - own handler) ──
+                if (new[] { "genderswap", "gender swap", "swapgender" }.Contains(itemName))
                 {
-                    return HandleGenderSwapSurgery(messageWrapper, viewer, currencySymbol);
+                    handlerType = "gender";
+                    displayName = "Gender Swap";
                 }
-                else if (itemName == "fat body" || itemName == "fatbody" || itemName == "body fat" || itemName == "fat")
+
+                // ── Body Change Surgeries ──
+                else if (new[] { "fatbody", "fat body", "fat", "body fat" }.Contains(itemName))
                 {
-                    surgeryType = "fat body";
+                    handlerType = "body";
+                    surgeryCategory = "fat body";
                     recipeDefName = "FatBodySurgery";
                     displayName = "Fat Body";
                 }
-                else if (itemName == "feminine body" || itemName == "femininebody" || itemName == "bodyfeminine" || itemName == "feminine")
+                else if (new[] { "femininebody", "feminine body", "feminine", "bodyfeminine" }.Contains(itemName))
                 {
-                    surgeryType = "feminine body";
+                    handlerType = "body";
+                    surgeryCategory = "feminine body";
                     recipeDefName = "FeminineBodySurgery";
                     displayName = "Feminine Body";
                 }
-                else if (itemName == "hulking body" || itemName == "hulkingbody" || itemName == "bodyhulking" || itemName == "hulk")
+                else if (new[] { "hulkingbody", "hulking body", "hulk", "bodyhulking" }.Contains(itemName))
                 {
-                    surgeryType = "hulking body";
+                    handlerType = "body";
+                    surgeryCategory = "hulking body";
                     recipeDefName = "HulkingBodySurgery";
                     displayName = "Hulking Body";
                 }
-                else if (itemName == "masculine body" || itemName == "masculinebody" || itemName == "bodymasculine" || itemName == "masculine")
+                else if (new[] { "masculinebody", "masculine body", "masculine", "bodymasculine" }.Contains(itemName))
                 {
-                    surgeryType = "masculine body";
+                    handlerType = "body";
+                    surgeryCategory = "masculine body";
                     recipeDefName = "MasculineBodySurgery";
                     displayName = "Masculine Body";
                 }
-                else if (itemName == "thin body" || itemName == "thinbody" || itemName == "bodythin" || itemName == "thin")
+                else if (new[] { "thinbody", "thin body", "thin", "bodythin" }.Contains(itemName))
                 {
-                    surgeryType = "thin body";
+                    handlerType = "body";
+                    surgeryCategory = "thin body";
                     recipeDefName = "ThinBodySurgery";
                     displayName = "Thin Body";
                 }
 
-                if (surgeryType != null)
+                // ── Biotech / Misc Surgeries ──
+                else if (BiotechSurgeryCommands.TryGetValue(itemName, out string recipeKey))
                 {
-                    return HandleBodyChangeSurgery(messageWrapper, viewer, currencySymbol, surgeryType, recipeDefName, displayName);
+                    handlerType = "biotech";
+                    recipeDefName = recipeKey;
+                    displayName = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(itemName);
                 }
 
-                // Check for biotech/misc surgeries
-
-                if (BiotechSurgeryCommands.TryGetValue(itemName, out string recipeKey))
+                // ── Not recognized ──
+                if (handlerType == null)
                 {
-                    displayName = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(itemName.ToLower());
-                    return HandleBiotechSurgery(messageWrapper, viewer, currencySymbol, recipeKey, displayName);
+                    return "Unknown surgery type. Try: genderswap, fat body, feminine body, hulking body, masculine body, thin body, or a biotech surgery.";
+                }
+
+                // ── Single place to check permission ──
+                CheckSurgeryEnabled(settings, itemName, out isAllowed, out disabledMessage);
+
+                Logger.Debug($"[Surgery Handler] Permission result for '{itemName}': Allowed = {isAllowed}, Message = '{disabledMessage ?? "none"}'");
+
+                if (!isAllowed)
+                {
+                    Logger.Debug($"[Surgery Handler] BLOCKED: {disabledMessage} for user {messageWrapper.Username}");
+                    return disabledMessage + " (use !surgerycosts to see available options)";
+                }
+
+                // ── Dispatch to correct handler ──
+                switch (handlerType)
+                {
+                    case "gender":
+                        return HandleGenderSwapSurgery(messageWrapper, viewer, currencySymbol);
+
+                    case "body":
+                        return HandleBodyChangeSurgery(messageWrapper, viewer, currencySymbol, surgeryCategory, recipeDefName, displayName);
+
+                    case "biotech":
+                        return HandleBiotechSurgery(messageWrapper, viewer, currencySymbol, recipeDefName, displayName);
                 }
 
                 // Get store item
@@ -265,6 +308,111 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
         }
 
+        // ──── SURGERY ENABLED CHECK METHOD ────
+        private static void CheckSurgeryEnabled(CAPGlobalChatSettings settings, string itemNameLower, out bool isAllowed, out string disabledMessage)
+        {
+            isAllowed = true;
+            disabledMessage = null;
+
+            switch (itemNameLower)
+            {
+                // ── Gender Swap ──
+                case "genderswap":
+                case "gender swap":
+                case "swapgender":
+                    isAllowed = settings.SurgeryAllowGenderSwap;
+                    disabledMessage = "Gender swap surgery is currently disabled.";
+                    break;
+
+                // ── Body Changes (all share one toggle) ──
+                case "fatbody":
+                case "fat body":
+                case "fat":
+                case "body fat":
+                case "femininebody":
+                case "feminine body":
+                case "feminine":
+                case "bodyfeminine":
+                case "hulkingbody":
+                case "hulking body":
+                case "hulk":
+                case "bodyhulking":
+                case "masculinebody":
+                case "masculine body":
+                case "masculine":
+                case "bodymasculine":
+                case "thinbody":
+                case "thin body":
+                case "thin":
+                case "bodythin":
+                    isAllowed = settings.SurgeryAllowBodyChange;
+                    disabledMessage = "Body modification surgeries are currently disabled.";
+                    break;
+
+                // ── Sterilization (vasectomy, tubal ligation, sterilize) ──
+                case "sterilize":
+                case "vasectomy":
+                case "tubal":
+                case "tuballigation":
+                    isAllowed = settings.SurgeryAllowSterilize;
+                    disabledMessage = "Sterilization (vasectomy/tubal ligation) is currently disabled.";
+                    break;
+
+                // ── IUD (implant + remove) ──
+                case "iud":
+                case "iudimplant":
+                case "implant iud":
+                case "iudremove":
+                case "removeiud":
+                case "remove iud":
+                    isAllowed = settings.SurgeryAllowIUD;
+                    disabledMessage = "IUD implantation/removal is currently disabled.";
+                    break;
+
+                // ── Vasectomy Reversal ──
+                case "vasreverse":
+                case "vas reverse":
+                case "reversovasectomy":
+                case "reverse vasectomy":
+                case "reversevasectomy":
+                    isAllowed = settings.SurgeryAllowVasReverse;
+                    disabledMessage = "Vasectomy reversal is currently disabled.";
+                    break;
+
+                // ── Pregnancy Termination ──
+                case "terminate":
+                case "termination":
+                case "pregnancy termination":
+                case "pregnancytermination":
+                case "abortion":
+                    isAllowed = settings.SurgeryAllowTerminate;
+                    disabledMessage = "Pregnancy termination is currently disabled.";
+                    break;
+
+                // ── Hemogen Extraction ──
+                case "hemogen":
+                case "extract hemogen":
+                case "extracthemogen":
+                    isAllowed = settings.SurgeryAllowHemogen;
+                    disabledMessage = "Hemogen extraction is currently disabled.";
+                    break;
+
+                // ── Transfusion ──
+                case "transfusion":
+                case "blood transfusion":
+                case "bloodtransfusion":
+                case "blood":
+                    isAllowed = settings.SurgeryAllowTransfusion;
+                    disabledMessage = "Blood transfusion is currently disabled.";
+                    break;
+
+                // ── Fallback for truly misc/uncategorized biotech (add future ones here if needed) ──
+                default:
+                    isAllowed = settings.SurgeryAllowMiscBiotech;
+                    disabledMessage = "Miscellaneous biotech surgeries are currently disabled.";
+                    break;
+            }
+        }
         // In SurgeryBuyItemCommandHandler.cs, add these new methods below HandleGenderSwapSurgery
 
         private static string HandleBodyChangeSurgery(ChatMessageWrapper messageWrapper, Viewer viewer, string currencySymbol, string surgeryType, string recipeDefName, string displayName)
@@ -628,16 +776,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
             return surgeryRecipes.Count > 0;
         }
-
-        //private static void ScheduleSurgeries(Verse.Pawn pawn, RecipeDef recipe, List<BodyPartRecord> bodyParts)
-        //{
-        //    foreach (var bodyPart in bodyParts)
-        //    {
-        //        var bill = new Bill_Medical(recipe, null) { Part = bodyPart };
-        //        pawn.health.surgeryBills.AddBill(bill);
-        //        Logger.Debug($"Scheduled {recipe.defName} on {bodyPart.Label} for pawn {pawn.Name}");
-        //    }
-        //}
 
         private static void ScheduleSurgeries(Verse.Pawn pawn, RecipeDef recipe, List<BodyPartRecord> bodyParts)
         {

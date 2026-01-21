@@ -169,6 +169,16 @@ namespace CAP_ChatInteractive
         public int SurgeryTransfusionCost = 200;
         public int SurgeryMiscBiotechCost = 350;
 
+        public bool SurgeryAllowGenderSwap = true;
+        public bool SurgeryAllowBodyChange = true;
+        public bool SurgeryAllowSterilize = true;
+        public bool SurgeryAllowIUD = true;
+        public bool SurgeryAllowVasReverse = true;
+        public bool SurgeryAllowTerminate = true;
+        public bool SurgeryAllowHemogen = true;
+        public bool SurgeryAllowTransfusion = true;
+        public bool SurgeryAllowMiscBiotech = true;
+
         // Passion Settings
         public int MinPassionWager = 10;
         public int MaxPassionWager = 1000;
