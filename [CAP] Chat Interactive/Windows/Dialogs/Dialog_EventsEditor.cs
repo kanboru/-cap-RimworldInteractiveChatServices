@@ -854,7 +854,7 @@ namespace CAP_ChatInteractive
 
             // Label for Karma
             Rect labelRect = new Rect(0f, 0f, 60f, 25f);
-            WWidgets.Label(labelRect, "Karma".Translate() + ":");
+            Widgets.Label(labelRect, "Karma".Translate() + ":");
 
             // Karma dropdown
             Rect dropdownRect = new Rect(65f, 0f, 100f, 25f);
