@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+  <!-- Section Headers -->
+  <RICS.Global.DebugHeader>Debug and Logging</RICS.Global.DebugHeader>
+  <RICS.Global.QuickStatusHeader>Quick Status</RICS.Global.QuickStatusHeader>
+  <RICS.Global.CommandPrefixesHeader>Command Prefixes</RICS.Global.CommandPrefixesHeader>
+
+  <!-- Checkbox Labels -->
+  <RICS.Global.EnableDebugLogging>Enable Debug Logging</RICS.Global.EnableDebugLogging>
+  <RICS.Global.LogAllChatMessages>Log All Chat Messages</RICS.Global.LogAllChatMessages>
+
+  <!-- Slider Label -->
+  <RICS.Global.MessageCooldown>Message Cooldown: {0} seconds</RICS.Global.MessageCooldown>
+
+  <!-- Status Labels -->
+  <RICS.Global.TwitchStatus>Twitch: {0}</RICS.Global.TwitchStatus>
+  <RICS.Global.YouTubeStatus>YouTube: {0}</RICS.Global.YouTubeStatus>
+  <RICS.Global.Connected>Connected</RICS.Global.Connected>
+  <RICS.Global.Disconnected>Disconnected</RICS.Global.Disconnected>
+
+  <!-- Prefix Section Text -->
+  <RICS.Global.PriceListUrlDescription>Price List URL - Web page showing available items and prices for viewers</RICS.Global.PriceListUrlDescription>
+  <RICS.Global.PriceListUrlLabel>Price List URL:</RICS.Global.PriceListUrlLabel>
+  <RICS.Global.CommandPrefixDescription>Command Prefix - The prefix to use for all chat commands.</RICS.Global.CommandPrefixDescription>
+  <RICS.Global.PurchasePrefixDescription>Purchase Prefix - The prefix to use for all chat commands.</RICS.Global.PurchasePrefixDescription>
+  <RICS.Global.PrefixRestrictions>Prefixes cannot start with: / . \\ or contain spaces</RICS.Global.PrefixRestrictions>
+  <RICS.Global.InvalidPrefix>Invalid prefix! Must not start with / . \\ or contain spaces</RICS.Global.InvalidPrefix>
+
+  <!-- Text Entry Labels -->
+  <RICS.Global.CommandPrefixLabel>Command Prefix:</RICS.Global.CommandPrefixLabel>
+  <RICS.Global.PurchasePrefixLabel>Purchase Prefix:</RICS.Global.PurchasePrefixLabel>
+</LanguageData>

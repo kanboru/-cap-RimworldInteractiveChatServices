@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  
+  <!-- Dialog_EventsEditor.cs translations -->
+  <EventsEditor>Events Editor</EventsEditor>
+  <EventsSetttings>Settings</EventsSetttings>
+  <EventsEditorHelp.tooltip>Events Editor Help</EventsEditorHelp.tooltip>
+  <EventsEditorHelp>Help</EventsEditorHelp>
+  
+  <!-- Sort buttons -->
+  <SortByName>Name</SortByName>
+  <SortByCost>Cost</SortByCost>
+  <SortByKarma>Karma</SortByKarma>
+  <SortedByX>Sorted by: {0}</SortedByX>
+  <DirectionX>Direction: {0}</DirectionX>
+  <Ascending>Ascending</Ascending>
+  <Descending>Descending</Descending>
+  
+  <!-- Action buttons -->
+  
+  <ResetPrices>Reset Prices</ResetPrices>
+  <CAP.EventsEditor.ResetPricesDialog>Reset all event prices to default? This cannot be undone.</CAP.EventsEditor.ResetPricesDialog>
+  <EnableEvents>Enable →</EnableEvents>
+  <DisableEvents>Disable →</DisableEvents>
+  <Cooldowns>Cooldowns →</Cooldowns>
+  
+  <!-- Cooldown menu -->
+  <NoCooldown>No Cooldown (∞)</NoCooldown>
+  <oneDay>1 Day</oneDay>
+  <threeDays>3 Days</threeDays>
+  <fiveDays>5 Days</fiveDays>
+  <sevenDays>7 Days</sevenDays>
+  <fourteenDays>14 Days</fourteenDays>
+  <ResetFilteredToDefaults>Reset filtered to defaults</ResetFilteredToDefaults>
+  <ResetFilteredToDefaults.Dialog>Reset cooldowns for filtered events to default?\n\nFilter: {0}</ResetFilteredToDefaults.Dialog>
+  <ResetAllToDefaults>Reset ALL to defaults</ResetAllToDefaults>
+  <ResetAllToDefaults.Dialog>Reset ALL event cooldowns to default? This cannot be undone.</ResetAllToDefaults.Dialog>
+  <Custom>Custom...</Custom>
+  
+  <!-- Lists -->
+  <Categories>Categories</Categories>
+  <ModSources>Mod Sources</ModSources>
+  
+  <!-- Messages -->
+  <NoEventsFound>No events found matching current filters</NoEventsFound>
+  <CannotEnableNotAvailable>Cannot enable - not available via commands</CannotEnableNotAvailable>
+  <Enabled>Enabled</Enabled>
+  
+  <!-- Tooltips -->
+  <NoCooldownInfiniteTooltip>No cooldown (infinite)\nClick to set a cooldown</NoCooldownInfiniteTooltip>
+  <ResetToNoCooldown>Reset to no cooldown (infinite)</ResetToNoCooldown>
+  <CooldownDaysTooltip>Cooldown Days\nDays before this event can be triggered again\n0 = No cooldown (infinite)\nOnly applies if global event cooldowns are enabled</CooldownDaysTooltip>
+  
+  <!-- Controls -->
+  <Cost>Cost</Cost>
+  <Karma>Karma</Karma>
+  <Reset>Reset</Reset>
+  <Good>Good</Good>
+  <Bad>Bad</Bad>
+  <Neutral>Neutral</Neutral>
+  
+  <!-- Confirmation dialogs -->
+  <ResetCooldownsFilteredConfirm>Reset cooldowns for filtered events to default?\n\nFilter: {0}</ResetCooldownsFilteredConfirm>
+  <ResetAllCooldownsConfirm>Reset ALL event cooldowns to default? This cannot be undone.</ResetAllCooldownsConfirm>
+  <SetNoCooldownConfirm>Set {0} to have NO cooldown (infinite)?</SetNoCooldownConfirm>
+  <SetCooldownConfirm>Set {0} to have {1} day{2} cooldown?</SetCooldownConfirm>
+  
+  <!-- Add these for plural handling -->
+  <DaysPlural>s</DaysPlural>
+  <DaysSingular></DaysSingular>
+  
+  <!-- Floating Menu -->
+  <CAP.FloatingMenu.AllMods>All Mods</CAP.FloatingMenu.AllMods>
+  
+</LanguageData>

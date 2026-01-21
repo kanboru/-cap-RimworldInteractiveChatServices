@@ -830,6 +830,7 @@ namespace CAP_ChatInteractive
                     // Checkbox (left)
                     Rect checkRect = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
                     Widgets.Checkbox(checkRect.x, checkRect.y, ref globalSettings.SurgeryAllowGenderSwap);  // bare checkbox
+                    TooltipHandler.TipRegion(checkRect, "CAP.CommandManager.SurgeryTooltip".Translate());
 
                     Rect genderCostLabelRect = new Rect(checkRect.xMax + gapAfterCheck, y, labelWidth, sectionHeight);
                     Widgets.Label(genderCostLabelRect, "CAP.CommandManager.SurgeryGenderSwapCost".Translate());
@@ -851,6 +852,7 @@ namespace CAP_ChatInteractive
 
                     Rect checkRectBody = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
                     Widgets.Checkbox(checkRectBody.x, checkRectBody.y, ref globalSettings.SurgeryAllowBodyChange);
+                    TooltipHandler.TipRegion(checkRectBody, "CAP.CommandManager.SurgeryTooltip".Translate());
 
                     Rect bodyCostLabelRect = new Rect(checkRectBody.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
                     Widgets.Label(bodyCostLabelRect, "CAP.CommandManager.SurgeryBodyChangeCost".Translate());
@@ -870,6 +872,7 @@ namespace CAP_ChatInteractive
 
                     Rect checkRectSterilize = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
                     Widgets.Checkbox(checkRectSterilize.x, checkRectSterilize.y, ref globalSettings.SurgeryAllowSterilize);
+                    TooltipHandler.TipRegion(checkRectSterilize, "CAP.CommandManager.SurgeryTooltip".Translate());
 
                     Rect sterilizeCostLabelRect = new Rect(checkRectSterilize.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
                     Widgets.Label(sterilizeCostLabelRect, "CAP.CommandManager.SurgerySterilizeCost".Translate());
@@ -889,6 +892,7 @@ namespace CAP_ChatInteractive
 
                     Rect checkRectIUD = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
                     Widgets.Checkbox(checkRectIUD.x, checkRectIUD.y, ref globalSettings.SurgeryAllowIUD);
+                    TooltipHandler.TipRegion(checkRectIUD, "CAP.CommandManager.SurgeryTooltip".Translate());
 
                     Rect iudCostLabelRect = new Rect(checkRectIUD.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
                     Widgets.Label(iudCostLabelRect, "CAP.CommandManager.SurgeryIUDCost".Translate());
@@ -908,6 +912,7 @@ namespace CAP_ChatInteractive
 
                     Rect checkRectVas = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
                     Widgets.Checkbox(checkRectVas.x, checkRectVas.y, ref globalSettings.SurgeryAllowVasReverse);
+                    TooltipHandler.TipRegion(checkRectVas, "CAP.CommandManager.SurgeryTooltip".Translate());
 
                     Rect vasReverseCostLabelRect = new Rect(checkRectVas.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
                     Widgets.Label(vasReverseCostLabelRect, "CAP.CommandManager.SurgeryVasReverseCost".Translate());
@@ -927,6 +932,7 @@ namespace CAP_ChatInteractive
 
                     Rect checkRectTerminate = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
                     Widgets.Checkbox(checkRectTerminate.x, checkRectTerminate.y, ref globalSettings.SurgeryAllowTerminate);
+                    TooltipHandler.TipRegion(checkRectTerminate, "CAP.CommandManager.SurgeryTooltip".Translate());
 
                     Rect terminateCostLabelRect = new Rect(checkRectTerminate.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
                     Widgets.Label(terminateCostLabelRect, "CAP.CommandManager.SurgeryTerminateCost".Translate());
@@ -946,6 +952,7 @@ namespace CAP_ChatInteractive
 
                     Rect checkRectHemogen = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
                     Widgets.Checkbox(checkRectHemogen.x, checkRectHemogen.y, ref globalSettings.SurgeryAllowHemogen);
+                    TooltipHandler.TipRegion(checkRectHemogen, "CAP.CommandManager.SurgeryTooltip".Translate());
 
                     Rect hemogenCostLabelRect = new Rect(checkRectHemogen.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
                     Widgets.Label(hemogenCostLabelRect, "CAP.CommandManager.SurgeryHemogenCost".Translate());
@@ -965,6 +972,7 @@ namespace CAP_ChatInteractive
 
                     Rect checkRectTransfusion = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
                     Widgets.Checkbox(checkRectTransfusion.x, checkRectTransfusion.y, ref globalSettings.SurgeryAllowTransfusion);
+                    TooltipHandler.TipRegion(checkRectTransfusion, "CAP.CommandManager.SurgeryTooltip".Translate());
 
                     Rect transfusionCostLabelRect = new Rect(checkRectTransfusion.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
                     Widgets.Label(transfusionCostLabelRect, "CAP.CommandManager.SurgeryTransfusionCost".Translate());
@@ -984,6 +992,7 @@ namespace CAP_ChatInteractive
 
                     Rect checkRectMisc = new Rect(leftPadding + 10f, rowY, checkBoxWidth, sectionHeight);
                     Widgets.Checkbox(checkRectMisc.x, checkRectMisc.y, ref globalSettings.SurgeryAllowMiscBiotech);
+                    TooltipHandler.TipRegion(checkRectMisc, "CAP.CommandManager.SurgeryTooltip".Translate());
 
                     Rect miscCostLabelRect = new Rect(checkRectMisc.xMax + gapAfterCheck, rowY, labelWidth, sectionHeight);
                     Widgets.Label(miscCostLabelRect, "CAP.CommandManager.SurgeryMiscBiotechCost".Translate());

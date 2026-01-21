@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+
+  <!-- Twitch Tab Header -->
+  <RICS.Twitch.TwitchIntegrationHeader>Twitch Integration</RICS.Twitch.TwitchIntegrationHeader>
+
+  <RICS.Twitch.QuickGuide.Title>Quick Setup:</RICS.Twitch.QuickGuide.Title>
+  <RICS.Twitch.QuickGuide.Step1>1. Enter your channel name</RICS.Twitch.QuickGuide.Step1>
+  <RICS.Twitch.QuickGuide.Step2>2. Get OAuth token from Twitch Token Generator</RICS.Twitch.QuickGuide.Step2>
+  <RICS.Twitch.QuickGuide.Step3>3. Paste token and connect!</RICS.Twitch.QuickGuide.Step3>
+
+  <RICS.Twitch.QuickGuide.Tooltip>Simple 3-step setup guide for Twitch integration</RICS.Twitch.QuickGuide.Tooltip>
+
+  <!-- Enable/Disable Integration -->
+  <RICS.Twitch.EnableIntegrationLabel>Enable Twitch Integration</RICS.Twitch.EnableIntegrationLabel>
+  
+  <RICS.Twitch.EnableIntegrationTooltip1>Enable/Disable Twitch Integration\n\n</RICS.Twitch.EnableIntegrationTooltip1>
+  <RICS.Twitch.EnableIntegrationTooltip2>When disabled, the mod will not connect to Twitch chat\n</RICS.Twitch.EnableIntegrationTooltip2>
+  <RICS.Twitch.EnableIntegrationTooltip3>and all Twitch-related features will be inactive.</RICS.Twitch.EnableIntegrationTooltip3>
+
+  <!-- Channel Name Field -->
+
+  <RICS.Twitch.ChannelInformationHeader>Channel Information</RICS.Twitch.ChannelInformationHeader>
+  <RICS.Twitch.ChannelNameLabel>Twitch Channel Name:</RICS.Twitch.ChannelNameLabel>
+  <!-- Channel Name Tooltip parts -->
+
+  <RICS.Twitch.ChannelNameTooltip.Title>Your Twitch Channel Name</RICS.Twitch.ChannelNameTooltip.Title>
+
+  <RICS.Twitch.ChannelNameTooltip.Desc>This is the username that appears in your stream URL.</RICS.Twitch.ChannelNameTooltip.Desc>
+
+  <RICS.Twitch.ChannelNameTooltip.UrlExample>https://twitch.tv/yourchannelname</RICS.Twitch.ChannelNameTooltip.UrlExample>
+
+  <RICS.Twitch.ChannelNameTooltip.ExamplesHeader>Examples:</RICS.Twitch.ChannelNameTooltip.ExamplesHeader>
+  <RICS.Twitch.ChannelNameTooltip.Example1>If your URL is twitch.tv/superstreamer → enter 'superstreamer'</RICS.Twitch.ChannelNameTooltip.Example1>
+  <RICS.Twitch.ChannelNameTooltip.CaseNote>Channel names are case-insensitive.</RICS.Twitch.ChannelNameTooltip.CaseNote>
+
+  <RICS.Twitch.ChannelNameTooltip.Warning>Note: This is your channel username, not your display name.</RICS.Twitch.ChannelNameTooltip.Warning>
+
+  <RICS.Twitch.ChannelNameFieldTooltip>Enter your Twitch channel name here</RICS.Twitch.ChannelNameFieldTooltip>
+
+  <RICS.Twitch.BotAccountHeader>Bot Account (Optional)</RICS.Twitch.BotAccountHeader>
+  <RICS.Twitch.BotUsernameLabel>Bot Username:</RICS.Twitch.BotUsernameLabel>
+
+  <RICS.Twitch.BotAccountStatus.Separate>✓ Using dedicated bot account</RICS.Twitch.BotAccountStatus.Separate>
+  <RICS.Twitch.BotAccountStatus.Main>⚠ Using main streamer account as bot</RICS.Twitch.BotAccountStatus.Main>
+
+  <!-- Bot Username Tooltip parts -->
+  <RICS.Twitch.BotUsernameTooltip.Title>Bot Account Username</RICS.Twitch.BotUsernameTooltip.Title>
+
+  <RICS.Twitch.BotUsernameTooltip.Recommended>Recommended: Use a separate bot account</RICS.Twitch.BotUsernameTooltip.Recommended>
+
+  <RICS.Twitch.BotUsernameTooltip.Alternative>Alternative: Use your main streamer account</RICS.Twitch.BotUsernameTooltip.Alternative>
+
+  <RICS.Twitch.BotUsernameTooltip.WhyHeader>Why use a separate bot account?</RICS.Twitch.BotUsernameTooltip.WhyHeader>
+  <RICS.Twitch.BotUsernameTooltip.Why1>Keeps chat cleaner (bot messages are separate)</RICS.Twitch.BotUsernameTooltip.Why1>
+  <RICS.Twitch.BotUsernameTooltip.Why2>Prevents accidental commands from your own account</RICS.Twitch.BotUsernameTooltip.Why2>
+  <RICS.Twitch.BotUsernameTooltip.Why3>Allows better moderation control</RICS.Twitch.BotUsernameTooltip.Why3>
+  <RICS.Twitch.BotUsernameTooltip.Why4>Gives a more professional appearance</RICS.Twitch.BotUsernameTooltip.Why4>
+
+  <RICS.Twitch.BotUsernameTooltip.MainAccountHeader>If using your main account:</RICS.Twitch.BotUsernameTooltip.MainAccountHeader>
+  <RICS.Twitch.BotUsernameTooltip.Main1>Enter your channel name again</RICS.Twitch.BotUsernameTooltip.Main1>
+  <RICS.Twitch.BotUsernameTooltip.Main2>You will see your own messages in chat</RICS.Twitch.BotUsernameTooltip.Main2>
+
+  <RICS.Twitch.BotUsernameFieldTooltip>Enter the bot account username (optional)</RICS.Twitch.BotUsernameFieldTooltip>
+
+  <!-- Token field & actions -->
+  <RICS.Twitch.AccessTokenEmpty>[No token set - use buttons below]</RICS.Twitch.AccessTokenEmpty>
+  <RICS.Twitch.AccessTokenMasked>oauth:••••••••••••••••</RICS.Twitch.AccessTokenMasked>
+  <RICS.Twitch.AccessTokenFieldTooltip>Twitch OAuth token (hidden for security).\nSelect text to copy, or use buttons below to paste/set.</RICS.Twitch.AccessTokenFieldTooltip>
+
+  <RICS.Twitch.PasteTokenButton>Paste Token</RICS.Twitch.PasteTokenButton>
+  <RICS.Twitch.PasteTokenTooltip>Paste OAuth token from clipboard (auto-adds 'oauth:' if missing)</RICS.Twitch.PasteTokenTooltip>
+
+  <RICS.Twitch.AddedOAuthPrefix>Added 'oauth:' prefix to token</RICS.Twitch.AddedOAuthPrefix>
+  <RICS.Twitch.TokenPastedSuccess>Twitch token pasted successfully!</RICS.Twitch.TokenPastedSuccess>
+  <RICS.Twitch.ClipboardEmpty>Clipboard is empty!</RICS.Twitch.ClipboardEmpty>
+
+  <RICS.Twitch.ClearTokenButton>Clear Token</RICS.Twitch.ClearTokenButton>
+  <RICS.Twitch.ClearTokenTooltip>Remove the current Twitch OAuth token</RICS.Twitch.ClearTokenTooltip>
+  <RICS.Twitch.TokenCleared>Twitch token cleared</RICS.Twitch.TokenCleared>
+
+  <RICS.Twitch.AddedOAuthPrefix>Added 'oauth:' prefix to token</RICS.Twitch.AddedOAuthPrefix>
+  <RICS.Twitch.TokenPastedSuccess>Twitch token pasted successfully!</RICS.Twitch.TokenPastedSuccess>
+  <RICS.Twitch.ClipboardEmpty>Clipboard is empty!</RICS.Twitch.ClipboardEmpty>
+
+  <!-- Get Token Button -->
+  <RICS.Twitch.GetTokenButton>Get Twitch Token</RICS.Twitch.GetTokenButton>
+  <RICS.Twitch.GetTokenButtonTooltip>Open Twitch Token Generator to get your OAuth token (with instructions)</RICS.Twitch.GetTokenButtonTooltip>
+
+  <!-- Dialog Content -->
+  <RICS.Twitch.TokenGeneratorTitle>Twitch Token Generator Instructions</RICS.Twitch.TokenGeneratorTitle>
+  <RICS.Twitch.TokenGeneratorStepsHeader>Step-by-Step:</RICS.Twitch.TokenGeneratorStepsHeader>
+  <RICS.Twitch.TokenGeneratorStep1>1. Click 'Open Browser' below</RICS.Twitch.TokenGeneratorStep1>
+  <RICS.Twitch.TokenGeneratorStep2>2. Login with your Twitch account</RICS.Twitch.TokenGeneratorStep2>
+  <RICS.Twitch.TokenGeneratorStep3>• Use your BOT account if you have one</RICS.Twitch.TokenGeneratorStep3>
+  <RICS.Twitch.TokenGeneratorStep4>• Or use your MAIN streamer account</RICS.Twitch.TokenGeneratorStep4>
+  <RICS.Twitch.TokenGeneratorStep5>3. Select 'Bot Chat Token'</RICS.Twitch.TokenGeneratorStep5>
+  <RICS.Twitch.TokenGeneratorStep6>4. Copy the generated token</RICS.Twitch.TokenGeneratorStep6>
+  <RICS.Twitch.TokenGeneratorStep7>5. Return here and click 'Paste Token'</RICS.Twitch.TokenGeneratorStep7>
+
+  <RICS.Twitch.TokenGeneratorSecurityHeader>Security Note:</RICS.Twitch.TokenGeneratorSecurityHeader>
+  <RICS.Twitch.TokenGeneratorSecurityNote1>• This token only allows chat access</RICS.Twitch.TokenGeneratorSecurityNote1>
+  <RICS.Twitch.TokenGeneratorSecurityNote2>• It cannot control your stream</RICS.Twitch.TokenGeneratorSecurityNote2>
+  <RICS.Twitch.TokenGeneratorSecurityNote3>• Keep it private like a password</RICS.Twitch.TokenGeneratorSecurityNote3>
+
+  <RICS.Twitch.TokenGeneratorConfirmation>Open Twitch Token Generator in your browser?</RICS.Twitch.TokenGeneratorConfirmation>
+
+  <!-- Buttons in dialog -->
+  <RICS.Twitch.OpenBrowserButton>Open Browser</RICS.Twitch.OpenBrowserButton>
+  <RICS.Twitch.CancelButton>Cancel</RICS.Twitch.CancelButton>
+
+  <!-- Connection Settings -->
+  <RICS.Twitch.ConnectionSettingsHeader>Twitch Connection Settings</RICS.Twitch.ConnectionSettingsHeader>
+
+  <RICS.Twitch.AutoConnectLabel>Auto-connect on startup</RICS.Twitch.AutoConnectLabel>
+  <RICS.Twitch.AutoConnectTooltip>Automatically connect to Twitch chat when the application starts</RICS.Twitch.AutoConnectTooltip>
+
+  <!-- Connection Status -->
+  <RICS.Twitch.ConnectionStatus>Status:</RICS.Twitch.ConnectionStatus>
+  <RICS.Twitch.ConnectedLabel>Connected to Twitch</RICS.Twitch.ConnectedLabel>
+  <RICS.Twitch.DisconnectedLabel>Disconnected</RICS.Twitch.DisconnectedLabel>
+
+  <!-- Connected Tooltip parts -->
+  <RICS.Twitch.ConnectedTooltip1>Connected to Twitch\n\n</RICS.Twitch.ConnectedTooltip1>
+  <RICS.Twitch.ConnectedTooltipChannel>• Channel: {0}</RICS.Twitch.ConnectedTooltipChannel>
+  <RICS.Twitch.ConnectedTooltipBot>• Bot: {0}\n\n</RICS.Twitch.ConnectedTooltipBot>
+  <RICS.Twitch.ConnectedTooltip4>The mod is now listening for chat commands\nand processing viewer interactions.</RICS.Twitch.ConnectedTooltip4>
+
+  <RICS.Twitch.DisconnectButton>Disconnect from Twitch</RICS.Twitch.DisconnectButton>
+  <RICS.Twitch.DisconnectedMessage>Disconnected from Twitch chat</RICS.Twitch.DisconnectedMessage>
+
+  <RICS.Twitch.DisconnectButtonTooltip>Disconnect from Twitch chat</RICS.Twitch.DisconnectButtonTooltip>
+
+  <!-- Disconnected Tooltip parts -->
+  <RICS.Twitch.DisconnectedTooltipTitle>Disconnected from Twitch</RICS.Twitch.DisconnectedTooltipTitle>
+  <RICS.Twitch.DisconnectedTooltipStatus>RICS is not currently connected to Twitch chat.</RICS.Twitch.DisconnectedTooltipStatus>
+  <RICS.Twitch.DisconnectedTooltipIntro>Make sure you have:</RICS.Twitch.DisconnectedTooltipIntro>
+  <RICS.Twitch.DisconnectedTooltipReq1>• Channel name entered</RICS.Twitch.DisconnectedTooltipReq1>
+  <RICS.Twitch.DisconnectedTooltipReq2>• Valid OAuth token</RICS.Twitch.DisconnectedTooltipReq2>
+  <RICS.Twitch.DisconnectedTooltipReq3>• Bot username (optional)</RICS.Twitch.DisconnectedTooltipReq3>
+
+  <RICS.Twitch.ConnectButton>Connect to Twitch</RICS.Twitch.ConnectButton>
+
+  <RICS.Twitch.ConnectButtonTooltip>Connect to Twitch chat</RICS.Twitch.ConnectButtonTooltip>
+  <RICS.Twitch.ConnectingMessage>Connecting to Twitch chat...</RICS.Twitch.ConnectingMessage>
+
+  <RICS.Twitch.ConnectButtonDisabled>Cannot Connect to Twitch (Missing Settings)</RICS.Twitch.ConnectButtonDisabled>
+
+  <RICS.Twitch.MissingChannelName>• Channel name\n</RICS.Twitch.MissingChannelName>
+  <RICS.Twitch.MissingOAuthToken>• OAuth token\n</RICS.Twitch.MissingOAuthToken>
+  <RICS.Twitch.MissingBotUsername>• Bot username\n</RICS.Twitch.MissingBotUsername>
+
+  <RICS.Twitch.MissingSettingsNote>Missing requirements: \n</RICS.Twitch.MissingSettingsNote>
+
+  <RICS.Twitch.MissingSettingsTooltip>Fix these missing settings to connect</RICS.Twitch.MissingSettingsTooltip>
+
+  <!-- Quick Tips Section -->
+
+  <RICS.Twitch.QuickTipsHeader>Quick Tips</RICS.Twitch.QuickTipsHeader>
+
+  <!-- Common Issues & Solutions Tips -->
+  <RICS.Twitch.TipsTitle>💡 <b>Common Issues and Solutions:</b></RICS.Twitch.TipsTitle>
+
+  <RICS.Twitch.TipsTokenIssue>• <b>Token not working?</b> Regenerate at Twitch Token Generator</RICS.Twitch.TipsTokenIssue>
+  <RICS.Twitch.TipsBotIssue>• <b>Bot not joining?</b> Check channel name spelling</RICS.Twitch.TipsBotIssue>
+  <RICS.Twitch.TipsConnectionDrops>• <b>Connection drops?</b> Check internet stability</RICS.Twitch.TipsConnectionDrops>
+  <RICS.Twitch.TipsOwnMessages>• <b>See your own messages?</b> That's normal with main account</RICS.Twitch.TipsOwnMessages>
+
+  <RICS.Twitch.QuickTipsTooltip></RICS.Twitch.QuickTipsTooltip>
+
+  
+  <RICS.Twitch.AuthenticationHeader>Authentication</RICS.Twitch.AuthenticationHeader>
+  <RICS.Twitch.AccessTokenLabel>Access Token:</RICS.Twitch.AccessTokenLabel>
+  <RICS.Twitch.BotUsernameTooltip.Title>Bot Account Username</RICS.Twitch.BotUsernameTooltip.Title>
+
+  <RICS.Twitch.BotAccountStatus.Separate>✓ Using dedicated bot account</RICS.Twitch.BotAccountStatus.Separate>
+  <RICS.Twitch.BotAccountStatus.Main>⚠ Using main streamer account as bot</RICS.Twitch.BotAccountStatus.Main>
+  <RICS.Twitch.TokenStatus.Ready>✓ Token configured – ready to connect</RICS.Twitch.TokenStatus.Ready>
+  <RICS.Twitch.TokenStatus.Missing>❌ No token – cannot connect</RICS.Twitch.TokenStatus.Missing>
+  <RICS.Twitch.TokenTypePrefix>Token type:</RICS.Twitch.TokenTypePrefix>
+  <RICS.Twitch.TokenType.Bot>Bot account</RICS.Twitch.TokenType.Bot>
+  <RICS.Twitch.TokenType.Main>Main account</RICS.Twitch.TokenType.Main>
+  <RICS.Twitch.TokenTypeTooltip>Shows which account this token was generated for</RICS.Twitch.TokenTypeTooltip>
+  
+  
+</LanguageData>
