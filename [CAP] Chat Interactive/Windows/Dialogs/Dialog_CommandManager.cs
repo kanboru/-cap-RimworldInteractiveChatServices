@@ -527,18 +527,30 @@ namespace CAP_ChatInteractive
                 Widgets.Label(eventHeaderRect, "CAP.CommandManager.CooldownSettings".Translate());
                 y += sectionHeight;
 
-                // Use event cooldown toggle
-                Rect eventToggleRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                Widgets.CheckboxLabeled(eventToggleRect, "CAP.CommandManager.UseCommandCooldown".Translate(), ref settings.useCommandCooldown);
-                y += sectionHeight;
+                // Use per-command cooldown toggle
+                Rect toggleRect = new Rect(leftPadding + 10f, y, viewRect.width - leftPadding - 100f, sectionHeight);
+                Widgets.CheckboxLabeled(toggleRect, "CAP.CommandManager.UseCommandCooldown".Translate(), ref settings.useCommandCooldown);
+                TooltipHandler.TipRegion(toggleRect, "CAP.CommandManager.UseCommandCooldownDesc".Translate());
+                y += sectionHeight + 4f;  // Small extra spacing after checkbox looks nicer
 
                 // Max uses per cooldown period
-                Rect eventUsesRect = new Rect(leftPadding + 20f, y, viewRect.width - leftPadding - 100f, sectionHeight);
-                Widgets.Label(eventUsesRect, "CAP.CommandManager.MaxUsesPerCooldown".Translate());
-                Rect eventUsesInputRect = new Rect(viewRect.width - 90f, y, 80f, sectionHeight);
-                string eventUsesBuffer = settings.MaxUsesPerCooldownPeriod.ToString();
-                UIUtilities.TextFieldNumericFlexible(eventUsesInputRect, ref settings.MaxUsesPerCooldownPeriod, ref eventUsesBuffer, 0, 10000);
-                y += sectionHeight;
+                Rect labelRect = new Rect(leftPadding + 20f, y, viewRect.width - leftPadding - 110f, sectionHeight);
+                Widgets.Label(labelRect, "CAP.CommandManager.MaxUsesPerCooldown".Translate());
+                TooltipHandler.TipRegion(labelRect, "CAP.CommandManager.MaxUsesPerCooldownDesc".Translate());
+
+                Rect inputRect = new Rect(viewRect.width - 100f, y, 90f, sectionHeight);  // Slightly wider input for comfort
+                string buffer = settings.MaxUsesPerCooldownPeriod.ToStringCached();       // Use cached ToString if available, minor perf
+                Widgets.TextFieldNumeric(inputRect, ref settings.MaxUsesPerCooldownPeriod, ref buffer, 0, 10000);
+
+                // Optional: Gray helper text when 0 (only if space allows)
+                if (settings.MaxUsesPerCooldownPeriod == 0)
+                {
+                    GUI.color = new Color(0.7f, 0.7f, 0.7f);
+                    Rect noteRect = new Rect(leftPadding + 25f, y + sectionHeight + 2f, viewRect.width - leftPadding - 30f, 20f);
+                    Widgets.Label(noteRect, "(Unlimited for this command)".Translate());
+                    GUI.color = Color.white;
+                }
+                y += sectionHeight + 8f;  // Extra spacing before next section
 
 
                 // RAID-SPECIFIC SETTINGS - Only show for raid command

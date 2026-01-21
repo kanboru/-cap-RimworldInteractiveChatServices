@@ -379,7 +379,5 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
             return $"There are {colonistCount}({viewerCount} viewers) and {animalCount} colony animals.";
         }
-
-
     }
 }
