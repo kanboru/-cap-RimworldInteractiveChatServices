@@ -57,7 +57,7 @@ namespace _CAP__Chat_Interactive.Utilities
 
     public static class RaceSettingsManager
     {
-        private static Dictionary<string, RaceSettings> _raceSettings;
+        public static Dictionary<string, RaceSettings> _raceSettings;  // SHout be point of truth!  is not Adjust code
         private static bool _isInitialized = false;
 
         public static Dictionary<string, RaceSettings> RaceSettings
