@@ -16,6 +16,14 @@
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 //
 // Manages the loading, saving, and updating of buyable incidents for the chat interactive mod.
+
+/*
+ * Logic:
+ * - On initialization, check if incidents JSON exists.
+ * - If not, create default incidents from IncidentDefs and save to JSON.
+ * - Data persistence: Uses Dictionary<string, BuyableIncident> to store incidents in memory.
+ * - All other fuctions call Dictionary to get incident data.
+ */
 using LudeonTK;
 using Newtonsoft.Json;
 using RimWorld;
@@ -60,7 +68,7 @@ namespace CAP_ChatInteractive.Incidents
                 Logger.Message($"[CAP] Incidents System initialized with {AllBuyableIncidents.Count} incidents");
             }
         }
-
+        // Loads incidents from the JSON file, with validation and error handling
         private static bool LoadIncidentsFromJson()
         {
             string jsonContent = JsonFileManager.LoadFile("Incidents.json");
@@ -120,7 +128,7 @@ namespace CAP_ChatInteractive.Incidents
                 return false;
             }
         }
-
+        // Handles incidents JSON corruption by backing up the corrupted file, notifying the player, and logging details
         private static void HandleIncidentsCorruption(string errorDetails, string corruptedJson)
         {
             // Backup corrupted file for debugging
