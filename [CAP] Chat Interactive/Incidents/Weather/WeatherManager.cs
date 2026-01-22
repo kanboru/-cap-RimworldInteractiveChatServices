@@ -31,11 +31,11 @@ namespace CAP_ChatInteractive.Incidents.Weather
         private static bool isInitialized = false;
         private static readonly object lockObject = new object();
 
-        private static List<TemperatureVariant> temperatureVariants = new List<TemperatureVariant>
-{
-    new TemperatureVariant { BaseWeatherDefName = "RainyThunderstorm", ColdVariantDefName = "SnowyThunderStorm", ThresholdTemperature = 0f },
-    new TemperatureVariant { BaseWeatherDefName = "Rain", ColdVariantDefName = "SnowHard", ThresholdTemperature = 2f }
-};
+//        private static List<TemperatureVariant> temperatureVariants = new List<TemperatureVariant>
+//{
+//    new TemperatureVariant { BaseWeatherDefName = "RainyThunderstorm", ColdVariantDefName = "SnowyThunderStorm", ThresholdTemperature = 0f },
+//    new TemperatureVariant { BaseWeatherDefName = "Rain", ColdVariantDefName = "SnowHard", ThresholdTemperature = 2f }
+//};
         public static void InitializeWeather()
         {
             if (isInitialized) return;
@@ -60,8 +60,7 @@ namespace CAP_ChatInteractive.Incidents.Weather
                 Logger.Message($"[CAP] Buyable Weather System initialized with {AllBuyableWeather.Count} weather types");
             }
         }
-
-
+        // Loads weather data from JSON file, handling corruption if necessary
         private static bool LoadWeatherFromJson()
         {
             string jsonContent = JsonFileManager.LoadFile("Weather.json");
@@ -71,18 +70,64 @@ namespace CAP_ChatInteractive.Incidents.Weather
             try
             {
                 var loadedWeather = JsonFileManager.DeserializeWeather(jsonContent);
-                AllBuyableWeather.Clear();
 
-                foreach (var kvp in loadedWeather)
+                if (loadedWeather == null || loadedWeather.Count == 0)
                 {
-                    AllBuyableWeather[kvp.Key] = kvp.Value;
+                    Logger.Error("Weather.json exists but contains no valid data - corrupted");
+                    HandleWeatherCorruption("File contains no valid data", jsonContent);
+                    return false;
                 }
+
+                // ... load into memory ...
                 return true;
             }
-            catch (Exception e)
+            catch (Newtonsoft.Json.JsonException jsonEx)
             {
-                Logger.Error($"Error loading weather JSON: {e.Message}");   
+                Logger.Error($"JSON CORRUPTION in Weather.json: {jsonEx.Message}");
+                HandleWeatherCorruption($"JSON parsing error: {jsonEx.Message}", jsonContent);
                 return false;
+            }
+            catch (System.Exception e)
+            {
+                Logger.Error($"Error loading weather JSON: {e.Message}");
+                return false;
+            }
+        }
+        // Handles weather data corruption by backing up the corrupted file, notifying the player, and logging details
+        private static void HandleWeatherCorruption(string errorDetails, string corruptedJson)
+        {
+            // Backup corrupted file for debugging
+            if (!string.IsNullOrWhiteSpace(corruptedJson))
+            {
+                try
+                {
+                    string backupPath = JsonFileManager.GetBackupPath("Weather.json");
+                    System.IO.File.WriteAllText(backupPath, corruptedJson);
+                    Logger.Debug($"Backed up corrupted Incidents.json to: {backupPath}");
+                }
+                catch (System.Exception ex)
+                {
+                    Logger.Error($"Failed to backup corrupted Incidents.json: {ex.Message}");
+                }
+            }
+
+            // Show in-game notification
+            if (Current.ProgramState == ProgramState.Playing)
+            {
+                string message = "Chat Interactive: Incidents configuration was corrupted.\n" +
+                                "Rebuilt with default incidents. Custom settings have been lost.\n" +
+                                "Check logs for details.";
+
+                Messages.Message(message, MessageTypeDefOf.NegativeEvent);
+            }
+
+            // Log the corrupted content (first 500 chars for debugging)
+            if (corruptedJson != null && corruptedJson.Length > 0)
+            {
+                string preview = corruptedJson.Length > 500 ?
+                    corruptedJson.Substring(0, 500) + "..." :
+                    corruptedJson;
+                Logger.Debug($"Corrupted Incidents JSON preview: {preview}");
             }
         }
 

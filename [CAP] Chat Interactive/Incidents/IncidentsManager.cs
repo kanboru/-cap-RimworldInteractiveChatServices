@@ -25,7 +25,6 @@
  * - All other fuctions call Dictionary to get incident data.
  */
 using LudeonTK;
-using Newtonsoft.Json;
 using RimWorld;
 using System;
 using System.Collections.Generic;
