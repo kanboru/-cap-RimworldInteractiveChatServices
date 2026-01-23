@@ -49,22 +49,17 @@
   <RICS.NoEventsFound>No events found matching current filters</RICS.NoEventsFound>
   <RICS.CannotEnableNotAvailable>Cannot enable - not available via commands</RICS.CannotEnableNotAvailable>
   <RICS.Enabled>Enabled</RICS.Enabled>
-  <RICS.EventsEditor.HeaderWithCount>Events ({0})</RICS.EventsEditor.HeaderWithCount>
-  <RICS.EventInfo.UnavailableSuffix> - [UNAVAILABLE]</RICS.EventInfo.UnavailableSuffix>
   <RICS.EventToggle.KarmaTooltip>Karma Type: {0}\nAffects karma-type limits if enabled in global settings</RICS.EventToggle.KarmaTooltip>
-  <RICS.CooldownControl.Label>CD:</RICS.CooldownControl.Label>
   <RICS.Messages.SetNoCooldown>Set {0} events to have no cooldown</RICS.Messages.SetNoCooldown>
   <RICS.Messages.SetCooldown>Set {0} events to {1} day{2} cooldown</RICS.Messages.SetCooldown>
   <RICS.Messages.ResetCooldowns>Reset cooldowns for {0} events</RICS.Messages.ResetCooldowns>
   <RICS.Messages.EventsEnabledFromMod>Enabled {0} events from {1}</RICS.Messages.EventsEnabledFromMod>
   <RICS.Messages.EventsDisabledFromMod>Disabled {0} events from {1}</RICS.Messages.EventsDisabledFromMod>
   <RICS.Categories.Uncategorized>Uncategorized</RICS.Categories.Uncategorized>
-  <RICS.Messages.SetNoCooldown>Set {0} events to have no cooldown</RICS.Messages.SetNoCooldown>
-  <RICS.Messages.SetCooldown>Set {0} events to {1} day{2} cooldown</RICS.Messages.SetCooldown>
-  <RICS.Messages.ResetCooldowns>Reset cooldowns for {0} events</RICS.Messages.ResetCooldowns>
-  <RICS.Messages.EventsEnabledFromMod>Enabled {0} events from {1}</RICS.Messages.EventsEnabledFromMod>
-  <RICS.Messages.EventsDisabledFromMod>Disabled {0} events from {1}</RICS.Messages.EventsDisabledFromMod>
-  <RICS.Categories.Uncategorized>Uncategorized</RICS.Categories.Uncategorized>
+
+  <RICS.Filter.Category>Category: {0}</RICS.Filter.Category>
+  <RICS.Filter.Mod>Mod: {0}</RICS.Filter.Mod>
+  <RICS.Filter.Search>Search: '{0}'</RICS.Filter.Search>
   
   <!-- Tooltips -->
   <RICS.NoCooldownInfiniteTooltip>No cooldown (infinite)\nClick to set a cooldown</RICS.NoCooldownInfiniteTooltip>

@@ -311,11 +311,11 @@ namespace CAP_ChatInteractive
 
             if (listViewType == EventListViewType.Category && selectedCategory != "All")
             {
-                description = $"Category: {GetDisplayCategoryName(selectedCategory)}";
+                description = "RICS.Filter.Category".Translate(GetDisplayCategoryName(selectedCategory));
             }
             else if (listViewType == EventListViewType.ModSource && selectedModSource != "All")
             {
-                description = $"Mod: {GetDisplayModName(selectedModSource)}";
+                description = "RICS.Filter.Mod".Translate(GetDisplayModName(selectedModSource));
             }
 
             // Check if we have a search query
@@ -323,7 +323,7 @@ namespace CAP_ChatInteractive
             {
                 if (!string.IsNullOrEmpty(description))
                     description += " + ";
-                description += $"Search: '{searchQuery}'";
+                description += "RICS.Filter.Search".Translate(searchQuery);
             }
 
             return description;
@@ -516,9 +516,9 @@ namespace CAP_ChatInteractive
             string headerText = "RICS.EventsEditor.HeaderWithCount".Translate(filteredEvents.Count);
 
             if (listViewType == EventListViewType.Category && selectedCategory != "All")
-                headerText += $" - {GetDisplayCategoryName(selectedCategory)}";
+                headerText += " - " + GetDisplayCategoryName(selectedCategory);
             else if (listViewType == EventListViewType.ModSource && selectedModSource != "All")
-                headerText += $" - {GetDisplayModName(selectedModSource)}";
+                headerText += " - " + GetDisplayModName(selectedModSource);
 
             Widgets.Label(headerRect, headerText);
             Text.Anchor = TextAnchor.UpperLeft;
