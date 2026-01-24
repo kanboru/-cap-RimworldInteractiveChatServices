@@ -572,56 +572,6 @@
     <useCommandCooldown>true</useCommandCooldown>
   </CAP_ChatInteractive.ChatCommandDef>
 
-	<!-- Pawn Appearance Commands -->
-  <CAP_ChatInteractive.ChatCommandDef>
-    <defName>SetHead</defName>
-    <commandText>sethead</commandText>
-    <label>sethead</label>
-    <enabled>true</enabled>
-    <commandClass>CAP_ChatInteractive.Commands.ViewerCommands.SetHead</commandClass>
-    <requiresMod>false</requiresMod>
-    <commandDescription>Change your pawn's head type. Respects gender and gene requirements.</commandDescription>
-    <cooldownSeconds>5</cooldownSeconds>
-    <useCommandCooldown>true</useCommandCooldown>
-  </CAP_ChatInteractive.ChatCommandDef>
-
-  <CAP_ChatInteractive.ChatCommandDef>
-    <defName>SetBody</defName>
-    <commandText>setbody</commandText>
-    <label>setbody</label>
-    <enabled>true</enabled>
-    <commandClass>CAP_ChatInteractive.Commands.ViewerCommands.SetBody</commandClass>
-    <requiresMod>false</requiresMod>
-    <commandDescription>Change your pawn's body type. Respects gene-locked body types (xenogenes take priority).</commandDescription>
-    <cooldownSeconds>5</cooldownSeconds>
-    <useCommandCooldown>true</useCommandCooldown>
-  </CAP_ChatInteractive.ChatCommandDef>
-
-  <CAP_ChatInteractive.ChatCommandDef>
-    <defName>SetHair</defName>
-    <commandText>sethair</commandText>
-    <label>SesethairtHead</label>
-    <enabled>true</enabled>
-    <commandClass>CAP_ChatInteractive.Commands.ViewerCommands.SetHair</commandClass>
-    <requiresMod>false</requiresMod>
-    <commandDescription>Change your pawn's hair style. Respects gene requirements.</commandDescription>
-    <cooldownSeconds>5</cooldownSeconds>
-    <useCommandCooldown>true</useCommandCooldown>
-  </CAP_ChatInteractive.ChatCommandDef>
-
-  <CAP_ChatInteractive.ChatCommandDef>
-    <defName>SetBeard</defName>
-    <commandText>setbeard</commandText>
-    <label>setbeard</label>
-    <enabled>true</enabled>
-    <commandClass>CAP_ChatInteractive.Commands.ViewerCommands.SetBeard</commandClass>
-    <requiresMod>false</requiresMod>
-    <commandDescription>Change your pawn's beard style. Requires Ideology DLC. Respects gene requirements.</commandDescription>
-    <cooldownSeconds>5</cooldownSeconds>
-    <useCommandCooldown>true</useCommandCooldown>
-  </CAP_ChatInteractive.ChatCommandDef>
-	
-
   <!-- Pawn Queue Commands -->
   <CAP_ChatInteractive.ChatCommandDef>
     <defName>JoinQueue</defName>
