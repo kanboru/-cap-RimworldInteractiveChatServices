@@ -27,6 +27,7 @@ namespace CAP_ChatInteractive
     public class CAPChatInteractive_GameComponent : GameComponent
     {
         private int tickCounter = 0;
+        private int saveCounter = 0;
         private const int TICKS_PER_REWARD = 120 * 60; // 2 minutes in ticks (60 ticks/sec * 120 sec)
         private bool versionCheckDone = false;
 
@@ -44,18 +45,20 @@ namespace CAP_ChatInteractive
         public override void LoadedGame()
         {
             base.LoadedGame();
-            PerformVersionCheckIfNeeded();
+            PerformVersionCheckIfNeeded(); // Check version on game load as well
         }
 
         public override void StartedNewGame()
         {
             base.StartedNewGame();
-            PerformVersionCheckIfNeeded();
+            PerformVersionCheckIfNeeded(); // Check version on new game start as well
         }
 
         public override void GameComponentTick()
         {
             tickCounter++;
+            saveCounter++;
+            
             if (tickCounter >= TICKS_PER_REWARD)
             {
                 tickCounter = 0;
@@ -65,6 +68,14 @@ namespace CAP_ChatInteractive
             }
         }
 
+        public override void FinalizeInit()
+        {
+            base.FinalizeInit();
+            Logger.Debug("GameComponent FinalizeInit - ensuring store is initialized");
+            Store.StoreInventory.InitializeStore();
+        }
+
+        // MOD VERSION CHECKING AND UPDATE NOTIFICATIONS
         private void PerformVersionCheckIfNeeded()
         {
             if (versionCheckDone) return;
@@ -72,7 +83,7 @@ namespace CAP_ChatInteractive
 
             CheckForVersionUpdate();
         }
-
+        // Check if the mod version has changed and show update notes if needed
         private void CheckForVersionUpdate()
         {
             var mod = CAPChatInteractiveMod.Instance;

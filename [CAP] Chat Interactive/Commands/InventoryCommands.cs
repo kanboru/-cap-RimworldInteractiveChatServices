@@ -18,12 +18,7 @@
 // Commands for purchasing and using items from the in-game store.
 using CAP_ChatInteractive.Commands.CommandHandlers;
 using CAP_ChatInteractive.Commands.Cooldowns;
-using CAP_ChatInteractive.Store;
-using RimWorld;
-using RimWorld.BaseGen;
-using RuntimeAudioClipLoader;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Verse;
 
@@ -94,7 +89,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             {
                return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
             }
-            return BuyItemCommandHandler.HandleUseItem(user, args);
+            return UseItemCommandHandler.HandleUseItem(user, args);
         }
     }
 
@@ -195,7 +190,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !surgery <implant> [left/right] [quantity] - Example: !surgery bionic arm left 1";
+                return "Usage: !surgery [implant] [left/right] [quantity] - Example: !surgery bionic arm left 1";
             }
             var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
                            if (cooldownManager == null)
@@ -208,7 +203,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             {
                 return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
             }
-            return BuyItemCommandHandler.HandleSurgery(user, args);
+            return SurgeryItemCommandHandler.HandleSurgery(user, args);
         }
     }
 }

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LanguageData>
+
+  <!-- TabDrawer_YouTube.cs Translations -->
+
+  <TabDrawer_YouTube.YouTubeChatIntegration>YouTube Chat Integration</TabDrawer_YouTube.YouTubeChatIntegration>
+
+  <TabDrawer_YouTube.ConnectionTypeExplanation>💡 Choose your connection type:</TabDrawer_YouTube.ConnectionTypeExplanation>
+
+  <TabDrawer_YouTube.ConnectionTypeReadOnly>
+    <![CDATA[<b>Read-Only</b>: Just API Key + Channel ID (easy, reads chat only)]]>
+  </TabDrawer_YouTube.ConnectionTypeReadOnly>
+
+  <TabDrawer_YouTube.ConnectionTypeReadWrite>
+    <![CDATA[<b>Read+Write</b>: API Key + OAuth (hard, can send messages, may require verification)]]>
+  </TabDrawer_YouTube.ConnectionTypeReadWrite>
+
+  <TabDrawer_YouTube.EnableYouTubeIntegration>Enable YouTube Integration</TabDrawer_YouTube.EnableYouTubeIntegration>
+
+  <TabDrawer_YouTube.BasicSettingsHeader>Basic Settings (Required for Read-Only)</TabDrawer_YouTube.BasicSettingsHeader>
+
+  <TabDrawer_YouTube.ChannelIDLabel>Channel ID:</TabDrawer_YouTube.ChannelIDLabel>
+
+  <TabDrawer_YouTube.FindIDButton>Find ID</TabDrawer_YouTube.FindIDButton>
+
+  <TabDrawer_YouTube.ChannelIDDialogMessage>
+    <![CDATA[This will open a tool to find your YouTube Channel ID.
+
+Your Channel ID starts with 'UC' and is different from your channel name.
+
+Open Channel ID Finder?]]>
+  </TabDrawer_YouTube.ChannelIDDialogMessage>
+
+  <TabDrawer_YouTube.ChannelIDDialogOpenTool>Open Tool</TabDrawer_YouTube.ChannelIDDialogOpenTool>
+
+  <TabDrawer_YouTube.ChannelIDDialogCancel>Cancel</TabDrawer_YouTube.ChannelIDDialogCancel>
+
+  <TabDrawer_YouTube.ChannelIDTooltip>
+    <![CDATA[<b>Required for both read-only and read+write modes</b>
+
+Your unique YouTube Channel ID (starts with UC...)
+This is NOT your channel name or URL!
+
+Example: UC_x123y456z789 (24 characters)]]>
+  </TabDrawer_YouTube.ChannelIDTooltip>
+
+  <TabDrawer_YouTube.APIKeyHeader>API Key (Required for Read-Only)</TabDrawer_YouTube.APIKeyHeader>
+
+  <TabDrawer_YouTube.APIKeyHelp>💡 API Key enables READ-ONLY chat reading</TabDrawer_YouTube.APIKeyHelp>
+
+  <TabDrawer_YouTube.APIKeyLabel>API Key:</TabDrawer_YouTube.APIKeyLabel>
+
+  <TabDrawer_YouTube.APIKeyPlaceholder>[Click Paste or Get]</TabDrawer_YouTube.APIKeyPlaceholder>
+
+  <TabDrawer_YouTube.APIKeyMasked>••••••••••••••••</TabDrawer_YouTube.APIKeyMasked>
+
+  <TabDrawer_YouTube.APIKeyPasteButton>Paste</TabDrawer_YouTube.APIKeyPasteButton>
+
+  <TabDrawer_YouTube.APIKeyPasteSuccess>API key pasted! You can now try read-only connection.</TabDrawer_YouTube.APIKeyPasteSuccess>
+
+  <TabDrawer_YouTube.APIKeyPasteFailed>Clipboard empty or invalid!</TabDrawer_YouTube.APIKeyPasteFailed>
+
+  <TabDrawer_YouTube.APIKeyGetButton>Get Key</TabDrawer_YouTube.APIKeyGetButton>
+
+  <TabDrawer_YouTube.APIKeyDialogTitle>
+    <![CDATA[<b>YouTube Data API v3 Key Setup</b>]]>
+  </TabDrawer_YouTube.APIKeyDialogTitle>
+
+  <TabDrawer_YouTube.APIKeyDialogInstructions>
+    <![CDATA[1. Go to Google Cloud Console
+2. Create a project (or select existing)
+3. Enable 'YouTube Data API v3'
+4. Create credentials → API Key
+5. Copy the generated key
+6. Paste it here
+
+This enables <b>read-only</b> chat access.
+
+Open Google Cloud Console?]]>
+  </TabDrawer_YouTube.APIKeyDialogInstructions>
+
+  <TabDrawer_YouTube.APIKeyDialogOpenConsole>Open Console</TabDrawer_YouTube.APIKeyDialogOpenConsole>
+
+  <TabDrawer_YouTube.APIKeyConfigured>✓ API Key configured - Ready for read-only mode</TabDrawer_YouTube.APIKeyConfigured>
+
+  <TabDrawer_YouTube.NoAPIKey>⚠ No API Key - Cannot connect to YouTube</TabDrawer_YouTube.NoAPIKey>
+
+  <TabDrawer_YouTube.APIKeyTooltip>
+    <![CDATA[<b>YouTube Data API v3 Key</b>
+
+Required for reading chat messages.
+Get this from Google Cloud Console.
+
+This is different from OAuth tokens!
+
+🔒 This key only allows reading chat,
+not sending messages.]]>
+  </TabDrawer_YouTube.APIKeyTooltip>
+
+  <TabDrawer_YouTube.DisconnectButton>Disconnect</TabDrawer_YouTube.DisconnectButton>
+
+  <TabDrawer_YouTube.DisconnectedMessage>Disconnected from YouTube</TabDrawer_YouTube.DisconnectedMessage>
+
+  <TabDrawer_YouTube.ConnectReadOnlyButton>Connect (Read-Only)</TabDrawer_YouTube.ConnectReadOnlyButton>
+
+  <TabDrawer_YouTube.ConnectReadOnlyTooltip>
+    <![CDATA[Connect to YouTube chat in read-only mode
+
+You will be able to see chat messages but cannot reply]]>
+  </TabDrawer_YouTube.ConnectReadOnlyTooltip>
+
+  <TabDrawer_YouTube.ConnectingMessage>Connecting to YouTube in read-only mode...</TabDrawer_YouTube.ConnectingMessage>
+
+  <TabDrawer_YouTube.CannotConnectButton>Connect (Missing API Key or Channel ID)</TabDrawer_YouTube.CannotConnectButton>
+
+  <TabDrawer_YouTube.CannotConnectTooltip>
+    <![CDATA[Cannot connect - missing API Key or Channel ID
+
+Configure basic settings above first]]>
+  </TabDrawer_YouTube.CannotConnectTooltip>
+
+  <TabDrawer_YouTube.APIQuotaHeader>API Quota Usage</TabDrawer_YouTube.APIQuotaHeader>
+
+  <TabDrawer_YouTube.QuotaStatus>Status: {0}</TabDrawer_YouTube.QuotaStatus>
+
+  <TabDrawer_YouTube.HighQuotaWarning>High usage - consider reducing polling frequency</TabDrawer_YouTube.HighQuotaWarning>
+
+  <!-- Status and Mode translations (new style) -->
+  <TabDrawer_YouTube.Status>Status: {0}</TabDrawer_YouTube.Status>
+  <TabDrawer_YouTube.Connected>Connected</TabDrawer_YouTube.Connected>
+  <TabDrawer_YouTube.Disconnected>Disconnected</TabDrawer_YouTube.Disconnected>
+  <TabDrawer_YouTube.ConnectionMode>Mode: {0}</TabDrawer_YouTube.ConnectionMode>
+  <TabDrawer_YouTube.ModeReadWrite>Read+Write</TabDrawer_YouTube.ModeReadWrite>
+  <TabDrawer_YouTube.ModeReadOnly>Read-Only</TabDrawer_YouTube.ModeReadOnly>
+
+</LanguageData>

@@ -150,11 +150,13 @@ namespace CAP_ChatInteractive
             // Background
             Widgets.DrawMenuSection(rect);
 
-            // Header
+            // Header Available Pawns
             Rect headerRect = new Rect(rect.x, rect.y, rect.width, 30f);
             Text.Font = GameFont.Medium;
             Text.Anchor = TextAnchor.MiddleCenter;
+            GUI.color = ColorLibrary.HeaderAccent;
             Widgets.Label(headerRect, "Available Pawns");
+            GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
             Text.Font = GameFont.Small;
 

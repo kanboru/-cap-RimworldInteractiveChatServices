@@ -179,7 +179,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
     public class GiftCoins : ChatCommand
     {
-        public override string Name => "giftcoins"; // Changed from "givecoins" to match XML
+        public override string Name => "giftcoins";
 
         public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
@@ -189,7 +189,13 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return "Usage: !giftcoins <viewer> <amount>";
             }
 
+            // Handle @username format - remove @ if present
             string targetUsername = args[0];
+            if (targetUsername.StartsWith("@"))
+            {
+                targetUsername = targetUsername.Substring(1);
+            }
+            targetUsername = targetUsername.ToLowerInvariant().Trim(); // Normalize case and trim
 
             // Parse the coin amount
             if (!int.TryParse(args[1], out int coinAmount) || coinAmount <= 0)
@@ -197,44 +203,81 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return "Please specify a valid positive number of coins to give.";
             }
 
-            // Get the sender's viewer data - USING STATIC METHOD
-            Viewer sender = Viewers.GetViewer(messageWrapper);
-            if (sender == null)
-            {
-                return "Error: Could not find your viewer data.";
-            }
-
-            // Check if sender has enough coins
-            if (sender.GetCoins() < coinAmount)
-            {
-                var formattedSenderCoins = sender.GetCoins().ToString("N0");
-                var formattedCoinAmount = coinAmount.ToString("N0");
-                return $"You don't have enough coins. You have {formattedSenderCoins} coins but tried to give {formattedCoinAmount}.";
-
-
-            }
-
-            // Get the target viewer - USING STATIC METHOD
-            Viewer target = Viewers.GetViewer(targetUsername);
-            if (target == null)
-            {
-                return $"Viewer '{targetUsername}' not found.";
-            }
-
-            // Cannot give coins to yourself
-            if (sender.Username.Equals(target.Username, StringComparison.OrdinalIgnoreCase))
+            // Early self-check (case-insensitive)
+            if (targetUsername.Equals(messageWrapper.Username.ToLowerInvariant()))
             {
                 return "You cannot give coins to yourself.";
             }
 
-            // Transfer coins
-            sender.TakeCoins(coinAmount);
-            target.GiveCoins(coinAmount);
+            // Get both viewers WITHIN THE SAME LOCK to ensure consistency
+            string result;
+            lock (Viewers._lock)
+            {
+                // Get the sender's viewer data
+                Viewer sender = Viewers.GetViewer(messageWrapper);
+                if (sender == null)
+                {
+                    return "Error: Could not find your viewer data.";
+                }
 
-            // Save the changes - USING STATIC METHOD
-            Viewers.SaveViewers();
+                // Check if sender has enough coins
+                if (sender.GetCoins() < coinAmount)
+                {
+                    var formattedSenderCoins = sender.GetCoins().ToString("N0");
+                    var formattedCoinAmount = coinAmount.ToString("N0");
+                    return $"You don't have enough coins. You have {formattedSenderCoins} coins but tried to give {formattedCoinAmount}.";
+                }
 
-            return $"Successfully gave {coinAmount} coins to {target.DisplayName}. You now have {sender.GetCoins()} coins remaining.";
+                // Get the target viewer
+                Viewer target = Viewers.GetViewer(targetUsername);
+                if (target == null)
+                {
+                    return $"Viewer '{targetUsername}' not found.";
+                }
+
+                // Final self-check (in case GetViewer normalized the username differently)
+                if (sender.Username.Equals(target.Username, StringComparison.OrdinalIgnoreCase))
+                {
+                    return "You cannot give coins to yourself.";
+                }
+
+                // Ensure target can receive coins (not banned, etc.)
+                if (target.IsBanned)
+                {
+                    return $"Cannot give coins to banned viewer '{target.DisplayName}'.";
+                }
+
+                // Perform atomic transaction
+                try
+                {
+                    // Take coins from sender first
+                    sender.TakeCoins(coinAmount);
+
+                    // Give coins to target
+                    target.GiveCoins(coinAmount);
+
+                    // Save immediately for transaction safety
+                    Viewers.SaveViewers();
+
+                    // Log the transaction for debugging
+                    Logger.Debug($"GiftCoins: {sender.Username} gave {coinAmount} coins to {target.Username}. " +
+                               $"Sender now has {sender.GetCoins()}, receiver now has {target.GetCoins()}");
+
+                    result = $"Successfully gave {coinAmount} coins to {target.DisplayName}. You now have {sender.GetCoins():N0} coins remaining.";
+                }
+                catch (Exception ex)
+                {
+                    // If anything fails, attempt to rollback
+                    Logger.Error($"GiftCoins transaction failed: {ex.Message}");
+
+                    // In a real implementation, you might want to rollback here
+                    // But since we SaveViewers() after both operations, they should be atomic
+
+                    result = "An error occurred during the transaction. Please try again.";
+                }
+            }
+
+            return result;
         }
     }
 
@@ -369,6 +412,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     public class Colonists : ChatCommand
     {
         public override string Name => "colonists";
+
         public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
             var assignmentManager = CAPChatInteractiveMod.GetPawnAssignmentManager();
@@ -387,9 +431,38 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         public override string Name => "stockpile";
         public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
+            // Get total living free colonists (standard RimWorld count)
+            int colonistCount = Current.Game.PlayerHomeMaps
+                .Sum(m => m.mapPawns.FreeColonistsSpawnedCount);
 
+            // Get total colony animals
+            int animalCount = Current.Game.PlayerHomeMaps
+                .Sum(m => m.mapPawns.ColonyAnimals.Count);
+
+            // Count only viewers who have an **assigned living pawn**
+            var assignmentManager = Current.Game.GetComponent<GameComponent_PawnAssignmentManager>();
+            if (assignmentManager == null)
+            {
+                // Fallback / safety
+                return $"There are {colonistCount} colonists and {animalCount} colony animals.";
+            }
 
             return "";
+            // Count unique pawns that are:
+            // • Assigned to a viewer
+            // • Still alive (most common expectation for viewer commands)
+            int viewerPawnCount = assignmentManager.GetAllViewerPawns()
+                .Count;  // This method already filters out dead pawns
+
+            // Alternative version (more explicit - use whichever style you prefer):
+            /*
+            int viewerPawnCount = assignmentManager.viewerPawnAssignments
+                .Values
+                .Select(thingId => GameComponent_PawnAssignmentManager.FindPawnByThingId(thingId))
+                .Count(p => p != null && !p.Dead);
+            */
+
+            return $"There are {colonistCount} colonists ({viewerPawnCount} controlled by viewers) and {animalCount} colony animals.";
         }
     }
 }

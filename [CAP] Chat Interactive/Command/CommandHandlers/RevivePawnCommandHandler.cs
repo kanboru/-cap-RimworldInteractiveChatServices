@@ -92,7 +92,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 return "Your pawn is already alive!";
             }
 
-            if (BuyItemCommandHandler.IsPawnCompletelyDestroyed(viewerPawn))
+            if (UseItemCommandHandler.IsPawnCompletelyDestroyed(viewerPawn))
             {
                 return "Your pawn's body has been completely destroyed and cannot be revived.";
             }
@@ -105,7 +105,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
             // Deduct coins and revive
             viewer.TakeCoins(pricePerRevive);
-            BuyItemCommandHandler.ResurrectPawn(viewerPawn);
+            UseItemCommandHandler.ResurrectPawn(viewerPawn);
 
             int karmaEarned = pricePerRevive / 100;
             if (karmaEarned > 0)
@@ -123,7 +123,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
             // Send resurrection invoice
             string invoiceLabel = $"💖 Rimazon Resurrection - {user.Username}";
-            string invoiceMessage = BuyItemCommandHandler.CreateRimazonResurrectionInvoice(user.Username, "Pawn Resurrection", pricePerRevive, currencySymbol);
+            string invoiceMessage = UseItemCommandHandler.CreateRimazonResurrectionInvoice(user.Username, "Pawn Resurrection", pricePerRevive, currencySymbol);
             MessageHandler.SendPinkLetter(invoiceLabel, invoiceMessage);
 
             Logger.Debug($"Revive self successful: {user.Username} revived their pawn for {pricePerRevive}{currencySymbol}");
@@ -156,14 +156,14 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 return $"{targetUsername}'s pawn is already alive!";
             }
 
-            if (BuyItemCommandHandler.IsPawnCompletelyDestroyed(targetPawn))
+            if (UseItemCommandHandler.IsPawnCompletelyDestroyed(targetPawn))
             {
                 return $"{targetUsername}'s pawn body has been completely destroyed and cannot be revived.";
             }
 
             // Rest of the method remains the same...
             viewer.TakeCoins(pricePerRevive);
-            BuyItemCommandHandler.ResurrectPawn(targetPawn);
+            UseItemCommandHandler.ResurrectPawn(targetPawn);
 
             int karmaEarned = pricePerRevive / 100;
             if (karmaEarned > 0)
@@ -199,7 +199,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             foreach (var username in allAssignedUsernames)
             {
                 var pawn = assignmentManager.GetAssignedPawn(username);
-                if (pawn != null && pawn.Dead && !BuyItemCommandHandler.IsPawnCompletelyDestroyed(pawn))
+                if (pawn != null && pawn.Dead && !UseItemCommandHandler.IsPawnCompletelyDestroyed(pawn))
                 {
                     deadPawns.Add((username, pawn));
                 }
@@ -224,9 +224,9 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             foreach (var (username, pawn) in deadPawns)
             {
                 // Double-check pawn is still dead and not destroyed
-                if (pawn.Dead && !BuyItemCommandHandler.IsPawnCompletelyDestroyed(pawn))
+                if (pawn.Dead && !UseItemCommandHandler.IsPawnCompletelyDestroyed(pawn))
                 {
-                    BuyItemCommandHandler.ResurrectPawn(pawn);
+                    UseItemCommandHandler.ResurrectPawn(pawn);
                     revivedCount++;
                 }
             }

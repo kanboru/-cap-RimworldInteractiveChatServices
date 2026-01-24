@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LanguageData>
+
+  <!-- Dialog_CommandManager General UI -->
+  <CAP.CommandManager.Title>Command Management</CAP.CommandManager.Title>
+  <CAP.CommandManager.SelectCommand>Select a command to see details</CAP.CommandManager.SelectCommand>
+  <CAP.CommandManager.Search>Search</CAP.CommandManager.Search>
+  <CAP.CommandManager.Settings>Settings</CAP.CommandManager.Settings>
+  
+  <!-- Sort Buttons -->
+  <CAP.CommandManager.Sort.Name>Name</CAP.CommandManager.Sort.Name>
+  <CAP.CommandManager.Sort.Category>Category</CAP.CommandManager.Sort.Category>
+  <CAP.CommandManager.Sort.Status>Status</CAP.CommandManager.Sort.Status>
+  
+  <!-- Column Headers -->
+  <CAP.CommandManager.Commands>Commands</CAP.CommandManager.Commands>
+  <CAP.CommandManager.Disabled>[DISABLED]</CAP.CommandManager.Disabled>
+  
+  <!-- Command Details Sections -->
+  <CAP.CommandManager.BasicInfo>Basic Information:</CAP.CommandManager.BasicInfo>
+  <CAP.CommandManager.Trigger>Trigger:</CAP.CommandManager.Trigger>
+  <CAP.CommandManager.Description>Description:</CAP.CommandManager.Description>
+  <CAP.CommandManager.PermissionLevel>Permission Level:</CAP.CommandManager.PermissionLevel>
+  <CAP.CommandManager.PermissionLevel.moderator>moderator</CAP.CommandManager.PermissionLevel.moderator>
+  <CAP.CommandManager.PermissionLevel.everyone>everyone</CAP.CommandManager.PermissionLevel.everyone>
+  <CAP.CommandManager.PermissionLevel.vip>vip</CAP.CommandManager.PermissionLevel.vip>
+  <CAP.CommandManager.PermissionLevel.subscriber>subscriber</CAP.CommandManager.PermissionLevel.subscriber>
+  <CAP.CommandManager.PermissionLevel.broadcaster>broadcaster</CAP.CommandManager.PermissionLevel.broadcaster>
+  
+  <CAP.CommandManager.BasicSettings>Basic Settings:</CAP.CommandManager.BasicSettings>
+  <CAP.CommandManager.Enabled>Enabled:</CAP.CommandManager.Enabled>
+  <CAP.CommandManager.Cooldown>Command Cooldown (seconds):</CAP.CommandManager.Cooldown>
+  <CAP.CommandManager.CooldownDesc>Prevents command spamming - reminds users to be respectful</CAP.CommandManager.CooldownDesc>
+  <CAP.CommandManager.NoDescription>No description available</CAP.CommandManager.NoDescription>
+  <CAP.CommandManager.Cost>Cost ({0}):</CAP.CommandManager.Cost>
+  
+  <!-- ON/OFF Toggle -->
+  <CAP.CommandManager.On>ON</CAP.CommandManager.On>
+  <CAP.CommandManager.Off>OFF</CAP.CommandManager.Off>
+  
+  <!-- Advanced Settings -->
+  <CAP.CommandManager.AdvancedSettings>Advanced Settings:</CAP.CommandManager.AdvancedSettings>
+  <CAP.CommandManager.CommandAlias>Command Alias:</CAP.CommandManager.CommandAlias>
+  <CAP.CommandManager.AliasDesc>Example: 'bp' for !backpack. Don't include '{0}' or '{1}' prefix. Can be used for translation!</CAP.CommandManager.AliasDesc>
+  
+  <!-- Command Cooldown Settings -->
+  <CAP.CommandManager.CooldownSettings>Command Cooldown Settings</CAP.CommandManager.CooldownSettings>
+
+  <CAP.CommandManager.UseCommandCooldown>Enable individual command limits</CAP.CommandManager.UseCommandCooldown>
+  <CAP.CommandManager.MaxUsesPerCooldown>Max uses per command per cooldown period (0 = unlimited for this command)</CAP.CommandManager.MaxUsesPerCooldown>
+  <CAP.CommandManager.UnlimitedUses>(Unlimited for this command)</CAP.CommandManager.UnlimitedUses>
+  <!-- Tooltips for command cooldown settings -->
+  <CAP.CommandManager.UseCommandCooldownDesc>When enabled, each command can have its own separate usage limit within the cooldown period.\n\nThis is an additional restriction on top of global event limits and karma-type caps (if those are enabled).\n\nDisable this if you want commands to only be restricted by the global event rules.</CAP.CommandManager.UseCommandCooldownDesc>
+  <CAP.CommandManager.MaxUsesPerCooldownDesc>The maximum number of times this specific command can be used successfully during one cooldown period.\n\n• 0 = no per-command limit (command follows only global event cooldowns, if enabled)\n• The cooldown period length is the same as the global "Event Cooldown Days" setting.\n\nExample: If set to 3 and cooldown is 5 days, this command can be used at most 3 times in any 5-day window.</CAP.CommandManager.MaxUsesPerCooldownDesc>
+  
+  <!-- Raid Command Section -->
+  <CAP.CommandManager.RaidSettings>Raid Command Settings:</CAP.CommandManager.RaidSettings>
+  <CAP.CommandManager.DefaultWager>Default wager:</CAP.CommandManager.DefaultWager>
+  <CAP.CommandManager.MinWager>Min wager:</CAP.CommandManager.MinWager>
+  <CAP.CommandManager.MaxWager>Max wager:</CAP.CommandManager.MaxWager>
+  <CAP.CommandManager.ConfigureRaidTypes>Configure Raid Types →</CAP.CommandManager.ConfigureRaidTypes>
+  <CAP.CommandManager.ConfigureStrategies>Configure Strategies →</CAP.CommandManager.ConfigureStrategies>
+  
+  <!-- Military Aid Command Section -->
+  <CAP.CommandManager.MilitaryAidSettings>Military Aid Command Settings:</CAP.CommandManager.MilitaryAidSettings>
+  <CAP.CommandManager.MilitaryAidDefaultwager>Default wager: </CAP.CommandManager.MilitaryAidDefaultwager>
+  <CAP.CommandManager.MilitaryAidMinWager>Min wager: </CAP.CommandManager.MilitaryAidMinWager>
+  <CAP.CommandManager.MilitaryAidMaxWager>Max wager: </CAP.CommandManager.MilitaryAidMaxWager>
+  
+  <!-- Lootbox command Section -->
+  <CAP.CommandManager.LootboxSettings>Loot Box Global Settings:</CAP.CommandManager.LootboxSettings>
+  <CAP.CommandManager.LootboxCoinRange>Coin Range (1-10000):</CAP.CommandManager.LootboxCoinRange>
+  <CAP.CommandManager.Min>Min:</CAP.CommandManager.Min>
+  <CAP.CommandManager.Max>Max:</CAP.CommandManager.Max>
+  <CAP.CommandManager.LootboxPerDay>Lootboxes Per Day:</CAP.CommandManager.LootboxPerDay>
+  <CAP.CommandManager.ShowWelcomeMessage>Show Welcome Message on Join:</CAP.CommandManager.ShowWelcomeMessage>
+  <CAP.CommandManager.ForceOpen>Force Open All At Once</CAP.CommandManager.ForceOpen>
+  
+  <!-- Passion command Section-->
+  <CAP.CommandManager.PassionSettings>Passion Command Settings:</CAP.CommandManager.PassionSettings>
+  <CAP.CommandManager.PassionDefaultWager>Default wager:</CAP.CommandManager.PassionDefaultWager>
+  <CAP.CommandManager.PassionMinWager>Min wager:</CAP.CommandManager.PassionMinWager>
+  <CAP.CommandManager.PassionMaxWager>Max wager:</CAP.CommandManager.PassionMaxWager>
+  <CAP.CommandManager.PassionBaseSuccess>Base success chance (%):</CAP.CommandManager.PassionBaseSuccess>
+  <CAP.CommandManager.PassionMaxSuccess>Max success chance (%):</CAP.CommandManager.PassionMaxSuccess>
+  <CAP.CommandManager.PassionDescription>Higher wagers = better success chances. Base chance scales with wager amount.</CAP.CommandManager.PassionDescription>
+
+  <!-- Surgery command Section-->
+  <CAP.CommandManager.SurgerySettings>Surgery Command Settings:</CAP.CommandManager.SurgerySettings>
+  <CAP.CommandManager.SurgeryGenderSwapCost>Gender Swap Cost:</CAP.CommandManager.SurgeryGenderSwapCost>
+  <CAP.CommandManager.BodyChangeCost>Body Change Cost:</CAP.CommandManager.BodyChangeCost>
+
+  <CAP.CommandManager.SurgerySettings>Surgery Settings</CAP.CommandManager.SurgerySettings>
+  <CAP.CommandManager.SurgeryGenderSwapCost>Gender Swap Cost</CAP.CommandManager.SurgeryGenderSwapCost>
+  <CAP.CommandManager.SurgeryBodyChangeCost>Body Change Cost</CAP.CommandManager.SurgeryBodyChangeCost>
+  <CAP.CommandManager.SurgerySterilizeCost>Sterilize Cost</CAP.CommandManager.SurgerySterilizeCost>
+  <CAP.CommandManager.SurgeryIUDCost>IUD Implant/Removal Cost</CAP.CommandManager.SurgeryIUDCost>
+  <CAP.CommandManager.SurgeryVasReverseCost>Vasectomy Reversal Cost</CAP.CommandManager.SurgeryVasReverseCost>
+  <CAP.CommandManager.SurgeryTerminateCost>Pregnancy Termination Cost</CAP.CommandManager.SurgeryTerminateCost>
+  <CAP.CommandManager.SurgeryHemogenCost>Hemogen Extraction Cost</CAP.CommandManager.SurgeryHemogenCost>
+  <CAP.CommandManager.SurgeryTransfusionCost>Blood Transfusion Cost</CAP.CommandManager.SurgeryTransfusionCost>
+  <CAP.CommandManager.SurgeryMiscBiotechCost>Misc Biotech Surgery Cost</CAP.CommandManager.SurgeryMiscBiotechCost>
+  <CAP.CommandManager.SurgeryDescription>Configure costs for special surgeries. Negative values give coins to the viewer (e.g. for donating blood via hemogen extraction).</CAP.CommandManager.SurgeryDescription>
+  
+  <CAP.CommandManager.SurgeryDescription>These costs apply to special cosmetic surgeries like gender swap and body type changes.</CAP.CommandManager.SurgeryDescription>
+  <CAP.CommandManager.SurgeryToggleNote>Disabling a surgery hides it from viewers and prevents usage. Costs are shown for reference even when disabled.</CAP.CommandManager.SurgeryToggleNote>
+
+  <CAP.CommandManager.SurgeryTooltip>X to disable</CAP.CommandManager.SurgeryTooltip>
+  
+  <!-- Reset Dialog -->
+  <CAP.CommandManager.ResetAll>Reset All Commands to Defaults</CAP.CommandManager.ResetAll>
+  <CAP.CommandManager.ResetWarning>You are about to reset all commands to defaults.\n\nExcept the Lootbox Commands coin amounts (because they are global).\n\nThis cannot be undone.</CAP.CommandManager.ResetWarning>
+  <CAP.CommandManager.ResetCommands>Reset Commands</CAP.CommandManager.ResetCommands>
+  <CAP.CommandManager.ResetMessage>All commands have been reset to defaults.</CAP.CommandManager.ResetMessage>
+  <CAP.CommandManager.ResetError>An error occurred while resetting commands: {0}</CAP.CommandManager.ResetError>
+  
+  <!-- Permission Level Colors -->
+  <CAP.Permission.Broadcaster>broadcaster</CAP.Permission.Broadcaster>
+  <CAP.Permission.Moderator>moderator</CAP.Permission.Moderator>
+  <CAP.Permission.VIP>vip</CAP.Permission.VIP>
+  <CAP.Permission.Subscriber>subscriber</CAP.Permission.Subscriber>
+  <CAP.Permission.Everyone>everyone</CAP.Permission.Everyone>
+  
+</LanguageData>

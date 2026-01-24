@@ -477,7 +477,9 @@ namespace CAP_ChatInteractive
             if (viewer == null) return false;
 
             string platformId = viewer.GetPrimaryPlatformIdentifier();
+            Logger.Debug($"Attempting to remove {username} : {platformId} from pawn queue");
             bool removed = pawnQueue.Remove(platformId);
+            Logger.Debug(removed ? $"Successfully removed {platformId} from pawn queue" : $"{platformId} not found in pawn queue");
             if (removed)
             {
                 queueJoinTimes.Remove(platformId);

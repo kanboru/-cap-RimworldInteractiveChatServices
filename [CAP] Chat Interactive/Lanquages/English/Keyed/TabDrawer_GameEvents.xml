@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+
+  <!-- Headers -->
+  <RICS.GameEvents.Header>Game Events and Cooldowns</RICS.GameEvents.Header>
+  <RICS.GameEvents.GlobalCooldownSettings>Global Cooldown Settings</RICS.GameEvents.GlobalCooldownSettings>
+  <RICS.GameEvents.OtherSettings>Other Settings</RICS.GameEvents.OtherSettings>
+  <RICS.GameEvents.EventManagement>Event Management</RICS.GameEvents.EventManagement>
+  <RICS.GameEvents.CurrentStatistics>Current Statistics:</RICS.GameEvents.CurrentStatistics>
+
+  <!-- Checkboxes & main toggles -->
+  <RICS.GameEvents.EnableEventCooldowns>Enable event cooldowns</RICS.GameEvents.EnableEventCooldowns>
+  <RICS.GameEvents.EnableEventCooldownsDesc>Turn on/off all event cooldowns. When off, events can be purchased without limits.</RICS.GameEvents.EnableEventCooldownsDesc>
+
+  <RICS.GameEvents.LimitEventsByKarmaType>Limit events by karma type</RICS.GameEvents.LimitEventsByKarmaType>
+  <RICS.GameEvents.LimitEventsByKarmaTypeDesc>Set different limits for good, bad, and neutral events</RICS.GameEvents.LimitEventsByKarmaTypeDesc>
+
+  <!-- Numeric fields - labels -->
+  <RICS.GameEvents.EventCooldownDays>Event cooldown duration in game days:</RICS.GameEvents.EventCooldownDays>
+  <RICS.GameEvents.EventsPerCooldown>Events per cooldown period:</RICS.GameEvents.EventsPerCooldown>
+  <RICS.GameEvents.MaxBadEvents>Maximum bad event purchases:</RICS.GameEvents.MaxBadEvents>
+  <RICS.GameEvents.MaxGoodEvents>Maximum good event purchases:</RICS.GameEvents.MaxGoodEvents>
+  <RICS.GameEvents.MaxNeutralEvents>Maximum neutral event purchases:</RICS.GameEvents.MaxNeutralEvents>
+  <RICS.GameEvents.MaxItemPurchases>Maximum item purchases per period:</RICS.GameEvents.MaxItemPurchases>
+  <RICS.GameEvents.MaxTraits>Max traits for a pawn:</RICS.GameEvents.MaxTraits>
+  <RICS.GameEvents.ResetAllCooldowns>Reset all cooldown settings back to default values</RICS.GameEvents.ResetAllCooldowns>
+
+  <!-- Descriptions (small gray text) -->
+  <RICS.GameEvents.EventCooldownDaysDesc>How many in-game days to count events. Affects: !event, !raid, !militaryaid, !weather</RICS.GameEvents.EventCooldownDaysDesc>
+  <RICS.GameEvents.EventsPerCooldownDesc>Maximum events allowed in {0} days. 0 = unlimited</RICS.GameEvents.EventsPerCooldownDesc>
+
+  <RICS.GameEvents.MaxBadEventsDesc>Bad events: !raid and other harmful events</RICS.GameEvents.MaxBadEventsDesc>
+  <RICS.GameEvents.MaxGoodEventsDesc>Good events: !militaryaid and other helpful events</RICS.GameEvents.MaxGoodEventsDesc>
+  <RICS.GameEvents.MaxNeutralEventsDesc>Neutral events: !weather and other neutral events</RICS.GameEvents.MaxNeutralEventsDesc>
+
+  <RICS.GameEvents.MaxItemPurchasesDesc>Maximum !buy, !equip, !wear, !healpawn, !revivepawn commands in {0} days</RICS.GameEvents.MaxItemPurchasesDesc>
+
+  <RICS.GameEvents.MaxTraitsDesc>Maximum number of traits a single pawn can have</RICS.GameEvents.MaxTraitsDesc>
+
+  <!-- Disabled state message -->
+  <RICS.GameEvents.CooldownsDisabledMessage>Event cooldowns are disabled. All events can be purchased without limits.</RICS.GameEvents.CooldownsDisabledMessage>
+
+  <!-- Statistics -->
+  <RICS.GameEvents.StoreStats>Store: {0}/{1} items enabled</RICS.GameEvents.StoreStats>
+  <RICS.GameEvents.TraitsStats>Traits: {0}/{1} traits enabled</RICS.GameEvents.TraitsStats>
+  <RICS.GameEvents.WeatherStats>Weather: {0}/{1} types enabled</RICS.GameEvents.WeatherStats>
+  <RICS.GameEvents.EventsStats>Events: {0}/{1} events enabled</RICS.GameEvents.EventsStats>
+
+  <!-- Buttons -->
+  <RICS.GameEvents.StoreEditorButton>Store Editor</RICS.GameEvents.StoreEditorButton>
+  <RICS.GameEvents.TraitsEditorButton>Traits Editor</RICS.GameEvents.TraitsEditorButton>
+  <RICS.GameEvents.WeatherEditorButton>Weather Editor</RICS.GameEvents.WeatherEditorButton>
+  <RICS.GameEvents.EventsEditorButton>Events Editor</RICS.GameEvents.EventsEditorButton>
+  <RICS.GameEvents.Reset>Reset</RICS.GameEvents.Reset>
+  <RICS.GameEvents.Cancel>Cancel</RICS.GameEvents.Cancel>
+
+  <!-- Reset button -->
+  <RICS.GameEvents.ResetButton>Reset to Default Values</RICS.GameEvents.ResetButton>
+  <RICS.GameEvents.ResetConfirmDesc>Reset all cooldown settings to default values?\n\nThis will reset:\n• Event cooldown days\n• Event limits\n• Karma type limits\n• Purchase limits</RICS.GameEvents.ResetConfirmDesc>
+  <RICS.GameEvents.ResetMessage>Cooldown settings reset to defaults</RICS.GameEvents.ResetMessage>
+
+  <!-- Load game hint -->
+  <RICS.GameEvents.LoadGameToAccessEditors>Load a game to access event editors and statistics</RICS.GameEvents.LoadGameToAccessEditors>
+
+  <!-- Description text at top -->
+  <RICS.GameEvents.MainDescription>Configure cooldowns for events, traits, and store purchases. Manage all game interactions in one place.</RICS.GameEvents.MainDescription>
+
+</LanguageData>

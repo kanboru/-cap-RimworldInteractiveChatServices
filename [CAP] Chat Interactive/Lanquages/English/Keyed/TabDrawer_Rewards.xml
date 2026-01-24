@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+
+  <!-- Section Headers -->
+  <RICS.Rewards.ChannelPointsSettingsHeader>Twitch Channel Points</RICS.Rewards.ChannelPointsSettingsHeader>
+  <RICS.Rewards.LootBoxSettingsHeader>Loot Box Settings</RICS.Rewards.LootBoxSettingsHeader>
+
+  <!-- Channel Points Important Note -->
+  <RICS.Rewards.ChannelPointsImportantNote>Important: Twitch rewards must be set to 'Require Viewer to Enter Text' or they won't be detected!</RICS.Rewards.ChannelPointsImportantNote>
+
+  <!-- Channel Points Checkboxes -->
+  <RICS.Rewards.EnableChannelPointsRewardsLabel>Enable Channel Points Rewards</RICS.Rewards.EnableChannelPointsRewardsLabel>
+  <RICS.Rewards.ChannelPointsDebugMessagesLabel>Show Channel Points Debug Messages</RICS.Rewards.ChannelPointsDebugMessagesLabel>
+
+  <!-- Table Headers -->
+  <RICS.Rewards.RewardNameHeader>Reward Name</RICS.Rewards.RewardNameHeader>
+  <RICS.Rewards.RewardUUIDHeader>Reward UUID</RICS.Rewards.RewardUUIDHeader>
+  <RICS.Rewards.CoinsHeader>Coins</RICS.Rewards.CoinsHeader>
+  <RICS.Rewards.AutoCaptureHeader>Auto</RICS.Rewards.AutoCaptureHeader>
+  <RICS.Rewards.EnabledHeader>Enabled</RICS.Rewards.EnabledHeader>
+
+  <!-- Empty State & Add Button -->
+  <RICS.Rewards.NoRewardsConfigured>No rewards configured. Add one below.</RICS.Rewards.NoRewardsConfigured>
+  <RICS.Rewards.AddNewRewardButton>Add New Reward</RICS.Rewards.AddNewRewardButton>
+  <RICS.Rewards.NewRewardDefaultName>New Reward</RICS.Rewards.NewRewardDefaultName>
+
+  <!-- Auto Capture Explanation -->
+  <RICS.Rewards.AutoCaptureExplanation>Auto Capture: When enabled, this reward will automatically capture the next UUID redeemed on Twitch</RICS.Rewards.AutoCaptureExplanation>
+
+  <!-- Lootbox Settings -->
+  <RICS.Rewards.LootBoxCoinRangeDescription>Coin Range (1-10000):</RICS.Rewards.LootBoxCoinRangeDescription>
+  <RICS.Rewards.LootBoxCoinRangeMinLabel>Min:</RICS.Rewards.LootBoxCoinRangeMinLabel>
+  <RICS.Rewards.LootBoxCoinRangeMaxLabel>Max:</RICS.Rewards.LootBoxCoinRangeMaxLabel>
+  <RICS.Rewards.LootBoxesPerDayLabel>Lootboxes Per Day:</RICS.Rewards.LootBoxesPerDayLabel>
+  <RICS.Rewards.ShowWelcomeMessageLabel>Show Welcome Message</RICS.Rewards.ShowWelcomeMessageLabel>
+  <RICS.Rewards.ForceOpenAllAtOnceLabel>Force Open All At Once</RICS.Rewards.ForceOpenAllAtOnceLabel>
+  <RICS.Rewards.DeleteRewardButton>X</RICS.Rewards.DeleteRewardButton>
+
+</LanguageData>

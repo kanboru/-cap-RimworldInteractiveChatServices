@@ -1,5 +1,4 @@
 ﻿// CAPChatInteractiveMod.cs
-// Copyright (c) Captolamia. All rights reserved.
 // Copyright (c) Captolamia
 // This file is part of CAP Chat Interactive.
 // 
@@ -67,7 +66,7 @@ namespace CAP_ChatInteractive
                 }
             }
 
-            Logger.Message("[CAP] RICS mod loaded successfully!");
+            Logger.Message("RICS mod loaded successfully!");
 
             // Force viewer loading by accessing the All property
             var viewerCount = Viewers.All.Count; // This triggers static constructor

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36518.9
+# Visual Studio Version 18
+VisualStudioVersion = 18.2.11415.280 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "[CAP] Chat Interactive", "[CAP] Chat Interactive\[CAP] Chat Interactive.csproj", "{931E9D4D-3A8D-4B9F-8B45-55CB9267242A}"
 EndProject
@@ -16,6 +16,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "About", "About", "{0083D6CE
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "[CAP] HAR Patch", "[CAP] HAR Patch\[CAP] HAR Patch.csproj", "{6A6186C9-4DC4-4098-B598-BAACF789CE32}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Languages", "Languages", "{3D07B92E-449F-4DD2-B323-83B0E2E269D5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "English", "English", "{574CBD0D-4F52-4EE9-8D65-3CDA841A3D76}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Keyed", "Keyed", "{B6C16C47-CCC0-4214-B9EF-45B1EE08AA29}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,6 +43,9 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{0083D6CE-282C-4E30-BECE-19D430116E62} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{3D07B92E-449F-4DD2-B323-83B0E2E269D5} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{574CBD0D-4F52-4EE9-8D65-3CDA841A3D76} = {3D07B92E-449F-4DD2-B323-83B0E2E269D5}
+		{B6C16C47-CCC0-4214-B9EF-45B1EE08AA29} = {574CBD0D-4F52-4EE9-8D65-3CDA841A3D76}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0130A430-4ED0-4CF4-A387-6AFDCFF9326F}

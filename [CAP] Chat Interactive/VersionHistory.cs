@@ -227,6 +227,105 @@ General Notes:
 - Multiple bug fixes and performance improvements
 - Better error handling throughout the mod"
             },
+            {
+                "1.0.15",
+                @"===============================================================================
+                         RICS 1.0.15 - Changelog
+                         Released: January 2026
+===============================================================================
+
+New Features
+────────────
+
+• Added new translation files:
+  - Twitch Settings Tab
+  - Game & Events Tab
+  - Rewards Tab
+
+• New commands (thanks to @kanboru!):
+  !SetTraits       → Mass set multiple traits at once (great for applying lists)
+  !Factions        → Lists all factions currently in the game
+  !Colonists       → Shows count of colonists + animals in the colony
+
+Added Admin/Utility Commands
+────────────────────────────
+
+• !cleanlootboxes [dry/dryrun | all | orphans]
+  - dry/dryrun   → Shows orphaned lootboxes (no changes)
+  - all          → Deletes ALL lootboxes from everyone (DANGEROUS!)
+  - orphans      → Removes only orphaned lootboxes
+
+• !cleanviewers [dry/dryrun | plat/platform | all]
+  - dry/dryrun   → Shows how many viewers would be cleaned
+  - plat/platform → Removes viewers with missing platform ID (safe & recommended)
+  - all          → Aggressive cleanup (use with caution)
+
+• !togglestore [on/off/alts]
+  Turns store-related commands on/off:
+  backpack, wear, equip, use, addtrait, removetrait, replacetrait, settraits,
+  pawn, surgery, event, weather, militaryaid, raid, revivepawn, healpawn, passion
+  
+  Special values:
+  • !togglestore     → Toggles current state
+  • !togglestore on  → Forces ON (also accepts: enable, 1, true)
+  • !togglestore off → Forces OFF (also accepts: disable, 0, false)
+
+Improvements & Fixes
+────────────────────
+
+• Fixed several commands failing to find pawns in some situations
+  (!healpawn, !revivepawn, etc.)
+
+• Improved Drop Pod & item placement logic (especially for underground bases):
+  RICS now tries to find a valid surface drop location in this priority order:
+  1. Ship landing beacon          (highest priority)
+  2. Orbital trade beacon
+  3. Caravan hitching spot
+  4. Near average colonist position (vanilla-like behavior)
+  5. Center of map                (last resort)
+
+  → RICS now actively avoids underground maps
+  → Recommendation: Underground base owners should encourage viewers to use !backpack
+
+• Fixed invalid users with no platform ID staying in viewer list
+  → Use !cleanviewers plat/platform to safely remove them
+
+• Fixed !backpack not properly handling multiple stackable items
+  → Can now properly place stacks (note: still possible to overload inventory → pawn may drop excess)
+
+===============================================================================
+Have fun with the new commands and cleaner systems! 🚀
+Big thanks to @kanboru for the awesome new command contributions!
+==============================================================================="
+                },
+                {
+                "1.0.16",
+                @"===============================================================================
+                         RICS 1.0.16 - Changelog
+                         Released: February 2026
+===============================================================================
+FIXES
+
+Set default moderator command cooldowns to 0 seconds.
+Fixed the cooldown slider for commands defaulting to 0.
+Fixed cooldowns not resetting properly; now check for a reset once per game day.
+Fixed Event Karma not working (thanks to Veloxcity for the fix).
+Fixed the Colonists command to count only viewers with an assigned pawn.
+Fixed GiftCoins command to prevent giving coins to yourself.
+Removed vehiclePawns from the store to prevent crashes when purchased. (This update will handle this automatically.)
+Fixed Surgeries to use all available medicine categories (3 of each), including modded medicine.
+
+ADDED
+
+New Surgery subcommands: genderswap and body changes (fatbody, femininebody, hulkingbody, masculinebody, thinbody). Includes checks for genes, ideology, HAR body types, age, pregnancy, etc.
+Expanded Surgery commands for Biotech: blood transfusions, sterilization (vasectomy/tubal ligation), hemogen extraction, IUD implantation/removal, vasectomy reversal, pregnancy termination, and more.
+Added translations for the YouTube tab.
+Added translations for the Command Settings and Event Settings dialog windows.
+Added extra safety checks when loading JSON persistence files.
+Added body type info to !mypawn body.
+Added a link to the !mypawn wiki page on GitHub."
+
+        }
             // Add more versions here as they're released
         };
 

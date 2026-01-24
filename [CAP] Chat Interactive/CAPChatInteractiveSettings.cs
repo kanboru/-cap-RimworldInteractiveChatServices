@@ -79,7 +79,7 @@ namespace CAP_ChatInteractive
     public class CAPGlobalChatSettings : IExposable
     {
         // Existing properties...
-        public string modVersion = "1.0.14a";
+        public string modVersion = "1.0.16";  // Current mod version WE DONT SAVE THIS!
         public string modVersionSaved = "";
         public string priceListUrl = "https://github.com/ekudram/RICS-Pricelist";
         public bool EnableDebugLogging = false;
@@ -87,6 +87,7 @@ namespace CAP_ChatInteractive
         public int MessageCooldownSeconds = 1;
 
         // economy properties
+        public bool StoreCommandsEnabled  = true;   // ← global kill-switch for buying/interacting commands
         public int StartingCoins = 100;
         public int StartingKarma = 100;
         public int BaseCoinReward = 10;
@@ -98,6 +99,7 @@ namespace CAP_ChatInteractive
         public int MinutesForActive = 30;
         public int MaxTraits = 4;
         public string CurrencyName = " 💰 ";
+
 
 
         // Global event settings
@@ -154,6 +156,29 @@ namespace CAP_ChatInteractive
         // Research settings
         public bool RequireResearch = true;
 
+        // Command settings that need to be global for now
+
+        // Surgery Command Settings
+        public int SurgeryGenderSwapCost = 1000;
+        public int SurgeryBodyChangeCost = 800;
+        public int SurgerySterilizeCost = 400;
+        public int SurgeryIUDCost = 250;
+        public int SurgeryVasReverseCost = 500;
+        public int SurgeryTerminateCost = 300;
+        public int SurgeryHemogenCost = -100;
+        public int SurgeryTransfusionCost = 200;
+        public int SurgeryMiscBiotechCost = 350;
+
+        public bool SurgeryAllowGenderSwap = true;
+        public bool SurgeryAllowBodyChange = true;
+        public bool SurgeryAllowSterilize = true;
+        public bool SurgeryAllowIUD = true;
+        public bool SurgeryAllowVasReverse = true;
+        public bool SurgeryAllowTerminate = true;
+        public bool SurgeryAllowHemogen = true;
+        public bool SurgeryAllowTransfusion = true;
+        public bool SurgeryAllowMiscBiotech = true;
+
         // Passion Settings
         public int MinPassionWager = 10;
         public int MaxPassionWager = 1000;
@@ -177,6 +202,7 @@ namespace CAP_ChatInteractive
                 true
             ));
         }
+
         public void ExposeData()
         {
             Scribe_Values.Look(ref modVersionSaved, "modVersionSaved", "");
@@ -197,6 +223,7 @@ namespace CAP_ChatInteractive
             Scribe_Values.Look(ref MinutesForActive, "minutesForActive", 30);
             Scribe_Values.Look(ref MaxTraits, "maxTraits", 4);
             Scribe_Values.Look(ref CurrencyName, "currencyName", " 💰 ");
+            Scribe_Values.Look(ref StoreCommandsEnabled, "storeCommandsEnabled", true);  // For !togglestore command
 
             // Cooldown settings
             Scribe_Values.Look(ref EventCooldownsEnabled, "eventCooldownsEnabled", true);
@@ -246,6 +273,10 @@ namespace CAP_ChatInteractive
             Scribe_Values.Look(ref MaxPassionWager, "maxPassionWager", 1000);
             Scribe_Values.Look(ref BasePassionSuccessChance, "basePassionSuccessChance", 15.0f);
             Scribe_Values.Look(ref MaxPassionSuccessChance, "maxPassionSuccessChance", 60.0f);
+
+            // Surgery Command
+            Scribe_Values.Look(ref SurgeryGenderSwapCost, "surgeryGenderSwapCost", 1000);
+            Scribe_Values.Look(ref SurgeryBodyChangeCost, "surgeryBodyChangeCost", 800);
 
             // Channel Points settings
             Scribe_Values.Look(ref ChannelPointsEnabled, "channelPointsEnabled", true);

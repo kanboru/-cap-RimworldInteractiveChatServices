@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 // A dialog window for editing and managing chat-interactive events
-using _CAP__Chat_Interactive.Windows.Dialogs;
 using _CAP__Chat_Interactive.Windows.Dialogs._CAP__Chat_Interactive.Windows.Dialogs;
 using CAP_ChatInteractive.Incidents;
 using RimWorld;
@@ -82,7 +81,7 @@ namespace CAP_ChatInteractive
             Text.Font = GameFont.Medium;
             GUI.color = ColorLibrary.HeaderAccent;
             Rect titleRect = new Rect(0f, 0f, 200f, 30f);
-            Widgets.Label(titleRect, "Events Editor");
+            Widgets.Label(titleRect, "RICS.EventsEditor".Translate());
 
             // Draw underline
             Rect underlineRect = new Rect(titleRect.x, titleRect.yMax - 2f, titleRect.width, 2f);
@@ -107,7 +106,7 @@ namespace CAP_ChatInteractive
             else
             {
                 // Fallback to text if icon not found
-                Widgets.Label(new Rect(0f, searchY, 40f, 30f), "Search:");
+                Widgets.Label(new Rect(0f, searchY, 40f, 30f), "RICS.EventsSearch".Translate());
             }
 
             Rect searchRect = new Rect(30f, searchY, 170f, 24f); // Adjusted position for icon
@@ -136,7 +135,7 @@ namespace CAP_ChatInteractive
             else
             {
                 // Fallback text button
-                if (Widgets.ButtonText(new Rect(rect.width - 80f, 5f, 75f, 24f), "Settings"))
+                if (Widgets.ButtonText(new Rect(rect.width - 80f, 5f, 75f, 24f), "RICS.EventsSettings".Translate()))
                 {
                     Find.WindowStack.Add(new Dialog_EventSettings());
                 }
@@ -151,12 +150,12 @@ namespace CAP_ChatInteractive
                 {
                     Find.WindowStack.Add(new Dialog_EventsEditorHelp());
                 }
-                TooltipHandler.TipRegion(infoRect, "Events Editor Help");
+                TooltipHandler.TipRegion(infoRect, "RICS.EventsEditorHelp.tooltip".Translate());
             }
             else
             {
                 // Fallback text button
-                if (Widgets.ButtonText(new Rect(rect.width - 110f, 5f, 45f, 24f), "Help"))
+                if (Widgets.ButtonText(new Rect(rect.width - 110f, 5f, 45f, 24f), "<RICS.EventsEditorHelp".Translate()))
                 {
                     Find.WindowStack.Add(new Dialog_EventsEditorHelp());
                 }
@@ -173,7 +172,7 @@ namespace CAP_ChatInteractive
             float spacing = 5f;
             float x = 0f;
 
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Name"))
+            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "RICS.SortByName".Translate()))
             {
                 if (sortMethod == EventSortMethod.Name)
                     sortAscending = !sortAscending;
@@ -183,7 +182,7 @@ namespace CAP_ChatInteractive
             }
             x += buttonWidth + spacing;
 
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Cost"))
+            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "RICS.SortByCost".Translate()))
             {
                 if (sortMethod == EventSortMethod.Cost)
                     sortAscending = !sortAscending;
@@ -193,7 +192,7 @@ namespace CAP_ChatInteractive
             }
             x += buttonWidth + spacing;
 
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Karma"))
+            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "RICS.SortByKarma".Translate()))
             {
                 if (sortMethod == EventSortMethod.Karma)
                     sortAscending = !sortAscending;
@@ -210,7 +209,8 @@ namespace CAP_ChatInteractive
             {
                 Widgets.DrawTextureFitted(indicatorRect, sortIcon, 1f);
                 // Show tooltip indicating current sort
-                string tooltip = $"Sorted by: {sortMethod}\nDirection: {(sortAscending ? "Ascending" : "Descending")}";
+                string tooltip = "RICS.SortedByX".Translate(sortMethod.ToString()) + "\n" +
+                                 "RICS.DirectionX".Translate((sortAscending ? "RICS.Ascending" : "RICS.Descending").Translate());
                 TooltipHandler.TipRegion(indicatorRect, tooltip);
             }
             else
@@ -230,31 +230,31 @@ namespace CAP_ChatInteractive
             float spacing = 5f;
             float x = 0f;
 
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Reset Prices"))
+            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "RICS.ResetPrices".Translate()))
             {
                 Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                    "Reset all event prices to default? This cannot be undone.",
+                    "RICS.EventsEditor.ResetPricesDialog".Translate(),
                     () => ResetAllPrices()
                 ));
             }
             x += buttonWidth + spacing;
 
             // Enable by Mod Source
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Enable →"))
+            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "RICS.EnableEvents".Translate()))
             {
                 ShowEnableByModSourceMenu();
             }
             x += buttonWidth + spacing;
 
             // Disable by Mod Source
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Disable →"))
+            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "RICS.DisableEvents".Translate()))
             {
                 ShowDisableByModSourceMenu();
             }
             x += buttonWidth + spacing;
 
             // Set Cooldowns button (includes reset option in menu)
-            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "Cooldowns →"))
+            if (Widgets.ButtonText(new Rect(x, 0f, buttonWidth, 30f), "RICS.Cooldowns".Translate()))
             {
                 ShowCooldownMenu();
             }
@@ -271,35 +271,35 @@ namespace CAP_ChatInteractive
             string filterDescription = BuildFilterDescription();
 
             // Add preset options
-            options.Add(new FloatMenuOption("No Cooldown (∞)", () => SetBulkCooldown(0, false, filterDescription)));
-            options.Add(new FloatMenuOption("1 Day", () => SetBulkCooldown(1, false, filterDescription)));
-            options.Add(new FloatMenuOption("3 Days", () => SetBulkCooldown(3, false, filterDescription)));
-            options.Add(new FloatMenuOption("5 Days", () => SetBulkCooldown(5, false, filterDescription)));
-            options.Add(new FloatMenuOption("7 Days", () => SetBulkCooldown(7, false, filterDescription)));
-            options.Add(new FloatMenuOption("14 Days", () => SetBulkCooldown(14, false, filterDescription)));
+            options.Add(new FloatMenuOption("RICS.NoCooldown".Translate(), () => SetBulkCooldown(0, false, filterDescription)));
+            options.Add(new FloatMenuOption("RICS.oneDay".Translate(), () => SetBulkCooldown(1, false, filterDescription)));
+            options.Add(new FloatMenuOption("RICS.threeDays".Translate(), () => SetBulkCooldown(3, false, filterDescription)));
+            options.Add(new FloatMenuOption("RICS.fiveDays".Translate(), () => SetBulkCooldown(5, false, filterDescription)));
+            options.Add(new FloatMenuOption("RICS.sevenDays".Translate(), () => SetBulkCooldown(7, false, filterDescription)));
+            options.Add(new FloatMenuOption("RICS.fourteenDays".Translate(), () => SetBulkCooldown(14, false, filterDescription)));
 
             // Reset to defaults section
             if (!string.IsNullOrEmpty(filterDescription))
             {
-                options.Add(new FloatMenuOption($"Reset filtered to defaults", () =>
+                options.Add(new FloatMenuOption($"RICS.ResetFilteredToDefaults".Translate(), () =>
                 {
                     Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                        $"Reset cooldowns for filtered events to default?\n\nFilter: {filterDescription}",
+                        "RICS.ResetFilteredToDefaults.Dialog".Translate(filterDescription),
                         () => ApplyResetAllCooldowns(true)
                     ));
                 }));
             }
 
-            options.Add(new FloatMenuOption("Reset ALL to defaults", () =>
+            options.Add(new FloatMenuOption("RICS.ResetAllToDefaults".Translate(), () =>
             {
                 Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                    "Reset ALL event cooldowns to default? This cannot be undone.",
+                    "RICS.ResetAllToDefaults.Dialog".Translate(),
                     () => ApplyResetAllCooldowns(false)
                 ));
             }));
 
             // Custom input option
-            options.Add(new FloatMenuOption("Custom...", () => OpenCustomCooldownDialog()));
+            options.Add(new FloatMenuOption("RICS.Custom".Translate(), () => OpenCustomCooldownDialog()));
 
             Find.WindowStack.Add(new FloatMenu(options));
         }
@@ -311,11 +311,11 @@ namespace CAP_ChatInteractive
 
             if (listViewType == EventListViewType.Category && selectedCategory != "All")
             {
-                description = $"Category: {GetDisplayCategoryName(selectedCategory)}";
+                description = "RICS.Filter.Category".Translate(GetDisplayCategoryName(selectedCategory));
             }
             else if (listViewType == EventListViewType.ModSource && selectedModSource != "All")
             {
-                description = $"Mod: {GetDisplayModName(selectedModSource)}";
+                description = "RICS.Filter.Mod".Translate(GetDisplayModName(selectedModSource));
             }
 
             // Check if we have a search query
@@ -323,12 +323,14 @@ namespace CAP_ChatInteractive
             {
                 if (!string.IsNullOrEmpty(description))
                     description += " + ";
-                description += $"Search: '{searchQuery}'";
+                description += "RICS.Filter.Search".Translate(searchQuery);
             }
 
             return description;
         }
+
         // NEW: Apply bulk cooldown to all incidents
+        // Future: Add filteredOnly parameter to apply only to filtered events
         private void ApplyBulkCooldown(int days)
         {
             int count = 0;
@@ -347,8 +349,8 @@ namespace CAP_ChatInteractive
             IncidentsManager.SaveIncidentsToJson();
 
             string message = days == 0 ?
-                $"Set {count} events to have no cooldown" :
-                $"Set {count} events to {days} day{(days == 1 ? "" : "s")} cooldown";
+                "RICS.Messages.SetNoCooldown".Translate(count) :
+                "RICS.Messages.SetCooldown".Translate(count, days, (days == 1 ? "RICS.DaysSingular" : "RICS.DaysPlural").Translate());
 
             Messages.Message(message, MessageTypeDefOf.TaskCompletion);
 
@@ -403,7 +405,7 @@ namespace CAP_ChatInteractive
 
             Text.Font = GameFont.Medium;
             Text.Anchor = TextAnchor.UpperCenter;
-            Widgets.Label(headerRect, "Categories");
+            Widgets.Label(headerRect, "RICS.Categories".Translate().Colorize(ColorLibrary.SubHeader));
             Text.Anchor = TextAnchor.UpperLeft;
             Text.Font = GameFont.Small;
 
@@ -460,7 +462,7 @@ namespace CAP_ChatInteractive
 
             Text.Font = GameFont.Medium;
             Text.Anchor = TextAnchor.UpperCenter;
-            Widgets.Label(headerRect, "Mod Sources");
+            Widgets.Label(headerRect, "RICS.ModSources".Translate().Colorize(ColorLibrary.SubHeader));
             Text.Anchor = TextAnchor.UpperLeft;
             Text.Font = GameFont.Small;
 
@@ -511,11 +513,12 @@ namespace CAP_ChatInteractive
             Text.Font = GameFont.Medium;
             Text.Anchor = TextAnchor.UpperCenter;
 
-            string headerText = $"Events ({filteredEvents.Count})";
+            string headerText = "RICS.EventsEditor.HeaderWithCount".Translate(filteredEvents.Count);
+
             if (listViewType == EventListViewType.Category && selectedCategory != "All")
-                headerText += $" - {GetDisplayCategoryName(selectedCategory)}";
+                headerText += " - " + GetDisplayCategoryName(selectedCategory);
             else if (listViewType == EventListViewType.ModSource && selectedModSource != "All")
-                headerText += $" - {GetDisplayModName(selectedModSource)}";
+                headerText += " - " + GetDisplayModName(selectedModSource);
 
             Widgets.Label(headerRect, headerText);
             Text.Anchor = TextAnchor.UpperLeft;
@@ -526,7 +529,7 @@ namespace CAP_ChatInteractive
             {
                 Rect noEventsRect = new Rect(rect.x, rect.y + 35f, rect.width, rect.height - 35f);
                 Text.Anchor = TextAnchor.MiddleCenter;
-                Widgets.Label(noEventsRect, "No events found matching current filters");
+                Widgets.Label(noEventsRect, "RICS.NoEventsFound".Translate());
                 Text.Anchor = TextAnchor.UpperLeft;
                 return;
             }
@@ -628,7 +631,7 @@ namespace CAP_ChatInteractive
 
             if (!incident.IsAvailableForCommands)
             {
-                metaInfo += " - [UNAVAILABLE]";
+                metaInfo += "RICS.EventInfo.UnavailableSuffix".Translate().Colorize(ColorLibrary.Danger);
                 GUI.color = Color.red;
             }
             else
@@ -653,13 +656,13 @@ namespace CAP_ChatInteractive
             if (!incident.IsAvailableForCommands)
             {
                 GUI.color = Color.gray;
-                Widgets.CheckboxLabeled(toggleRect, "Enabled", ref enabledCurrent);
+                Widgets.CheckboxLabeled(toggleRect, "RICS.Enabled".Translate(), ref enabledCurrent);
                 GUI.color = Color.white;
-                TooltipHandler.TipRegion(toggleRect, "Cannot enable - not available via commands");
+                TooltipHandler.TipRegion(toggleRect, "RICS.CannotEnableNotAvailable".Translate());
             }
             else
             {
-                Widgets.CheckboxLabeled(toggleRect, "Enabled", ref enabledCurrent);
+                Widgets.CheckboxLabeled(toggleRect, "RICS.Enabled".Translate(), ref enabledCurrent);
                 if (enabledCurrent != incident.Enabled)
                 {
                     incident.Enabled = enabledCurrent;
@@ -673,14 +676,13 @@ namespace CAP_ChatInteractive
 
             // Karma Type (left side)
             Rect karmaRect = new Rect(0f, y, rect.width * 0.4f, sectionHeight);
-            string karmaInfo = $"{incident.KarmaType}";
+            string karmaInfo = TranslateKarmaType(incident.KarmaType);
             GUI.color = GetKarmaTypeColor(incident.KarmaType);
             Widgets.Label(karmaRect, karmaInfo);
             GUI.color = Color.white;
 
             // Add tooltip for karma type
-            TooltipHandler.TipRegion(karmaRect, $"Karma Type: {incident.KarmaType}\nAffects karma-type limits if enabled in global settings");
-
+            TooltipHandler.TipRegion(karmaRect, "RICS.EventToggle.KarmaTooltip".Translate(TranslateKarmaType(incident.KarmaType)));
             // Cooldown Days (right side)
             Rect cooldownRect = new Rect(karmaRect.xMax + 5f, y, rect.width * 0.6f - 5f, sectionHeight);
             DrawCooldownControl(cooldownRect, incident);
@@ -694,7 +696,7 @@ namespace CAP_ChatInteractive
 
             // Label
             Rect labelRect = new Rect(0f, 0f, 45f, rect.height);
-            Widgets.Label(labelRect, "CD:");
+            Widgets.Label(labelRect, "RICS.CooldownControl.Label".Translate());
 
             // Cooldown input field
             Rect inputRect = new Rect(50f, 0f, 50f, rect.height);
@@ -723,7 +725,7 @@ namespace CAP_ChatInteractive
                         numericBuffers[bufferKey] = "1";
                         IncidentsManager.SaveIncidentsToJson();
                     }
-                    TooltipHandler.TipRegion(infinityRect, "No cooldown (infinite)\nClick to set a cooldown");
+                    TooltipHandler.TipRegion(infinityRect, "RICS.NoCooldownInfiniteTooltip".Translate());
                 }
                 else
                 {
@@ -734,7 +736,7 @@ namespace CAP_ChatInteractive
                         numericBuffers[bufferKey] = "1";
                         IncidentsManager.SaveIncidentsToJson();
                     }
-                    TooltipHandler.TipRegion(infinityRect, "No cooldown (infinite)\nClick to set a cooldown");
+                    TooltipHandler.TipRegion(infinityRect, "RICS.NoCooldownInfiniteTooltip".Translate());
                 }
             }
             else
@@ -774,14 +776,11 @@ namespace CAP_ChatInteractive
                         IncidentsManager.SaveIncidentsToJson();
                     }
                 }
-                TooltipHandler.TipRegion(infinityButtonRect, "Reset to no cooldown (infinite)");
+                TooltipHandler.TipRegion(infinityButtonRect, "RICS.ResetToNoCooldown".Translate());
             }
 
             // Tooltip for the entire cooldown control
-            string cooldownTooltip = "Cooldown Days\n" +
-                                     "Days before this event can be triggered again\n" +
-                                     "0 = No cooldown (infinite)\n" +
-                                     "Only applies if global event cooldowns are enabled";
+            string cooldownTooltip = "RICS.CooldownDaysTooltip".Translate();
             TooltipHandler.TipRegion(new Rect(labelRect.x, labelRect.y, rect.width, rect.height), cooldownTooltip);
 
             Widgets.EndGroup();
@@ -814,7 +813,7 @@ namespace CAP_ChatInteractive
 
             // Label
             Rect labelRect = new Rect(0f, 0f, 60f, 25f);
-            Widgets.Label(labelRect, "Cost:");
+            Widgets.Label(labelRect, "Cost".Translate() + ":"); ;
 
             // Cost input
             Rect inputRect = new Rect(65f, 0f, 80f, 25f);
@@ -840,7 +839,7 @@ namespace CAP_ChatInteractive
 
             // Reset button
             Rect resetRect = new Rect(150f, 0f, 60f, 25f);
-            if (Widgets.ButtonText(resetRect, "Reset"))
+            if (Widgets.ButtonText(resetRect, "RICS.Reset".Translate()))
             {
                 incident.BaseCost = CalculateDefaultCost(incident);
                 // Also update the buffer when resetting
@@ -857,17 +856,17 @@ namespace CAP_ChatInteractive
 
             // Label for Karma
             Rect labelRect = new Rect(0f, 0f, 60f, 25f);
-            Widgets.Label(labelRect, "Karma:");
+            Widgets.Label(labelRect, "RICS.Karma".Translate() + ":");
 
             // Karma dropdown
             Rect dropdownRect = new Rect(65f, 0f, 100f, 25f);
-            if (Widgets.ButtonText(dropdownRect, incident.KarmaType))
+            if (Widgets.ButtonText(dropdownRect, TranslateKarmaType(incident.KarmaType)))
             {
                 List<FloatMenuOption> options = new List<FloatMenuOption>
                 {
-                    new FloatMenuOption("Good", () => UpdateKarmaType(incident, "Good")),
-                    new FloatMenuOption("Bad", () => UpdateKarmaType(incident, "Bad")),
-                    new FloatMenuOption("Neutral", () => UpdateKarmaType(incident, "Neutral"))
+                    new FloatMenuOption("RICS.Good".Translate(), () => UpdateKarmaType(incident, "Good")),
+                    new FloatMenuOption("RICS.Bad".Translate(), () => UpdateKarmaType(incident, "Bad")),
+                    new FloatMenuOption("RICS.Neutral".Translate(), () => UpdateKarmaType(incident, "Neutral"))
                 };
 
                 Find.WindowStack.Add(new FloatMenu(options));
@@ -935,7 +934,7 @@ namespace CAP_ChatInteractive
             }
 
             IncidentsManager.SaveIncidentsToJson();
-            Messages.Message($"Reset cooldowns for {count} events", MessageTypeDefOf.TaskCompletion);
+            Messages.Message("RICS.Messages.ResetCooldowns".Translate(count), MessageTypeDefOf.TaskCompletion);
             FilterEvents();
         }
         private void SetBulkCooldown(int days, bool filteredOnly = false, string filterDescription = "")
@@ -945,8 +944,8 @@ namespace CAP_ChatInteractive
                 "ALL events";
 
             string confirmMessage = days == 0 ?
-                $"Set {targetDescription} to have NO cooldown (infinite)?" :
-                $"Set {targetDescription} to have {days} day{(days == 1 ? "" : "s")} cooldown?";
+                "RICS.SetNoCooldownConfirm".Translate(targetDescription) :
+                "RICS.SetCooldownConfirm".Translate(targetDescription, days);
 
             Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
                 confirmMessage,
@@ -1002,7 +1001,7 @@ namespace CAP_ChatInteractive
             FilterEvents();
         }
 
-        // NEW: Calculate default cooldown based on incident type (similar to your BuyableIncident logic)
+        // Calculate default cooldown based on incident type (similar to your BuyableIncident logic)
         private int CalculateDefaultCooldown(BuyableIncident incident)
         {
             // This should match the logic in BuyableIncident.SetDefaultCooldown
@@ -1025,7 +1024,7 @@ namespace CAP_ChatInteractive
         {
             List<FloatMenuOption> options = new List<FloatMenuOption>();
 
-            options.Add(new FloatMenuOption("All Mods", EnableAllEvents));
+            options.Add(new FloatMenuOption("RICS.FloatingMenu.AllMods".Translate(), EnableAllEvents));
 
             foreach (var modSource in modSourceCounts.Keys.Where(k => k != "All").OrderBy(k => k))
             {
@@ -1040,7 +1039,7 @@ namespace CAP_ChatInteractive
         {
             List<FloatMenuOption> options = new List<FloatMenuOption>();
 
-            options.Add(new FloatMenuOption("All Mods", DisableAllEvents));
+            options.Add(new FloatMenuOption("RICS.FloatingMenu.AllMods".Translate(), DisableAllEvents));
 
             foreach (var modSource in modSourceCounts.Keys.Where(k => k != "All").OrderBy(k => k))
             {
@@ -1065,7 +1064,7 @@ namespace CAP_ChatInteractive
 
             IncidentsManager.SaveIncidentsToJson();
             FilterEvents();
-            Messages.Message($"Enabled {count} events from {GetDisplayModName(modSource)}", MessageTypeDefOf.TaskCompletion);
+            Messages.Message("RICS.Messages.EventsEnabledFromMod".Translate(count, GetDisplayModName(modSource)), MessageTypeDefOf.TaskCompletion);
         }
 
         private void DisableEventsByModSource(string modSource)
@@ -1082,7 +1081,7 @@ namespace CAP_ChatInteractive
 
             IncidentsManager.SaveIncidentsToJson();
             FilterEvents();
-            Messages.Message($"Disabled {count} events from {GetDisplayModName(modSource)}", MessageTypeDefOf.TaskCompletion);
+            Messages.Message("RICS.Messages.EventsDisabledFromMod".Translate(count, GetDisplayModName(modSource)), MessageTypeDefOf.TaskCompletion);
         }
 
         private void EnableAllEvents()
@@ -1156,7 +1155,7 @@ namespace CAP_ChatInteractive
 
         private string GetDisplayCategoryName(string categoryName)
         {
-            if (string.IsNullOrEmpty(categoryName)) return "Uncategorized";
+            if (string.IsNullOrEmpty(categoryName)) return "RICS.Categories.Uncategorized".Translate();
             return categoryName;
         }
 
@@ -1244,12 +1243,23 @@ namespace CAP_ChatInteractive
         }
         public override void PostClose()
         {
-            IncidentsManager.SaveIncidentsToJson();
+            IncidentsManager.SaveIncidentsToJsonPostClose();
             base.PostClose();
         }
+
         private void ShowDefInfoWindow(BuyableIncident incident)
         {
             Find.WindowStack.Add(new EventsDefInfoWindow(incident));
+        }
+
+        private string TranslateKarmaType(string karmaType)
+        {
+            return karmaType?.ToLower() switch
+            {
+                "good" => "RICS.Good".Translate(),
+                "bad" => "RICS.Bad".Translate(),
+                _ => "RICS.Neutral".Translate() // default to Neutral for null or any other value
+            };
         }
     }
 

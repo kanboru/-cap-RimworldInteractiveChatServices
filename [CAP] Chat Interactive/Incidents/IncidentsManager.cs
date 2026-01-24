@@ -16,6 +16,29 @@
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 //
 // Manages the loading, saving, and updating of buyable incidents for the chat interactive mod.
+
+/*
+============================================================
+RICS INCIDENTS DATA FLOW - CRITICAL ARCHITECTURE
+============================================================
+
+RUNTIME OPERATIONS:
+• All commands use AllBuyableIncidents Dictionary (in-memory cache)
+• JSON is ONLY for persistence, never read during normal operations
+• Changes update Dictionary → SaveIncidentsToJson() asynchronously
+
+PERFORMANCE NOTES:
+• LongEventHandler prevents UI stutter during saves
+• No auto-saves - only save on actual data changes
+• No locks needed except for save operation itself
+
+DO NOT CHANGE:
+• Do NOT add timed auto-saves (disk I/O waste)
+• Do NOT read JSON during runtime (use Dictionary)
+• Do NOT replace async saving (causes stutter)
+• Do NOT add redundant saves (PostClose handles it)
+============================================================
+*/
 using LudeonTK;
 using Newtonsoft.Json;
 using RimWorld;
@@ -42,11 +65,12 @@ namespace CAP_ChatInteractive.Incidents
             {
                 if (isInitialized) return;
 
-                Logger.Debug("Initializing Incidents System...");
+                Logger.Debug("Initializing Incidents/Events System...");
 
-                if (!LoadIncidentsFromJson())
+                bool loadedFromJson = LoadIncidentsFromJson();
+
+                if (!loadedFromJson)
                 {
-                    Logger.Debug("No incidents JSON found, creating default incidents...");
                     CreateDefaultIncidents();
                     SaveIncidentsToJson();
                 }
@@ -59,7 +83,7 @@ namespace CAP_ChatInteractive.Incidents
                 Logger.Message($"[CAP] Incidents System initialized with {AllBuyableIncidents.Count} incidents");
             }
         }
-
+        // Loads incidents from the JSON file, with validation and error handling
         private static bool LoadIncidentsFromJson()
         {
             string jsonContent = JsonFileManager.LoadFile("Incidents.json");
@@ -69,8 +93,17 @@ namespace CAP_ChatInteractive.Incidents
             try
             {
                 var loadedIncidents = JsonFileManager.DeserializeIncidents(jsonContent);
-                AllBuyableIncidents.Clear();
 
+                // Validation: Check if data is valid
+                if (loadedIncidents == null || loadedIncidents.Count == 0)
+                {
+                    Logger.Error("Incidents.json exists but contains no valid data - corrupted or empty");
+                    HandleIncidentsCorruption("File contains no valid data", jsonContent);
+                    return false;
+                }
+
+                // Success! Load into memory
+                AllBuyableIncidents.Clear();
                 foreach (var kvp in loadedIncidents)
                 {
                     AllBuyableIncidents[kvp.Key] = kvp.Value;
@@ -79,10 +112,72 @@ namespace CAP_ChatInteractive.Incidents
                 Logger.Debug($"Loaded {AllBuyableIncidents.Count} incidents from JSON");
                 return true;
             }
+            catch (Newtonsoft.Json.JsonException jsonEx)
+            {
+                Logger.Error($"JSON CORRUPTION in Incidents.json: {jsonEx.Message}\n" +
+                             $"File may be partially written, damaged, or from incompatible version.");
+                HandleIncidentsCorruption($"JSON parsing error: {jsonEx.Message}", jsonContent);
+                return false;
+            }
+            catch (System.IO.IOException ioEx)
+            {
+                // Disk-level failure - serious hardware issue
+                Logger.Error($"DISK ACCESS ERROR reading Incidents.json: {ioEx.Message}\n" +
+                             $"Streamer should check hard drive health immediately!");
+
+                // Show urgent in-game warning
+                if (Current.ProgramState == ProgramState.Playing && Find.LetterStack != null)
+                {
+                    Find.LetterStack.ReceiveLetter(
+                        "Chat Interactive: Critical Storage Error",
+                        "Chat Interactive cannot read incidents data due to a disk access error.\n\n" +
+                        "This may indicate hardware failure. Check your hard drive health!",
+                        LetterDefOf.NegativeEvent
+                    );
+                }
+                return false;
+            }
             catch (System.Exception e)
             {
-                Logger.Error($"Error loading incidents JSON: {e.Message}");
+                Logger.Error($"Unexpected error loading incidents JSON: {e.Message}");
                 return false;
+            }
+        }
+        // Handles incidents JSON corruption by backing up the corrupted file, notifying the player, and logging details
+        private static void HandleIncidentsCorruption(string errorDetails, string corruptedJson)
+        {
+            // Backup corrupted file for debugging
+            if (!string.IsNullOrWhiteSpace(corruptedJson))
+            {
+                try
+                {
+                    string backupPath = JsonFileManager.GetBackupPath("Incidents.json");
+                    System.IO.File.WriteAllText(backupPath, corruptedJson);
+                    Logger.Debug($"Backed up corrupted Incidents.json to: {backupPath}");
+                }
+                catch (System.Exception ex)
+                {
+                    Logger.Error($"Failed to backup corrupted Incidents.json: {ex.Message}");
+                }
+            }
+
+            // Show in-game notification
+            if (Current.ProgramState == ProgramState.Playing)
+            {
+                string message = "Chat Interactive: Incidents configuration was corrupted.\n" +
+                                "Rebuilt with default incidents. Custom settings have been lost.\n" +
+                                "Check logs for details.";
+
+                Messages.Message(message, MessageTypeDefOf.NegativeEvent);
+            }
+
+            // Log the corrupted content (first 500 chars for debugging)
+            if (corruptedJson != null && corruptedJson.Length > 0)
+            {
+                string preview = corruptedJson.Length > 500 ?
+                    corruptedJson.Substring(0, 500) + "..." :
+                    corruptedJson;
+                Logger.Debug($"Corrupted Incidents JSON preview: {preview}");
             }
         }
 
@@ -125,7 +220,7 @@ namespace CAP_ChatInteractive.Incidents
 
             Logger.Debug($"Created {AllBuyableIncidents.Count} store-suitable incidents");
         }
-
+        // Currently unused - for future roadmap logging
         private static void LogImplementationSummary()
         {
             var incidentsByMod = IncidentsManager.AllBuyableIncidents.Values
@@ -320,7 +415,6 @@ namespace CAP_ChatInteractive.Incidents
                 SaveIncidentsToJson(); // Save changes
             }
         }
-
         public static void SaveIncidentsToJson()
         {
             LongEventHandler.QueueLongEvent(() =>
@@ -331,14 +425,163 @@ namespace CAP_ChatInteractive.Incidents
                     {
                         string jsonContent = JsonFileManager.SerializeIncidents(AllBuyableIncidents);
                         JsonFileManager.SaveFile("Incidents.json", jsonContent);
-                        Logger.Debug("Incidents JSON saved successfully");
+                        Logger.Debug($"Incidents JSON saved. Items: {AllBuyableIncidents?.Count ?? 0}");
                     }
-                    catch (System.Exception e)
+                    catch (JsonException jsonEx)
                     {
-                        Logger.Error($"Error saving incidents JSON: {e.Message}");
+                        HandleJsonException(jsonEx, "Incidents.json");
+                    }
+                    catch (IOException ioEx)
+                    {
+                        HandleIOException(ioEx, "Incidents.json", isCritical: false);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error($"Error saving incidents JSON: {e}");
                     }
                 }
-            }, null, false, null, showExtraUIInfo: false, forceHideUI: true);
+            },
+            textKey: null,
+            doAsynchronously: false,
+            exceptionHandler: null,
+            showExtraUIInfo: false,
+            forceHideUI: true);
+        }
+
+        // For post-close saves (show feedback to user)
+        public static void SaveIncidentsToJsonPostClose()
+        {
+            LongEventHandler.QueueLongEvent(() =>
+            {
+                lock (lockObject)
+                {
+                    try
+                    {
+                        string jsonContent = JsonFileManager.SerializeIncidents(AllBuyableIncidents);
+                        JsonFileManager.SaveFile("Incidents.json", jsonContent);
+                        Logger.Message("Incidents JSON saved successfully");
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        HandleJsonException(jsonEx, "Incidents.json");
+
+                        // Additional UI feedback for post-close
+                        Messages.Message("RICS: JSON error saving Incidents. Check logs.",
+                            MessageTypeDefOf.RejectInput);
+                    }
+                    catch (IOException ioEx)
+                    {
+                        HandleIOException(ioEx, "Incidents.json", isCritical: true);
+
+                        // Always show disk errors
+                        Messages.Message("RICS: Disk error! Incidents not saved.",
+                            MessageTypeDefOf.RejectInput);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error($"Error saving incidents JSON: {e}");
+                        Messages.Message($"RICS: Save error: {e.GetType().Name}",
+                            MessageTypeDefOf.RejectInput);
+                    }
+                }
+            },
+            textKey: null,
+            // textKey: "RICS.SavingIncidentsSettings",    // Shows "Saving store settings..." in progress UI .. Flashes screen to fast for SSD users
+            doAsynchronously: false,
+            exceptionHandler: HandleSaveException,
+            showExtraUIInfo: true,
+            forceHideUI: false);
+        }
+
+        // Custom exception handler for LongEventHandler
+        private static void HandleSaveException(Exception ex)
+        {
+            Logger.Error($"LongEventHandler caught exception during save: {ex}");
+
+            // Only show message if not already handled in try/catch
+            if (ex is not JsonException && ex is not IOException)
+            {
+                Logger.Error($"Error saving incidents JSON: {ex}");
+                Messages.Message($"RICS: Save failed! {ex.Message}",
+                    MessageTypeDefOf.RejectInput);
+            }
+        }
+
+        // Shared exception handlers
+        private static void HandleJsonException(JsonException jsonEx, string filename)
+        {
+            Logger.Error($"JSON CORRUPTION in {filename}: {jsonEx.Message}\n" +
+                        $"File may be corrupted or from incompatible version.\n" +
+                        $"Attempting to create backup and rebuild...");
+
+            // Create emergency backup
+            try
+            {
+                string backupPath = Path.Combine(JsonFileManager.GetFilePath(filename),
+                    $"{Path.GetFileNameWithoutExtension(filename)}_CORRUPTED_{DateTime.Now:yyyyMMdd_HHmmss}.json.bak");
+                string originalPath = Path.Combine(JsonFileManager.GetFilePath(filename));
+
+                if (File.Exists(originalPath))
+                {
+                    File.Copy(originalPath, backupPath, true);
+                    Logger.Message($"Corrupted file backed up to: {backupPath}");
+                }
+            }
+            catch (Exception backupEx)
+            {
+                Logger.Error($"Failed to create backup: {backupEx.Message}");
+            }
+
+            // Could add logic here to rebuild from defaults if needed
+            if (AllBuyableIncidents == null || AllBuyableIncidents.Count == 0)
+            {
+                Logger.Warning($"No incidents data available after JSON error. May need to reset to defaults.");
+            }
+        }
+
+        private static void HandleIOException(IOException ioEx, string filename, bool isCritical)
+        {
+            string errorType = isCritical ? "CRITICAL DISK ACCESS ERROR" : "Disk access error";
+            Logger.Error($"{errorType} reading {filename}: {ioEx.Message}\n" +
+                        $"Error Code: {ioEx.HResult}\n" +
+                        $"Check disk health and free space!");
+
+            if (isCritical && Current.ProgramState == ProgramState.Playing)
+            {
+                // Show urgent letter for critical disk errors
+                ShowCriticalDiskError(ioEx, filename);
+            }
+        }
+
+        private static void ShowCriticalDiskError(IOException ioEx, string filename)
+        {
+            try
+            {
+                if (Find.LetterStack != null)
+                {
+                    Find.LetterStack.ReceiveLetter(
+                        "RICS: Critical Storage Error",
+                        $"RICS cannot save incidents  data due to a disk error.\n\n" +
+                        $"File: {filename}\n" +
+                        $"Error: {ioEx.Message}\n\n" +
+                        $"This may indicate:\n" +
+                        $"• Hard drive failure\n" +
+                        $"• Disk full\n" +
+                        $"• File permission issues\n" +
+                        $"• Antivirus blocking access\n\n" +
+                        $"Check your storage device health immediately!",
+                        LetterDefOf.ThreatBig,
+                        lookTargets: null,
+                        debugInfo: null,
+                        relatedFaction: null,
+                        hyperlinkThingDefs: null
+                    );
+                }
+            }
+            catch (Exception letterEx)
+            {
+                Logger.Error($"Failed to show critical error letter: {letterEx.Message}");
+            }
         }
 
         private static void LogIncidentCategories()

@@ -65,6 +65,18 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
             }
         }
 
+        public override void GameComponentTick()
+        {
+            base.GameComponentTick();
+
+            // Run full cleanup once per in-game day
+            // 60000 ticks = 1 RimWorld day (24 in-game hours)
+            if (Find.TickManager.TicksGame % 60000 == 0)
+            {
+                CleanupOldRecords();
+            }
+        }
+
         public override void ExposeData()
         {
             Scribe_Deep.Look(ref data, "globalCooldownData");
@@ -114,6 +126,8 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
             Logger.Debug($"Max Bad Events: {settings.MaxBadEvents}");
             Logger.Debug($"Max Neutral Events: {settings.MaxNeutralEvents}");
 
+            CleanupOldRecords();
+
             if (settings.MaxGoodEvents == 0 && eventType == "good") return true;
             if (settings.MaxBadEvents == 0 && eventType == "bad") return true;
             if (settings.MaxNeutralEvents == 0 && eventType == "neutral") return true;
@@ -135,6 +149,7 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
 
         public bool CanUseCommand(string commandName, CommandSettings settings, CAPGlobalChatSettings globalSettings)
         {
+            CleanupOldRecords();
             // Always check per-command game days cooldown first (if enabled)
             if (settings.useCommandCooldown && settings.MaxUsesPerCooldownPeriod > 0)
             {
@@ -197,10 +212,12 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
         private void CleanupOldRecords()
         {
             int currentDay = CurrentGameDay;
-            if (currentDay == lastCleanupDay) return;
+            if (currentDay == lastCleanupDay) return;  // Already did today
 
-            var globalSettings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings as CAPGlobalChatSettings;
+            var globalSettings = CAPChatInteractiveMod.Instance?.Settings?.GlobalSettings as CAPGlobalChatSettings;
+            if (globalSettings == null) return;
 
+            // Clean everything
             foreach (var record in data.EventUsage.Values)
                 CleanupOldEvents(record, globalSettings.EventCooldownDays);
 
@@ -210,26 +227,45 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
             foreach (var record in data.IncidentUsage.Values)
                 CleanupOldIncidentUses(record, globalSettings.EventCooldownDays);
 
+            foreach (var record in data.BuyUsage.Values)
+                CleanupOldPurchases(record, globalSettings.EventCooldownDays);
+
             lastCleanupDay = currentDay;
+
+            // Optional: log once per real cleanup for debugging
+            Logger.Debug($"Global cooldown cleanup performed on day {currentDay}");
         }
 
         private void CleanupOldEvents(EventUsageRecord record, int cooldownDays)
         {
             if (cooldownDays == 0) return; // Never expire
-            record.UsageDays.RemoveAll(day => (CurrentGameDay - day) > cooldownDays);
+            Logger.Debug($"Cleaning up for cooldown {cooldownDays}. Current day: {CurrentGameDay}. Before cleanup: {record.UsageDays.Count} uses.");
+            record.UsageDays.RemoveAll(day => (CurrentGameDay - day) >= cooldownDays);  // Changed > to >=
+            Logger.Debug($"After cleanup: {record.UsageDays.Count} uses remaining.");
         }
 
         private void CleanupOldCommandUses(CommandUsageRecord record, int cooldownDays)
         {
             if (cooldownDays == 0) return;
-            record.UsageDays.RemoveAll(day => (CurrentGameDay - day) > cooldownDays);
+            Logger.Debug($"Cleaning up for cooldown {cooldownDays}. Current day: {CurrentGameDay}. Before cleanup: {record.UsageDays.Count} uses.");
+            record.UsageDays.RemoveAll(day => (CurrentGameDay - day) >= cooldownDays);  // Changed > to >=
+            Logger.Debug($"After cleanup: {record.UsageDays.Count} uses remaining.");
+        }
+
+        private void CleanupOldIncidentUses(IncidentUsageRecord record, int cooldownDays)
+        {
+            if (cooldownDays == 0) return; // Never expire
+            Logger.Debug($"Cleaning up for cooldown {cooldownDays}. Current day: {CurrentGameDay}. Before cleanup: {record.UsageDays.Count} uses.");
+            // Remove usage days that are older than or equal to the cooldown period  // Changed comment for clarity
+            record.UsageDays.RemoveAll(day => (CurrentGameDay - day) >= cooldownDays);  // Changed > to >=
+            Logger.Debug($"After cleanup: {record.UsageDays.Count} uses remaining.");
         }
 
         // Update GlobalCooldownManager.cs - simplify the incident cooldown methods
         public bool CanUseIncident(string incidentDefName, int incidentCooldownDays, CAPGlobalChatSettings settings)
         {
             Logger.Debug($"CanUseIncident: {incidentDefName}, IncidentCooldownDays: {incidentCooldownDays}");
-
+            CleanupOldRecords();
             // If event cooldowns are disabled globally, skip all cooldown checks
             if (!settings.EventCooldownsEnabled)
             {
@@ -255,7 +291,7 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
             foreach (int usageDay in record.UsageDays)
             {
                 int daysSinceUse = CurrentGameDay - usageDay;
-                if (daysSinceUse <= incidentCooldownDays)
+                if (daysSinceUse < incidentCooldownDays)  // Changed <= to < for consistency with new cleanup logic
                 {
                     incidentUsedRecently = true;
                     Logger.Debug($"Incident {incidentDefName} was used {daysSinceUse} days ago (cooldown: {incidentCooldownDays} days)");
@@ -272,14 +308,6 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
             record.UsageDays.Add(CurrentGameDay);
 
             Logger.Debug($"Recorded incident use: {incidentDefName} on day {CurrentGameDay}");
-        }
-
-        private void CleanupOldIncidentUses(IncidentUsageRecord record, int cooldownDays)
-        {
-            if (cooldownDays == 0) return; // Never expire
-
-            // Remove usage days that are older than the cooldown period
-            record.UsageDays.RemoveAll(day => (CurrentGameDay - day) > cooldownDays);
         }
 
         private IncidentUsageRecord GetOrCreateIncidentRecord(string incidentDefName)
@@ -325,6 +353,7 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
 
         public bool CanPurchaseItem()
         {
+            CleanupOldRecords();
             var settings = CAPChatInteractiveMod.Instance?.Settings?.GlobalSettings as CAPGlobalChatSettings;
             if (settings == null)
             {
@@ -379,7 +408,7 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
         private void CleanupOldPurchases(BuyUsageRecord record, int cooldownDays)
         {
             if (cooldownDays == 0) return;
-            record.PurchaseDays.RemoveAll(day => (GenDate.DaysPassed - day) > cooldownDays);
+            record.PurchaseDays.RemoveAll(day => (GenDate.DaysPassed - day) >= cooldownDays);  // Changed > to >= (note: uses GenDate.DaysPassed directly here)
         }
     }
 
