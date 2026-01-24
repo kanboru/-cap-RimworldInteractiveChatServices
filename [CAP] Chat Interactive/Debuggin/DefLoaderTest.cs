@@ -26,15 +26,15 @@ namespace CAP_ChatInteractive
     {
         static DefLoaderTest()
         {
-            return; // Disable by default, enable for debugging
+            // return; // Disable by default, enable for debugging
             Logger.Debug("=== DEF LOADER TEST ===");
 
             // Test if our custom def type is recognized
-            var ourDefs = DefDatabase<ChatInteractiveAddonDef>.AllDefs;
+            var ourDefs = DefDatabase<EnhancedChatInteractiveAddonDef>.AllDefs;
             Logger.Debug($"ChatInteractiveAddonDef count: {ourDefs.Count()}");
 
             // Test if we can find our specific def
-            var ourDef = DefDatabase<ChatInteractiveAddonDef>.GetNamed("CAPChatInteractive", false);
+            var ourDef = DefDatabase<EnhancedChatInteractiveAddonDef>.GetNamed("CAPChatInteractive", false);
             if (ourDef != null)
             {
                 Logger.Debug($"✅ Found our AddonDef: {ourDef.defName}");
