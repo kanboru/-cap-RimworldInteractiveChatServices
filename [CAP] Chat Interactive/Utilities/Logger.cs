@@ -24,7 +24,7 @@ namespace CAP_ChatInteractive
     public static class Logger
     {
         private const string Prefix = "<color=#4A90E2>[RICS]</color>";
-
+        private const string DebugPrefix = "<color=#FF7518>[DEBUG]</color>";
         public static void Message(string message)
         {
             Log.Message($"{Prefix} {message}");
@@ -44,7 +44,7 @@ namespace CAP_ChatInteractive
         {
             // Use settings-based debug toggle
             if (CAPChatInteractiveMod.Instance?.Settings?.GlobalSettings?.EnableDebugLogging == true)
-                Log.Message($"{Prefix} <color=#FF7518>[DEBUG]<color><color=#FF5F1F> {message}</color>");
+                Log.Message($"{Prefix} {DebugPrefix} <color=#FF5F1F>{message}</color>");
             //Log.Message($"{Prefix} [DEBUG] {message}");  // No color for debug messages version
         }
 

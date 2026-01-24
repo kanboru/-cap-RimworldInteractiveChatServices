@@ -16,6 +16,8 @@
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 // Main tab window for CAP Chat Interactive mod
 using RimWorld;
+using System;
+using System.Linq;
 using UnityEngine;
 using Verse;
 
@@ -30,34 +32,43 @@ namespace CAP_ChatInteractive.Windows
 
         public override void DoWindowContents(Rect inRect)
         {
-            // Logger.Debug("MainTabWindow_ChatInteractive.DoWindowContents called");
-
             var listing = new Listing_Standard();
             listing.Begin(inRect);
 
             listing.Label("RICS - Quick Menu");
             listing.GapLine();
 
-            // Logger.Debug($"Found {AddonRegistry.AddonDefs.Count} addon defs");
+            // Group buttons by source mod
+            var groupedButtons = AddonRegistry.AddonDefs
+                .Where(def => def.enabled)
+                .GroupBy(def => def.sourceMod)
+                .OrderBy(g => g.Key == "RICS" ? 0 : 1) // RICS first
+                .ThenBy(g => g.Key) // Then alphabetically
+                .ToList();
 
-            foreach (var addonDef in AddonRegistry.AddonDefs)
+            foreach (var group in groupedButtons)
             {
-                // Logger.Debug($"Processing addon: {addonDef.defName}");
-                if (listing.ButtonText(addonDef.label))
+                // Add mod header (except for RICS which already has one)
+                if (group.Key != "RICS")
                 {
-                    var menu = addonDef.GetAddonMenu();
-                    if (menu != null)
+                    listing.Gap(8f);
+                    listing.Label($"{group.Key} Features");
+                    listing.GapLine(4f);
+                }
+
+                // Add buttons for this mod
+                foreach (var addonDef in group.OrderBy(d => d.displayOrder))
+                {
+                    if (listing.ButtonText(addonDef.label))
                     {
-                        var options = menu.MenuOptions();
-                        if (options != null && options.Count > 0)
-                        {
-                            Find.WindowStack.Add(new FloatMenu(options));
-                        }
-                        else
-                        {
-                            Messages.Message("No menu options available for this addon", MessageTypeDefOf.NeutralEvent);
-                        }
+                        addonDef.ExecuteDirectly();
                     }
+                }
+
+                // Add extra gap after mod group (except after last)
+                if (group != groupedButtons.Last())
+                {
+                    listing.Gap(12f);
                 }
             }
 
