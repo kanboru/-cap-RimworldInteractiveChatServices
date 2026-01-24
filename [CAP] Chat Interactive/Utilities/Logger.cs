@@ -44,7 +44,7 @@ namespace CAP_ChatInteractive
         {
             // Use settings-based debug toggle
             if (CAPChatInteractiveMod.Instance?.Settings?.GlobalSettings?.EnableDebugLogging == true)
-                Log.Message($"{Prefix} <color=#888888>[DEBUG] {message}</color>");
+                Log.Message($"{Prefix} <color=#FF7518>[DEBUG]<color><color=#FF5F1F> {message}</color>");
             //Log.Message($"{Prefix} [DEBUG] {message}");  // No color for debug messages version
         }
 
