@@ -6,86 +6,84 @@
     <label>gender swap</label>
     <description>Performs a gender swap on the patient.</description>
     <workerClass>CAP_ChatInteractive.Commands.CommandHandlers.GenderSwapRecipeWorker</workerClass>
-    <!-- Custom worker -->
+    <surgerySuccessChanceFactor>1</surgerySuccessChanceFactor>
+    <workSpeedStat>MedicalOperationSpeed</workSpeedStat>
+    <workAmount>3200</workAmount>
+    <anesthetize>true</anesthetize>
+    <workSpeedStat>MedicalOperationSpeed</workSpeedStat>
+    <hideBodyPartNames>true</hideBodyPartNames>
+    <appliedOnFixedBodyParts>
+      <li>Torso</li>
+    </appliedOnFixedBodyParts>
+    <skillRequirements>
+      <Medicine>10</Medicine>
+    </skillRequirements>
+    <!-- Ingredients required for the surgery -->
     <ingredients>
-      <!-- Add any required ingredients, e.g., medicine -->
       <li>
         <filter>
-          <thingDefs>
-            <li>MedicineIndustrial</li>
-          </thingDefs>
+          <categories>
+            <li>Medicine</li>
+          </categories>
         </filter>
         <count>3</count>
       </li>
     </ingredients>
+    <!-- This sets what shows in the bill filter by default -->
     <defaultIngredientFilter>
-      <thingDefs>
-        <li>MedicineIndustrial</li>
-      </thingDefs>
+      <categories>
+        <li>Medicine</li>
+      </categories>
     </defaultIngredientFilter>
+    <!-- Optional: Force only medicine to be usable -->
     <fixedIngredientFilter>
-      <thingDefs>
-        <li>MedicineIndustrial</li>
-      </thingDefs>
+      <categories>
+        <li>Medicine</li>
+      </categories>
     </fixedIngredientFilter>
-
-    <appliedOnFixedBodyParts>
-      <li>Torso</li>
-    </appliedOnFixedBodyParts>
-    <hideBodyPartNames>true</hideBodyPartNames>
-
-    <skillRequirements>
-      <Medicine>10</Medicine>
-    </skillRequirements>
-    <workSpeedStat>MedicalOperationSpeed</workSpeedStat>
-    <workAmount>3200</workAmount>
-    <!-- Surgery duration -->
-    <anesthetize>true</anesthetize>
-    <surgerySuccessChanceFactor>1</surgerySuccessChanceFactor>
   </RecipeDef>
 
+  
   <!-- Fat Body Surgery -->
   <RecipeDef Name="FatBodySurgery" ParentName="SurgeryFlesh">
     <defName>FatBodySurgery</defName>
     <label>add fat surgery</label>
     <description>Performs fat adding surgery.</description>
     <workerClass>CAP_ChatInteractive.Commands.CommandHandlers.FatBodyRecipeWorker</workerClass>
-    <!-- Custom worker -->
+    <workSpeedStat>MedicalOperationSpeed</workSpeedStat>
+    <workAmount>3200</workAmount>
+    <anesthetize>true</anesthetize>
+    <surgerySuccessChanceFactor>1</surgerySuccessChanceFactor>
+    <hideBodyPartNames>true</hideBodyPartNames>
+    <skillRequirements>
+      <Medicine>10</Medicine>
+    </skillRequirements>
+    <appliedOnFixedBodyParts>
+      <li>Torso</li>
+    </appliedOnFixedBodyParts>
+    <!-- Ingredients required for the surgery -->
     <ingredients>
-      <!-- Add any required ingredients, e.g., medicine -->
       <li>
         <filter>
-          <thingDefs>
-            <li>MedicineIndustrial</li>
-          </thingDefs>
+          <categories>
+            <li>Medicine</li>
+          </categories>
         </filter>
         <count>3</count>
       </li>
     </ingredients>
+    <!-- This sets what shows in the bill filter by default -->
     <defaultIngredientFilter>
-      <thingDefs>
-        <li>MedicineIndustrial</li>
-      </thingDefs>
+      <categories>
+        <li>Medicine</li>
+      </categories>
     </defaultIngredientFilter>
+    <!-- Optional: Force only medicine to be usable -->
     <fixedIngredientFilter>
-      <thingDefs>
-        <li>MedicineIndustrial</li>
-      </thingDefs>
+      <categories>
+        <li>Medicine</li>
+      </categories>
     </fixedIngredientFilter>
-
-    <appliedOnFixedBodyParts>
-      <li>Torso</li>
-    </appliedOnFixedBodyParts>
-    <hideBodyPartNames>true</hideBodyPartNames>
-
-    <skillRequirements>
-      <Medicine>10</Medicine>
-    </skillRequirements>
-    <workSpeedStat>MedicalOperationSpeed</workSpeedStat>
-    <workAmount>3200</workAmount>
-    <!-- Surgery duration -->
-    <anesthetize>true</anesthetize>
-    <surgerySuccessChanceFactor>1</surgerySuccessChanceFactor>
   </RecipeDef>
 
   <!-- Feminine Body Surgery -->
@@ -94,34 +92,10 @@
     <label>feminine surgery</label>
     <description>Surgery to make one more feminine.</description>
     <workerClass>CAP_ChatInteractive.Commands.CommandHandlers.FeminineBodyRecipeWorker</workerClass>
-    <!-- Custom worker -->
-    <ingredients>
-      <!-- Add any required ingredients, e.g., medicine -->
-      <li>
-        <filter>
-          <thingDefs>
-            <li>MedicineIndustrial</li>
-          </thingDefs>
-        </filter>
-        <count>3</count>
-      </li>
-    </ingredients>
-    <defaultIngredientFilter>
-      <thingDefs>
-        <li>MedicineIndustrial</li>
-      </thingDefs>
-    </defaultIngredientFilter>
-    <fixedIngredientFilter>
-      <thingDefs>
-        <li>MedicineIndustrial</li>
-      </thingDefs>
-    </fixedIngredientFilter>
-
     <appliedOnFixedBodyParts>
       <li>Torso</li>
     </appliedOnFixedBodyParts>
     <hideBodyPartNames>true</hideBodyPartNames>
-
     <skillRequirements>
       <Medicine>10</Medicine>
     </skillRequirements>
@@ -130,6 +104,28 @@
     <!-- Surgery duration -->
     <anesthetize>true</anesthetize>
     <surgerySuccessChanceFactor>1</surgerySuccessChanceFactor>
+    <!-- Ingredients required for the surgery -->
+    <ingredients>
+      <li>
+        <filter>
+          <categories>
+            <li>Medicine</li>
+          </categories>
+        </filter>
+        <count>3</count>
+      </li>
+    </ingredients>
+    <defaultIngredientFilter>
+      <categories>
+        <li>Medicine</li>
+      </categories>
+    </defaultIngredientFilter>
+    <fixedIngredientFilter>
+      <categories>
+        <li>Medicine</li>
+      </categories>
+    </fixedIngredientFilter>
+
   </RecipeDef>
 
   <!-- Hulking Body Surgery -->
@@ -139,26 +135,26 @@
     <description>Surgery to make one more hulking.</description>
     <workerClass>CAP_ChatInteractive.Commands.CommandHandlers.HulkBodyRecipeWorker</workerClass>
     <!-- Custom worker -->
+    <!-- Ingredients required for the surgery -->
     <ingredients>
-      <!-- Add any required ingredients, e.g., medicine -->
       <li>
         <filter>
-          <thingDefs>
-            <li>MedicineIndustrial</li>
-          </thingDefs>
+          <categories>
+            <li>Medicine</li>
+          </categories>
         </filter>
         <count>3</count>
       </li>
     </ingredients>
     <defaultIngredientFilter>
-      <thingDefs>
-        <li>MedicineIndustrial</li>
-      </thingDefs>
+      <categories>
+        <li>Medicine</li>
+      </categories>
     </defaultIngredientFilter>
     <fixedIngredientFilter>
-      <thingDefs>
-        <li>MedicineIndustrial</li>
-      </thingDefs>
+      <categories>
+        <li>Medicine</li>
+      </categories>
     </fixedIngredientFilter>
 
     <appliedOnFixedBodyParts>
@@ -183,27 +179,26 @@
     <description>Surgery to make one more masculine.</description>
     <workerClass>CAP_ChatInteractive.Commands.CommandHandlers.MasculineBodyRecipeWorker</workerClass>
     <!-- Custom worker -->
+    <!-- Ingredients required for the surgery -->
     <ingredients>
-      <!-- Add any required ingredients, e.g., medicine -->
       <li>
         <filter>
-          <thingDefs>
-            <li>MedicineIndustrial</li>
-          </thingDefs>
+          <categories>
+            <li>Medicine</li>
+          </categories>
         </filter>
         <count>3</count>
       </li>
     </ingredients>
     <defaultIngredientFilter>
-      <thingDefs>
-        <li>MedicineIndustrial</li>
-      </thingDefs>
+      <categories>
+        <li>Medicine</li>
+      </categories>
     </defaultIngredientFilter>
-    <!-- Or whatever prereq you want -->
     <fixedIngredientFilter>
-      <thingDefs>
-        <li>MedicineIndustrial</li>
-      </thingDefs>
+      <categories>
+        <li>Medicine</li>
+      </categories>
     </fixedIngredientFilter>
 
     <appliedOnFixedBodyParts>
@@ -227,28 +222,27 @@
     <label>thin surgery</label>
     <description>Surgery to make one thin.</description>
     <workerClass>CAP_ChatInteractive.Commands.CommandHandlers.ThinBodyRecipeWorker</workerClass>
-    <!-- Custom worker -->
+
+    <!-- Ingredients required for the surgery -->
     <ingredients>
-      <!-- Add any required ingredients, e.g., medicine -->
       <li>
         <filter>
-          <thingDefs>
-            <li>MedicineIndustrial</li>
-          </thingDefs>
+          <categories>
+            <li>Medicine</li>
+          </categories>
         </filter>
         <count>3</count>
       </li>
     </ingredients>
     <defaultIngredientFilter>
-      <thingDefs>
-        <li>MedicineIndustrial</li>
-      </thingDefs>
+      <categories>
+        <li>Medicine</li>
+      </categories>
     </defaultIngredientFilter>
-    <!-- Or whatever prereq you want -->
     <fixedIngredientFilter>
-      <thingDefs>
-        <li>MedicineIndustrial</li>
-      </thingDefs>
+      <categories>
+        <li>Medicine</li>
+      </categories>
     </fixedIngredientFilter>
 
     <appliedOnFixedBodyParts>
@@ -261,7 +255,6 @@
     </skillRequirements>
     <workSpeedStat>MedicalOperationSpeed</workSpeedStat>
     <workAmount>3200</workAmount>
-    <!-- Surgery duration -->
     <anesthetize>true</anesthetize>
     <surgerySuccessChanceFactor>1</surgerySuccessChanceFactor>
   </RecipeDef>

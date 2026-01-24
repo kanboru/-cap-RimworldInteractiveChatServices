@@ -425,7 +425,7 @@ namespace CAP_ChatInteractive.Incidents
                     {
                         string jsonContent = JsonFileManager.SerializeIncidents(AllBuyableIncidents);
                         JsonFileManager.SaveFile("Incidents.json", jsonContent);
-                        Logger.Message($"Incidents JSON saved. Items: {AllBuyableIncidents?.Count ?? 0}");
+                        Logger.Debug($"Incidents JSON saved. Items: {AllBuyableIncidents?.Count ?? 0}");
                     }
                     catch (JsonException jsonEx)
                     {
@@ -442,7 +442,7 @@ namespace CAP_ChatInteractive.Incidents
                 }
             },
             textKey: null,
-            doAsynchronously: true,
+            doAsynchronously: false,
             exceptionHandler: null,
             showExtraUIInfo: false,
             forceHideUI: true);
@@ -460,10 +460,6 @@ namespace CAP_ChatInteractive.Incidents
                         string jsonContent = JsonFileManager.SerializeIncidents(AllBuyableIncidents);
                         JsonFileManager.SaveFile("Incidents.json", jsonContent);
                         Logger.Message("Incidents JSON saved successfully");
-
-                        // Show success message in UI (brief, silent)
-                        Messages.Message("RICS: Incidents settings saved.",
-                            MessageTypeDefOf.SilentInput);
                     }
                     catch (JsonException jsonEx)
                     {
@@ -489,8 +485,9 @@ namespace CAP_ChatInteractive.Incidents
                     }
                 }
             },
-            textKey: "RICS.SavingIncidentsSettings",    // Shows "Saving store settings..." in progress UI
-            doAsynchronously: true,
+            textKey: null,
+            // textKey: "RICS.SavingIncidentsSettings",    // Shows "Saving store settings..." in progress UI .. Flashes screen to fast for SSD users
+            doAsynchronously: false,
             exceptionHandler: HandleSaveException,
             showExtraUIInfo: true,
             forceHideUI: false);
@@ -504,6 +501,7 @@ namespace CAP_ChatInteractive.Incidents
             // Only show message if not already handled in try/catch
             if (ex is not JsonException && ex is not IOException)
             {
+                Logger.Error($"Error saving incidents JSON: {ex}");
                 Messages.Message($"RICS: Save failed! {ex.Message}",
                     MessageTypeDefOf.RejectInput);
             }

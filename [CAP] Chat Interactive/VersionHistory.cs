@@ -297,6 +297,34 @@ Improvements & Fixes
 Have fun with the new commands and cleaner systems! 🚀
 Big thanks to @kanboru for the awesome new command contributions!
 ==============================================================================="
+                },
+                {
+                "1.0.16",
+                @"===============================================================================
+                         RICS 1.0.16 - Changelog
+                         Released: February 2026
+===============================================================================
+FIXES
+
+Set default moderator command cooldowns to 0 seconds.
+Fixed the cooldown slider for commands defaulting to 0.
+Fixed cooldowns not resetting properly; now check for a reset once per game day.
+Fixed Event Karma not working (thanks to Veloxcity for the fix).
+Fixed the Colonists command to count only viewers with an assigned pawn.
+Fixed GiftCoins command to prevent giving coins to yourself.
+Removed vehiclePawns from the store to prevent crashes when purchased. (This update will handle this automatically.)
+Fixed Surgeries to use all available medicine categories (3 of each), including modded medicine.
+
+ADDED
+
+New Surgery subcommands: genderswap and body changes (fatbody, femininebody, hulkingbody, masculinebody, thinbody). Includes checks for genes, ideology, HAR body types, age, pregnancy, etc.
+Expanded Surgery commands for Biotech: blood transfusions, sterilization (vasectomy/tubal ligation), hemogen extraction, IUD implantation/removal, vasectomy reversal, pregnancy termination, and more.
+Added translations for the YouTube tab.
+Added translations for the Command Settings and Event Settings dialog windows.
+Added extra safety checks when loading JSON persistence files.
+Added body type info to !mypawn body.
+Added a link to the !mypawn wiki page on GitHub."
+
         }
             // Add more versions here as they're released
         };
