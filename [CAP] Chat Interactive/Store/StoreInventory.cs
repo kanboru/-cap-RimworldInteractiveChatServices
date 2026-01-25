@@ -234,6 +234,8 @@ namespace CAP_ChatInteractive.Store
         // Validate and update store items
         private static void ValidateAndUpdateStore()
         {
+
+
             var tradeableItems = GetDefaultTradeableItems();
             int addedItems = 0;
             int removedItems = 0;
@@ -242,6 +244,10 @@ namespace CAP_ChatInteractive.Store
             int updatedTypeFlags = 0;
             int migratedItems = 0;
             int removedInvalidItems = 0;
+
+            Logger.Message("=== Validating and updating store items... ===");
+            Logger.Debug($"Current store items: {AllStoreItems.Count}");
+            Logger.Debug($"Tradeable items in game: {tradeableItems.Count()}");
 
             // Add any new items that aren't in the store
             foreach (var thingDef in tradeableItems)
@@ -256,6 +262,7 @@ namespace CAP_ChatInteractive.Store
                 else
                 {
                     // Validate and update existing items
+                    // DO NOT overwrite user customizations like Enabled, CustomName, use, wear, equip etc.
                     var existingItem = AllStoreItems[thingDef.defName];
                     var tempStoreItem = new StoreItem(thingDef); // Create temp to get current values
 
@@ -284,19 +291,6 @@ namespace CAP_ChatInteractive.Store
                         existingItem.LimitMode = QuantityLimitMode.OneStack;
                         existingItem.HasQuantityLimit = true;
                         updatedQuantityLimits++;
-                    }
-
-
-
-                    // Update type flags if they don't match current logic
-                    if (existingItem.IsUsable != tempStoreItem.IsUsable ||
-                        existingItem.IsWearable != tempStoreItem.IsWearable ||
-                        existingItem.IsEquippable != tempStoreItem.IsEquippable)
-                    {
-                        existingItem.IsUsable = tempStoreItem.IsUsable;
-                        existingItem.IsWearable = tempStoreItem.IsWearable;
-                        existingItem.IsEquippable = tempStoreItem.IsEquippable;
-                        updatedTypeFlags++;
                     }
                 }
             }
