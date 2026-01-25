@@ -147,11 +147,11 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     displayName = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(itemName);
                 }
 
-                // ── Not recognized ──
-                if (handlerType == null)
-                {
-                    return "Unknown surgery type. Try: genderswap, fat body, feminine body, hulking body, masculine body, thin body, or a biotech surgery.";
-                }
+                // ── Not recognized ──  DONT DO THIS IT STOPS IMPLANT HANDLING
+                //if (handlerType == null)
+                //{
+                //    return "Unknown surgery type. Try: genderswap, fat body, feminine body, hulking body, masculine body, thin body, or a biotech surgery.";
+                //}
 
                 // ── Single place to check permission ──
                 CheckSurgeryEnabled(settings, itemName, out isAllowed, out disabledMessage);
