@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 using CAP_ChatInteractive.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Verse;
@@ -23,11 +24,11 @@ namespace CAP_ChatInteractive
     [StaticConstructorOnStartup]
     public static class AddonRegistry
     {
-        public static List<ChatInteractiveAddonDef> AddonDefs { get; private set; }
+        public static List<EnhancedChatInteractiveAddonDef> AddonDefs { get; private set; }
 
         static AddonRegistry()
         {
-            AddonDefs = DefDatabase<ChatInteractiveAddonDef>.AllDefs
+            AddonDefs = DefDatabase<EnhancedChatInteractiveAddonDef>.AllDefs
                 .Where(def => def.enabled)
                 .OrderBy(def => def.displayOrder)
                 .ToList();
@@ -39,6 +40,51 @@ namespace CAP_ChatInteractive
         {
             var mainDef = AddonDefs.FirstOrDefault();
             return mainDef?.GetAddonMenu();
+        }
+
+        public static void ExecuteAddonDirectly(EnhancedChatInteractiveAddonDef addonDef)
+        {
+            if (addonDef == null || !addonDef.enabled) return;
+
+            switch (addonDef.buttonType)
+            {
+                case ButtonType.DirectDialogButton when addonDef.dialogClass != null:
+                    var dialog = Activator.CreateInstance(addonDef.dialogClass) as Window;
+                    if (dialog != null)
+                    {
+                        Find.WindowStack.Add(dialog);
+                    }
+                    break;
+
+                case ButtonType.ToggleWindowButton when addonDef.windowClass != null:
+                    var existingWindow = Find.WindowStack.Windows.FirstOrDefault(w => w.GetType() == addonDef.windowClass);
+                    if (existingWindow != null)
+                    {
+                        existingWindow.Close();
+                    }
+                    else
+                    {
+                        var window = Activator.CreateInstance(addonDef.windowClass) as Window;
+                        if (window != null)
+                        {
+                            Find.WindowStack.Add(window);
+                        }
+                    }
+                    break;
+
+                case ButtonType.MenuButton:
+                    // Fall back to original menu behavior
+                    var menu = addonDef.GetAddonMenu();
+                    if (menu != null)
+                    {
+                        var options = menu.MenuOptions();
+                        if (options != null && options.Count > 0)
+                        {
+                            Find.WindowStack.Add(new FloatMenu(options));
+                        }
+                    }
+                    break;
+            }
         }
     }
 }
