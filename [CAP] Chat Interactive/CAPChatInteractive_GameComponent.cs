@@ -27,7 +27,6 @@ namespace CAP_ChatInteractive
     public class CAPChatInteractive_GameComponent : GameComponent
     {
         private int tickCounter = 0;
-        private int saveCounter = 0;
         private const int TICKS_PER_REWARD = 120 * 60; // 2 minutes in ticks (60 ticks/sec * 120 sec)
         private bool versionCheckDone = false;
 
@@ -57,8 +56,6 @@ namespace CAP_ChatInteractive
         public override void GameComponentTick()
         {
             tickCounter++;
-            saveCounter++;
-            
             if (tickCounter >= TICKS_PER_REWARD)
             {
                 tickCounter = 0;
