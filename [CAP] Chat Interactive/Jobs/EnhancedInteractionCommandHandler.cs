@@ -41,6 +41,18 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             { InteractionDefOf.AnimalChat, new InteractionInfo { IsNegative = false, Cost = 10, KarmaCost = 0 } }
         };
 
+        public class FlirtSettings
+        {
+            public float MinMoodThreshold { get; set; } = 0.30f;
+            public float StressedMoodThreshold { get; set; } = 0.40f;
+            public int MinOpinionForAutoSuccess { get; set; } = 20;
+            public int NegativeOpinionRefuseChance { get; set; } = 80; // 80%
+            public bool CheckExistingRelationships { get; set; } = true;
+
+            // You can make this configurable via your mod settings
+            public static FlirtSettings Instance = new FlirtSettings();
+        }
+
         public static string HandleInteractionCommand(ChatMessageWrapper messageWrapper, InteractionDef interaction, string[] args)
         {
             try
@@ -75,9 +87,22 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 Pawn targetPawn = FindInteractionTarget(initiatorPawn, args);
                 if (targetPawn == null) return "No valid target found for interaction.";
 
-                // Check if pawn can interact
                 if (!CanPawnsInteract(initiatorPawn, targetPawn))
                     return $"{initiatorPawn.Name} cannot interact with {targetPawn.Name} right now.";
+
+                // Special handling for romance/flirt interactions
+                if (interaction == InteractionDefOf.RomanceAttempt ||
+                    (interaction.defName?.ToLower().Contains("flirt") == true))
+                {
+                    if (!CanFlirt(initiatorPawn, targetPawn, out string refusalMessage))
+                    {
+                        // Refund cost since interaction won't happen
+                        viewer.GiveCoins(interactionInfo.Cost);
+                        Viewers.SaveViewers();
+
+                        return refusalMessage;
+                    }
+                }
 
                 // Create and assign the social visit job
                 Job socialJob = JobMaker.MakeJob(JobDefOf_CAP.CAP_SocialVisit, targetPawn);
@@ -156,6 +181,124 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             if (initiator.Downed || target.Downed) return false;
 
             return true;
+        }
+
+        // Add this method inside the EnhancedInteractionCommandHandler class
+        private static bool CanFlirt(Pawn initiator, Pawn target, out string refusalMessage)
+        {
+            refusalMessage = null;
+
+            if (target == null || initiator == null)
+            {
+                refusalMessage = "No valid target found.";
+                return false;
+            }
+
+            if (initiator == target)
+            {
+                refusalMessage = "You can't flirt with yourself!";
+                return false;
+            }
+
+            // Step 1: Basic checks (already partially in CanPawnsInteract, but add more)
+            if (initiator.Dead || target.Dead)
+            {
+                refusalMessage = $"{target.Name} is not available.";
+                return false;
+            }
+
+            if (initiator.Downed || target.Downed)
+            {
+                refusalMessage = $"{target.Name} is incapacitated.";
+                return false;
+            }
+
+            // Step 2: Mood check on target (the one being flirted with)
+            var targetMood = target.needs.mood;
+            if (targetMood != null)
+            {
+                float targetMoodPct = targetMood.CurLevelPercentage;
+
+                // Hard refuse if target is in a very bad mood
+                if (targetMoodPct < 0.30f)  // Below 30% - near mental break
+                {
+                    refusalMessage = $"{target.Name} is feeling too down for this.";
+
+                    // Small mood hit to initiator for insensitive timing
+                    var initiatorMood = initiator.needs.mood;
+                    if (initiatorMood != null && Rand.Value < 0.5f)
+                    {
+                        initiatorMood.thoughts.memories.TryGainMemory(ThoughtDefOf.RebuffedMyRomanceAttempt);
+                    }
+                    return false;
+                }
+                // Soft refuse if target is stressed
+                else if (targetMoodPct < 0.40f && Rand.Value < 0.7f)  // 70% chance to refuse when stressed
+                {
+                    refusalMessage = $"{target.Name} isn't in the mood right now.";
+                    return false;
+                }
+            }
+
+            // Step 3: Opinion check (target's opinion of initiator)
+            int opinion = target.relations.OpinionOf(initiator);
+
+            // Hard refuse if target dislikes initiator
+            if (opinion < -10)  // Strong dislike
+            {
+                refusalMessage = $"{target.Name} wants nothing to do with {initiator.Name}.";
+                return false;
+            }
+
+            // Likely refuse if neutral-negative
+            if (opinion < 0 && Rand.Value < 0.8f)  // 80% chance to refuse
+            {
+                refusalMessage = $"{target.Name} isn't interested.";
+                return false;
+            }
+
+
+            // Unlikely but possible refusal for neutral opinion
+            if (opinion < 10 && Rand.Value < 0.3f)  // 30% chance to refuse
+            {
+                refusalMessage = $"{target.Name} seems unsure about this.";
+                return false;
+            }
+
+            // Step 4: Check for existing relationships (optional but recommended)
+            if (LovePartnerRelationUtility.HasAnyLovePartner(target))
+            {
+                Pawn existingPartner = LovePartnerRelationUtility.ExistingMostLikedLovePartner(target, false);
+                if (existingPartner != null)
+                {
+                    int partnerOpinion = target.relations.OpinionOf(existingPartner);
+                    if (partnerOpinion >= 15 && Rand.Value < 0.6f)  // 60% chance to refuse if happy with partner
+                    {
+                        refusalMessage = $"{target.Name} is committed to {existingPartner.Name}.";
+                        return false;
+                    }
+                }
+            }
+
+            // Step 5: Trait-based checks
+            if (target.story != null && target.story.traits != null)
+            {
+                // Psychopaths are less receptive to romance
+                if (target.story.traits.HasTrait(TraitDefOf.Psychopath) && Rand.Value < 0.4f)
+                {
+                    refusalMessage = $"{target.Name} coldly rejects the advance.";
+                    return false;
+                }
+
+                // Abrasive pawns more likely to be rude
+                if (target.story.traits.HasTrait(TraitDefOf.Abrasive) && Rand.Value < 0.3f)
+                {
+                    refusalMessage = $"{target.Name} snaps: \"Leave me alone!\"";
+                    return false;
+                }
+            }
+
+            return true; // All checks passed
         }
 
         private class InteractionInfo

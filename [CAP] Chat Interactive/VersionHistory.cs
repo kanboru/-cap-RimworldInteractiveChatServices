@@ -325,7 +325,18 @@ Added extra safety checks when loading JSON persistence files.
 Added body type info to !mypawn body.
 Added a link to the !mypawn wiki page on GitHub."
 
-        }
+               },
+            {    "1.0.16a",
+@"===============================================================================
+        RICS 1.0.16a - Changelog
+        Released: March 2026
+===============================================================================
+HOTFIXES
+Fixed finding pawns from commands for !revivepawn, !healpawn and others.
+Fixed Validation errors when loading storeitems with isUseable/isWearable/isEquippable.
+Put in controls for !flirt command to prevent abuse.
+"
+}
             // Add more versions here as they're released
         };
 

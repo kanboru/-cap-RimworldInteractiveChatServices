@@ -408,13 +408,15 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         // === Body ===
         private static string HandleBodyInfo(Pawn pawn, string[] args)
         {
-            string bodyPartFilter = args.Length > 0 ? string.Join(" ", args).ToLower() : null;
             // Add body type at the beginning
             string bodyTypeInfo = "";
-            if (pawn.story?.bodyType != null && bodyPartFilter == null)
+            if (pawn.story?.bodyType != null)
             {
-                bodyTypeInfo = $"🧬 Body Type: {pawn.story.bodyType.defName} |";
+                bodyTypeInfo = $"🧬 Body Type: {pawn.story.bodyType.label} |";
+                string displayName = GetBodyTypeDisplayName(pawn);
+                bodyTypeInfo = $"🧬 Body Type: {displayName} |";
             }
+
 
             if (pawn.health?.hediffSet?.hediffs == null || pawn.health.hediffSet.hediffs.Count == 0)
             {
@@ -433,7 +435,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             var healthConditions = GetVisibleHealthConditions(pawn);
 
             // Check if user specified a body part filter
-            
+            string bodyPartFilter = args.Length > 0 ? string.Join(" ", args).ToLower() : null;
             BodyPartRecord targetPart = null;
 
             if (!string.IsNullOrEmpty(bodyPartFilter))
