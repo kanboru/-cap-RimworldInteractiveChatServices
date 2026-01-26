@@ -14,6 +14,7 @@
 // 
 // You should have received a copy of the GNU Affero General Public License
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
+
 // Global Settings classes for CAP Chat Interactive mod
 // including per-streaming-service settings and global chat settings.
 
@@ -46,6 +47,8 @@ namespace CAP_ChatInteractive
         public bool AutoConnect = false;
         public bool IsConnected = false;
         public bool suspendFeedback = false;
+        public bool useWhisperForCommands = true;  // 1.0.17 addition
+        public bool forceUseWHisper = false;  // 1.0.17 addition
 
         public void ExposeData()
         {
@@ -56,6 +59,8 @@ namespace CAP_ChatInteractive
             Scribe_Values.Look(ref AutoConnect, "autoConnect", false);
             Scribe_Values.Look(ref IsConnected, "isConnected", false);
             Scribe_Values.Look(ref suspendFeedback,"suspendFeedback",false);
+            Scribe_Values.Look(ref useWhisperForCommands, "useWhisperForCommands", true);  // 1.0.17 addition
+            Scribe_Values.Look(ref forceUseWHisper, "forceUseWHisper", false);  // 1.0.17 addition
         }
 
         public bool CanConnect
