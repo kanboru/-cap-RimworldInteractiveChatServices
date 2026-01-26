@@ -181,6 +181,48 @@
   <RICS.Twitch.TokenType.Bot>Bot account</RICS.Twitch.TokenType.Bot>
   <RICS.Twitch.TokenType.Main>Main account</RICS.Twitch.TokenType.Main>
   <RICS.Twitch.TokenTypeTooltip>Shows which account this token was generated for</RICS.Twitch.TokenTypeTooltip>
+
+  <!-- added in 1.0.17-->
+  <!-- Whisper Command Settings -->
+  <RICS.Twitch.WhisperSettingsHeader>Whisper Command Settings</RICS.Twitch.WhisperSettingsHeader>
+
+  <RICS.Twitch.UseWhisperForCommandsLabel>Allow whisper commands</RICS.Twitch.UseWhisperForCommandsLabel>
+  <RICS.Twitch.UseWhisperForCommandsTooltip>
+    Allow viewers to send commands via whispers (private messages).
+    Default: ON - Viewers can whisper commands.
+    Disable: Only allow commands in public chat.
+  </RICS.Twitch.UseWhisperForCommandsTooltip>
+
+  <RICS.Twitch.ForceUseWhisperLabel>Force whisper-only commands</RICS.Twitch.ForceUseWhisperLabel>
+  <RICS.Twitch.ForceUseWhisperTooltip>
+    <![CDATA[Force viewers to use whispers for ALL commands (reduces chat clutter).
+ON: Commands in public chat are ignored.
+OFF: Commands work in both chat and whispers.
+Note: When enabled, a reminder message will be sent periodically.]]>
+  </RICS.Twitch.ForceUseWhisperTooltip>
+
+  <RICS.Twitch.WhisperReminderTimerLabel>Whisper reminder timer (seconds):</RICS.Twitch.WhisperReminderTimerLabel>
+  <RICS.Twitch.WhisperReminderTimerTooltip>
+    <![CDATA[How often to remind viewers to use whispers (in seconds).
+0 = Never send reminders.
+300 = 5 minutes (recommended).
+When "Force whisper-only commands" is enabled, this controls how often the reminder message appears in chat.]]>
+  </RICS.Twitch.WhisperReminderTimerTooltip>
+
+  <RICS.Twitch.WhisperReminderDisabled>Reminder: Disabled (no chat messages will be sent)</RICS.Twitch.WhisperReminderDisabled>
+  <RICS.Twitch.WhisperReminderEnabled>Reminder: Every {0} seconds</RICS.Twitch.WhisperReminderEnabled>
+
+  <RICS.Twitch.WhisperLimitationNote>Note: Twitch limits bot whisper replies to certain users.</RICS.Twitch.WhisperLimitationNote>
+  <RICS.Twitch.WhisperLimitationTooltip>
+    <![CDATA[Twitch Platform Limitation:
+• Bots can only send whispers to users who:
+  - Have subscribed to the channel
+  - Have received a whisper from the bot before
+  - Are followed by the bot account
+• This is a Twitch API restriction for spam prevention.
+• Public chat replies will still work normally.]]>
+  </RICS.Twitch.WhisperLimitationTooltip>
+  
   
   
 </LanguageData>

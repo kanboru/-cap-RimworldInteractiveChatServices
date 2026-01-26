@@ -31,7 +31,12 @@ namespace _CAP__Chat_Interactive
         public static void Draw(Rect region)
         {
             var settings = CAPChatInteractiveMod.Instance.Settings.TwitchSettings;
-            var view = new Rect(0f, 0f, region.width - 16f, 750f); // Increased height
+            // var view = new Rect(0f, 0f, region.width - 16f, 1100f); // Increased height
+
+            // Calculate dynamic height based on content
+            float calculatedHeight = CalculateTabHeight();
+
+            var view = new Rect(0f, 0f, region.width - 16f, calculatedHeight);
 
             Widgets.BeginScrollView(region, ref _scrollPosition, view);
             var listing = new Listing_Standard();
@@ -440,12 +445,76 @@ namespace _CAP__Chat_Interactive
                 }
             }
 
+            // Add this code after the Connection Settings section (around line 400-410)
+
+            // === Whisper Command Settings ===
+            listing.Gap(24f);
+            Text.Font = GameFont.Medium;
+            GUI.color = ColorLibrary.SubHeader;
+            listing.Label("RICS.Twitch.WhisperSettingsHeader".Translate());
+            Text.Font = GameFont.Small;
+            GUI.color = Color.white;
+            listing.GapLine(6f);
+            listing.Gap(4f);
+
+            // useWhisperForCommands checkbox
+            Rect useWhisperRect = listing.GetRect(30f);
+            Widgets.CheckboxLabeled(useWhisperRect,
+                "RICS.Twitch.UseWhisperForCommandsLabel".Translate(),
+                ref settings.useWhisperForCommands);
+            TooltipHandler.TipRegion(useWhisperRect,
+                "RICS.Twitch.UseWhisperForCommandsTooltip".Translate());
+
+            listing.Gap(12f);
+
+            // forceUseWhisper checkbox
+            Rect forceWhisperRect = listing.GetRect(30f);
+            Widgets.CheckboxLabeled(forceWhisperRect,
+                "RICS.Twitch.ForceUseWhisperLabel".Translate(),
+                ref settings.forceUseWhisper);
+            TooltipHandler.TipRegion(forceWhisperRect,
+                "RICS.Twitch.ForceUseWhisperTooltip".Translate());
+
+            listing.Gap(12f);
+
+            // forceUseWhisperMessageTimer numeric input
+            Rect timerLabelRect = listing.GetRect(24f);
+            Widgets.Label(timerLabelRect,
+                "RICS.Twitch.WhisperReminderTimerLabel".Translate());
+            TooltipHandler.TipRegion(timerLabelRect,
+                "RICS.Twitch.WhisperReminderTimerTooltip".Translate());
+
+            Rect timerFieldRect = listing.GetRect(30f);
+            string timerBuffer = settings.forceUseWhisperMessageTimer.ToString();
+            Widgets.TextFieldNumeric(timerFieldRect, ref settings.forceUseWhisperMessageTimer, ref timerBuffer, 0, 3600);
+
+            // Add a helper label explaining the timer
+            Rect timerHelperRect = listing.GetRect(20f);
+            GUI.color = Color.gray;
+            string timerHelper = settings.forceUseWhisperMessageTimer == 0
+                ? "RICS.Twitch.WhisperReminderDisabled".Translate()
+                : string.Format("RICS.Twitch.WhisperReminderEnabled".Translate(),
+                    settings.forceUseWhisperMessageTimer);
+            Widgets.Label(timerHelperRect, timerHelper);
+            GUI.color = Color.white;
+
+            // Add explanatory note about whisper limitations
+            listing.Gap(12f);
+            Rect whisperNoteRect = listing.GetRect(40f);
+            GUI.color = ColorLibrary.MutedText;
+            Widgets.Label(whisperNoteRect, "RICS.Twitch.WhisperLimitationNote".Translate());
+            GUI.color = Color.white;
+            TooltipHandler.TipRegion(whisperNoteRect,
+                "RICS.Twitch.WhisperLimitationTooltip".Translate());
+
             // === Quick Tips Section ===
             listing.Gap(24f);
             Text.Font = GameFont.Medium;
+            GUI.color = ColorLibrary.SubHeader;
             // listing.Label("Quick Tips");
             listing.Label("RICS.Twitch.QuickTipsHeader".Translate());
             Text.Font = GameFont.Small;
+            GUI.color = Color.white;
             listing.GapLine(6f);
             listing.Gap(4f);
 
@@ -467,6 +536,44 @@ namespace _CAP__Chat_Interactive
             TooltipHandler.TipRegion(tipsRect,"RICS.Twitch.QuickTipsTooltip".Translate());
             listing.End();
             Widgets.EndScrollView();
+        }
+
+        private static float CalculateTabHeight()
+        {
+            // Base margins and gaps
+            float height = 0f;
+
+            // Header: 30 + gap 8 = 38
+            height += 38f;
+
+            // Quick Guide: ~80 + gap 12 = 92
+            height += 92f;
+
+            // Enable/Disable: 30 + gap 16 = 46
+            height += 46f;
+
+            // Channel Information: Header 30 + gap 6 + gap 4 + labels 24 + field 30 + gap 12 = 106
+            height += 106f;
+
+            // Bot Account: Header 30 + gap 6 + gap 4 + label 24 + field 30 + status 20 + gap 16 = 130
+            height += 130f;
+
+            // Authentication: Header 30 + gap 6 + gap 4 + label 24 + field 30 + buttons 35 + gap 8 + status 20 + type 18 + gap 20 = 195
+            height += 195f;
+
+            // Connection Settings: Header 30 + gap 6 + gap 4 + checkbox 30 + gap 12 + status 24 + button 30 + gap 24 = 136
+            height += 136f;
+
+            // Whisper Settings: Header 30 + gap 6 + gap 4 + checkbox 30 + gap 12 + checkbox 30 + gap 12 + label 24 + field 30 + helper 20 + gap 12 + note 40 + gap 24 = 254
+            height += 254f;
+
+            // Quick Tips: Header 30 + gap 6 + gap 4 + content 85 = 125
+            height += 125f;
+            // The math is off so more padding for now
+            // Add some extra padding at the bottom
+            height += 120f;
+
+            return height;
         }
     }
 }
