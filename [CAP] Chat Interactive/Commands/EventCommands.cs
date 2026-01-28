@@ -24,16 +24,16 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         public override string Name => "event";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
 
             if (args.Length == 0)
             {
-                return "Usage: !event <event_name> or !lookup event <name>.";
+                return "Usage: !event [event_name] or !lookup event [name].";
             }
 
             string incidentType = string.Join(" ", args).Trim();
-            return IncidentCommandHandler.HandleIncidentCommand(user, incidentType);
+            return IncidentCommandHandler.HandleIncidentCommand(messageWrapper, incidentType);
         }
     }
 
@@ -41,16 +41,16 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
     {
         public override string Name => "weather";
 
-        public override string Execute(ChatMessageWrapper user, string[] args)
+        public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
 
             if (args.Length == 0)
             {
-                return "Usage: !weather <type>. Types: rain, snow, fog, thunderstorm, clear, etc.";
+                return "Usage: !weather [type>] Types: rain, snow, fog, thunderstorm, clear, etc.";
             }
 
             string weatherType = args[0].ToLower();
-            return WeatherCommandHandler.HandleWeatherCommand(user, weatherType);
+            return WeatherCommandHandler.HandleWeatherCommand(messageWrapper, weatherType);
         }
     }
 }

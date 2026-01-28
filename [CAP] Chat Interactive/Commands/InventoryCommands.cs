@@ -43,6 +43,43 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return pawnCommand.Execute(messageWrapper, pawnArgs);
             }
 
+            // Check if this is a event purchase
+            if (args[0].ToLower() == "event")
+            {
+                var newArgs = args.Skip(1).ToArray();
+                var newCommand = new Event();
+                return newCommand.Execute(messageWrapper, newArgs);
+            }
+            // check if this is a weather purchase
+            if (args[0].ToLower() == "weather")
+            {
+                var newArgs = args.Skip(1).ToArray();
+                var newCommand = new Weather();
+                return newCommand.Execute(messageWrapper, newArgs);
+            }
+            
+            if (args[0].ToLower() == "use")
+            {
+                var newArgs = args.Skip(1).ToArray();
+                var newCommand = new Use();
+                return newCommand.Execute(messageWrapper, newArgs);
+            }
+
+            if (args[0].ToLower() == "equip")
+            {
+                var newArgs = args.Skip(1).ToArray();
+                var newCommand = new Equip();
+                return newCommand.Execute(messageWrapper, newArgs);
+            }
+
+            if (args[0].ToLower() == "wear")
+            {
+                var newArgs = args.Skip(1).ToArray();
+                var newCommand = new Wear();
+                return newCommand.Execute(messageWrapper, newArgs);
+            }
+
+
             try
             {
                 var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
@@ -76,7 +113,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !use <item> ";
+                return "Usage: !use [item] ";
             }
             var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
             if (cooldownManager == null)
@@ -101,7 +138,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !equip <item> [quality] [material]";
+                return "Usage: !equip [item] [quality] [material]";
             }
 
             var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
@@ -128,7 +165,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !wear <item> [quality] [material]";
+                return "Usage: !wear [item] [quality] [material]";
             }
 
             var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
@@ -154,7 +191,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !backpack <item> [quality] [material]";
+                return "Usage: !backpack [item] [quality] [material]";
             }
             var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
             if (cooldownManager == null)
