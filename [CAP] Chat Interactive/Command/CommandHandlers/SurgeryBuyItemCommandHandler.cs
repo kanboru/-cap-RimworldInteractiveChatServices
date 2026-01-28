@@ -111,7 +111,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     recipeDefName = "FatBodySurgery";
                     displayName = "Fat Body";
                 }
-                else if (new[] { "femininebody", "feminine body", "feminine", "bodyfeminine" }.Contains(itemName))
+                else if (new[] { "femininebody", "feminine body", "feminine", "bodyfeminine", "female" }.Contains(itemName))
                 {
                     handlerType = "body";
                     surgeryCategory = "feminine body";
@@ -125,7 +125,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     recipeDefName = "HulkingBodySurgery";
                     displayName = "Hulking Body";
                 }
-                else if (new[] { "masculinebody", "masculine body", "masculine", "bodymasculine" }.Contains(itemName))
+                else if (new[] { "masculinebody", "masculine body", "masculine", "bodymasculine", "male" }.Contains(itemName))
                 {
                     handlerType = "body";
                     surgeryCategory = "masculine body";
