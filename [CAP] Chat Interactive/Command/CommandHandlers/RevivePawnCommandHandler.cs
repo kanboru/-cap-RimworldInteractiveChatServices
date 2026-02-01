@@ -80,7 +80,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static string ReviveSelf(ChatMessageWrapper user, Viewer viewer, int pricePerRevive, string currencySymbol)
         {
-            var viewerPawn = StoreCommandHelper.GetViewerPawn(user);
+            var viewerPawn = PawnItemHelper.GetViewerPawn(user);
 
             if (viewerPawn == null)
             {

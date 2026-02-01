@@ -29,7 +29,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         internal static string HandleDyeCommand(ChatMessageWrapper messageWrapper, string[] args)
         {
             // Get the viewer's pawn
-            Verse.Pawn viewerPawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
+            Verse.Pawn viewerPawn = PawnItemHelper.GetViewerPawn(messageWrapper);
             if (viewerPawn == null)
             {
                 return "You need to have a pawn in the colony to dye thier clothing. Use !buy pawn first.";

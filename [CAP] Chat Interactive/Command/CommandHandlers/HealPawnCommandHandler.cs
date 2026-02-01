@@ -100,7 +100,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static string HealAllSelf(ChatMessageWrapper messageWrapper, Viewer viewer, int pricePerHeal, string currencySymbol, int quantity)
         {
-            var viewerPawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
+            var viewerPawn = PawnItemHelper.GetViewerPawn(messageWrapper);
 
             if (viewerPawn == null)
             {
@@ -166,7 +166,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static string HealSelf(ChatMessageWrapper messageWrapper, Viewer viewer, int pricePerHeal, string currencySymbol, int quantity)
         {
-            var viewerPawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
+            var viewerPawn = PawnItemHelper.GetViewerPawn(messageWrapper);
 
             if (viewerPawn == null)
             {
@@ -284,7 +284,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             // Find all injured assigned pawns and count their injuries
             foreach (var username in allAssignedUsernames)
             {
-                var pawn = StoreCommandHelper.GetViewerPawn(username);
+                var pawn = PawnItemHelper.GetViewerPawn(username);
                 if (pawn != null && !pawn.Dead)
                 {
                     int injuryCount = CountHealableInjuries(pawn);

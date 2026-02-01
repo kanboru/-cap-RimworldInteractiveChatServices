@@ -33,7 +33,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         internal static string HandleSetFavoriteColorCommand(ChatMessageWrapper messageWrapper, string[] args)
         {
             // Get the viewer's pawn
-            Verse.Pawn viewerPawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
+            Verse.Pawn viewerPawn = PawnItemHelper.GetViewerPawn(messageWrapper);
             if (viewerPawn == null)
             {
                 return "You need to have a pawn in the colony to set a favorite color. Use !buy pawn first.";

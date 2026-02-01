@@ -38,7 +38,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                     return "❌ Viewer not found.";
 
                 // Check if viewer has a pawn assigned
-                Verse.Pawn pawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
+                Verse.Pawn pawn = PawnItemHelper.GetViewerPawn(messageWrapper);
 
                 if (pawn == null)
                     return "❌ You need an assigned pawn to use !passion. Use !join to get in the queue.";

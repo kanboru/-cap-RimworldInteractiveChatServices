@@ -87,7 +87,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 }
 
                 // Get viewer's pawn
-                var viewerPawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
+                var viewerPawn = PawnItemHelper.GetViewerPawn(messageWrapper);
                 Verse.Pawn rimworldPawn = viewerPawn; // This is already a Verse.Pawn
                 Logger.Debug($"Viewer pawn for {messageWrapper.Username}: {(viewerPawn != null ? viewerPawn.Name.ToString() : "null")}");
                 Logger.Debug($"Viewer pawn dead status: {(viewerPawn != null ? viewerPawn.Dead.ToString() : "N/A")}");

@@ -213,7 +213,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 }
 
                 // Get viewer's pawn
-                Verse.Pawn viewerPawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
+                Verse.Pawn viewerPawn = PawnItemHelper.GetViewerPawn(messageWrapper);
                 if (viewerPawn == null)
                 {
                     return "You need to have a pawn in the colony to perform surgery. Use !buy pawn first.";
@@ -429,7 +429,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                        $"You have {StoreCommandHelper.FormatCurrencyMessage(viewer.Coins, currencySymbol)}.";
             }
             // Get viewer's pawn
-            Verse.Pawn pawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
+            Verse.Pawn pawn = PawnItemHelper.GetViewerPawn(messageWrapper);
             if (pawn == null)
                 return "You need to have a pawn in the colony to perform surgery. Use !buy pawn first.";
             if (pawn.Dead)
@@ -505,7 +505,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
 
             // Get viewer's pawn
-            Verse.Pawn pawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
+            Verse.Pawn pawn = PawnItemHelper.GetViewerPawn(messageWrapper);
             if (pawn == null)
                 return "You need to have a pawn in the colony to perform surgery. Use !buy pawn first.";
             if (pawn.Dead)
@@ -564,7 +564,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         {
             const int quantity = 1; // Fixed to 1 for misc surgeries
 
-            Verse.Pawn pawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
+            Verse.Pawn pawn = PawnItemHelper.GetViewerPawn(messageWrapper);
             if (pawn == null) return "You need a pawn. Use !buy pawn first.";
             if (pawn.Dead) return "Pawn is dead.";
 
