@@ -397,7 +397,8 @@ namespace CAP_ChatInteractive.Store
             return false;
         }
 
-        private static bool ShouldRemoveStoreItem(string defName, ThingDef thingDef, IEnumerable<ThingDef> tradeableItems, out string reason)
+        private static bool ShouldRemoveStoreItem(string defName,
+            ThingDef thingDef, IEnumerable<ThingDef> tradeableItems, out string reason)
         {
             reason = null;
 

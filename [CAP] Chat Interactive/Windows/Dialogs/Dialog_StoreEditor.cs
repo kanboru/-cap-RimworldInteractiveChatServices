@@ -1486,7 +1486,7 @@ namespace CAP_ChatInteractive
                 var thingDef = DefDatabase<ThingDef>.GetNamedSilentFail(item.DefName);
                 if (thingDef != null)
                 {
-                    item.BasePrice = (int)(thingDef.BaseMarketValue);
+                    item.BasePrice = Math.Max(1, (int)thingDef.BaseMarketValue);
                     // item.Enabled = true;  // Lets just reset the prices not enable them all
                 }
             }
