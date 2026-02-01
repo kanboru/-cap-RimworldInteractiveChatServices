@@ -21,7 +21,9 @@ using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Verse;
+using static CAP_ChatInteractive.Commands.CommandHandlers.StoreCommandHelper;
 using Pawn = CAP_ChatInteractive.Commands.ViewerCommands.Pawn;
 
 namespace CAP_ChatInteractive.Commands.CommandHandlers
@@ -34,7 +36,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             try
             {
                 Logger.Debug($"HandleBuyItem called for user: {messageWrapper.Username}, command {messageWrapper.Message}, args: {string.Join(", ", args)}, requireEquippable: {requireEquippable}, requireWearable: {requireWearable}, addToInventory: {addToInventory}");
-
 
                 // REPLACE all the parsing code (about 80 lines) with just:
                 var parsed = CommandParserUtility.ParseCommandArguments(args, allowQuality: true, allowMaterial: true, allowSide: false, allowQuantity: true);
@@ -96,10 +97,10 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 Logger.Debug($"Research requirements met for {itemName}");
 
                 // Parse quality
-                var quality = StoreCommandHelper.ParseQuality(qualityStr);
+                var quality = ItemConfigHelper.ParseQuality(qualityStr);
                 Logger.Debug($"Parsed quality: {qualityStr} -> {quality}");
 
-                if (!StoreCommandHelper.IsQualityAllowed(quality))
+                if (!ItemConfigHelper.IsQualityAllowed(quality))
                 {
                     Logger.Debug($"Quality {qualityStr} is not allowed for purchases");
                     return $"Quality '{qualityStr}' is not allowed for purchases.";
@@ -124,7 +125,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 ThingDef material = null;
                 if (thingDef.MadeFromStuff)
                 {
-                    material = StoreCommandHelper.ParseMaterial(materialStr, thingDef);
+                    material = ItemConfigHelper.ParseMaterial(materialStr, thingDef);
                     if (materialStr != "random" && material == null)
                     {
                         return $"Material '{materialStr}' is not valid for {itemName}.";
@@ -149,7 +150,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 Logger.Debug($"Final quantity after limits: {quantity}");
 
                 // Calculate final price
-                int finalPrice = StoreCommandHelper.CalculateFinalPrice(storeItem, quantity, quality, material);
+                int finalPrice = ItemConfigHelper.CalculateFinalPrice(storeItem, quantity, quality, material);
 
                 // Check if user can afford
                 if (!StoreCommandHelper.CanUserAfford(messageWrapper, finalPrice))
@@ -162,7 +163,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 if (requireEquippable || requireWearable || addToInventory)
                 {
-                    viewerPawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
+                    viewerPawn = PawnItemHelper.GetViewerPawn(messageWrapper);
                     if (viewerPawn == null)
                     {
                         return "You need to have a pawn in the colony. Use !buy pawn first.";
@@ -176,7 +177,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 else
                 {
                     // For regular buy commands, try to get the pawn but don't require it
-                    viewerPawn = StoreCommandHelper.GetViewerPawn(messageWrapper);
+                    viewerPawn = PawnItemHelper.GetViewerPawn(messageWrapper);
                     // Log if no pawn found for debugging
                     if (viewerPawn == null)
                     {
@@ -199,30 +200,31 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     Logger.Debug($"Awarded {karmaEarned} karma for {finalPrice} coin purchase");
                 }
 
-                (List<Thing> spawnedItems, IntVec3 deliveryPos) spawnResult;
-
                 // Spawn the item
                 var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
+                (List<Thing> spawnedItems, IntVec3 deliveryPos) spawnResult;
+                DeliveryResult deliveryResult;
+
                 if (requireEquippable || requireWearable)
                 {
-                    spawnResult = StoreCommandHelper.SpawnItemForPawn(thingDef, quantity, quality, material, viewerPawn, false, requireEquippable, requireWearable);
-                    cooldownManager.RecordItemPurchase(storeItem.DefName); // or "apparel", "item", etc.
+                    deliveryResult = ItemDeliveryHelper.SpawnItemForPawn(thingDef,
+                        quantity, quality, material, viewerPawn, false, requireEquippable, requireWearable);
                 }
                 else
                 {
-                    spawnResult = StoreCommandHelper.SpawnItemForPawn(thingDef, quantity, quality, material, viewerPawn, addToInventory);
-                    cooldownManager.RecordItemPurchase(storeItem.DefName); // or "apparel", "item", etc.
+                    deliveryResult = ItemDeliveryHelper.SpawnItemForPawn(thingDef,
+                        quantity, quality, material, viewerPawn, addToInventory, false, false);
                 }
-                List<Thing> spawnedItems = spawnResult.spawnedItems;
-                IntVec3 deliveryPos = spawnResult.deliveryPos;
+
+                List<Thing> allSpawnedItems = new List<Thing>();
+                allSpawnedItems.AddRange(deliveryResult.LockerDeliveredItems);
+                allSpawnedItems.AddRange(deliveryResult.DropPodDeliveredItems);
 
                 // Set ownership for each spawned item if this is a direct pawn delivery
                 if (requireEquippable || requireWearable || addToInventory)
                 {
-                    //List<Thing> spawnedItems = spawnResult.spawnedItems;
-                    foreach (Thing spawnedItem in spawnedItems)
+                    foreach (Thing spawnedItem in allSpawnedItems)
                     {
-                        // spawnedItem.SetFactionDirect(Faction.OfPlayer);
                         TrySetItemOwnership(spawnedItem, viewerPawn);
                     }
                 }
@@ -230,16 +232,21 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 // Create look targets - use the delivery position we know items will be at
                 LookTargets lookTargets = null;
 
+                // Get all spawned items for ownership setting (if needed)
+                allSpawnedItems.AddRange(deliveryResult.LockerDeliveredItems);
+                allSpawnedItems.AddRange(deliveryResult.DropPodDeliveredItems);
+
+                // For the LookTargets code, update to use deliveryResult.DeliveryPosition:
                 if (thingDef.thingClass == typeof(Verse.Pawn))
                 {
                     // For animal deliveries, target the EXACT SPAWN POSITION
-                    if (deliveryPos.IsValid)
+                    if (deliveryResult.DeliveryPosition.IsValid)
                     {
                         Map targetMap = viewerPawn?.Map ?? Find.CurrentMap ?? Find.Maps.FirstOrDefault(m => m.IsPlayerHome);
                         if (targetMap != null)
                         {
-                            lookTargets = new LookTargets(deliveryPos, targetMap);
-                            Logger.Debug($"Created LookTargets for exact animal spawn position: {deliveryPos}");
+                            lookTargets = new LookTargets(deliveryResult.DeliveryPosition, targetMap);
+                            Logger.Debug($"Created LookTargets for exact animal spawn position: {deliveryResult.DeliveryPosition}");
                         }
                     }
                 }
@@ -248,16 +255,28 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     // For direct pawn interactions, target the pawn
                     lookTargets = viewerPawn != null ? new LookTargets(viewerPawn) : null;
                     Logger.Debug($"Created LookTargets for pawn: {viewerPawn?.Name}");
-
                 }
-                else if (deliveryPos.IsValid)
+                else if (deliveryResult.PrimaryMethod == DeliveryMethod.Locker)
+                {
+                    // For locker deliveries, target the locker position
+                    if (deliveryResult.DeliveryPosition.IsValid)
+                    {
+                        Map targetMap = viewerPawn?.Map ?? Find.CurrentMap ?? Find.Maps.FirstOrDefault(m => m.IsPlayerHome);
+                        if (targetMap != null)
+                        {
+                            lookTargets = new LookTargets(deliveryResult.DeliveryPosition, targetMap);
+                            Logger.Debug($"Created LookTargets for locker position: {deliveryResult.DeliveryPosition}");
+                        }
+                    }
+                }
+                else if (deliveryResult.DeliveryPosition.IsValid)
                 {
                     // For drop pod deliveries, target the delivery position
                     Map targetMap = viewerPawn?.Map ?? Find.CurrentMap ?? Find.Maps.FirstOrDefault(m => m.IsPlayerHome);
                     if (targetMap != null)
                     {
-                        lookTargets = new LookTargets(deliveryPos, targetMap);
-                        Logger.Debug($"Created LookTargets for delivery position: {deliveryPos} on map {targetMap}");
+                        lookTargets = new LookTargets(deliveryResult.DeliveryPosition, targetMap);
+                        Logger.Debug($"Created LookTargets for delivery position: {deliveryResult.DeliveryPosition} on map {targetMap}");
                     }
                 }
 
@@ -279,7 +298,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     string emoji = "🐾";
                     invoiceLabel = $"{emoji} Rimazon Pet Delivery - {messageWrapper.Username}";
                     invoiceMessage = CreateRimazonPetInvoice(messageWrapper.Username, itemLabel, quantity, finalPrice, currencySymbol);
-
                 }
                 // Then check for backpack/equip/wear
                 else if (addToInventory || requireEquippable || requireWearable)
@@ -293,9 +311,22 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 }
                 else
                 {
-                    // Regular drop pod delivery
+                    // Regular delivery with tracking
                     invoiceLabel = $"🟡 Rimazon Delivery - {messageWrapper.Username}";
-                    invoiceMessage = CreateRimazonInvoice(messageWrapper.Username, itemLabel, quantity, finalPrice, currencySymbol, quality, material);
+
+                    // Check if we have mixed delivery
+                    if (deliveryResult.LockerDeliveredItems.Count > 0 && deliveryResult.DropPodDeliveredItems.Count > 0)
+                    {
+                        // Use split invoice for mixed delivery
+                        invoiceMessage = CreateSplitInvoice(messageWrapper.Username, itemLabel, quantity, finalPrice,
+                            currencySymbol, quality, material, deliveryResult);
+                    }
+                    else
+                    {
+                        // Single delivery method
+                        invoiceMessage = CreateRimazonInvoice(messageWrapper.Username, itemLabel, quantity, finalPrice,
+                            currencySymbol, quality, material, deliveryResult);
+                    }
                 }
 
                 // Send the letter
@@ -308,14 +339,12 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     MessageHandler.SendGreenLetter(invoiceLabel, invoiceMessage, lookTargets);
                 }
 
-
                 // Return success message
                 string action = addToInventory ? "added to your pawn's inventory" :
                               requireEquippable ? "equipped to your pawn" :
                               requireWearable ? "worn by your pawn" : "delivered via Rimazon";
 
                 return $"Purchased {quantity}x {itemName} for {StoreCommandHelper.FormatCurrencyMessage(finalPrice, currencySymbol)} and {action}! Remaining: {StoreCommandHelper.FormatCurrencyMessage(viewer.Coins, currencySymbol)}.";
-
             }
             catch (Exception ex)
             {
@@ -324,12 +353,33 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
         }
 
-        private static string CreateRimazonInvoice(string username, string itemName, int quantity, int price, string currencySymbol, QualityCategory? quality, ThingDef material)
+        private static string CreateRimazonInvoice(string username, string itemName, int quantity, int price,
+            string currencySymbol, QualityCategory? quality, ThingDef material, DeliveryResult deliveryResult)
         {
+            // Get counts from delivery result
+            int lockerCount = deliveryResult.LockerDeliveredItems.Sum(t => t.stackCount);
+            int dropPodCount = deliveryResult.DropPodDeliveredItems.Sum(t => t.stackCount);
+
             string invoice = $"RIMAZON INVOICE\n";
             invoice += $"====================\n";
             invoice += $"Customer: {username}\n";
             invoice += $"Item: {itemName} x{quantity}\n";
+
+            // Show delivery breakdown
+            if (lockerCount > 0 && dropPodCount > 0)
+            {
+                invoice += $"Delivery: Mixed Delivery\n";
+                invoice += $"  • Locker Delivery: x{lockerCount}\n";
+                invoice += $"  • Drop Pod Delivery: x{dropPodCount}\n";
+            }
+            else if (lockerCount > 0)
+            {
+                invoice += $"Delivery: Locker Delivery (x{lockerCount})\n";
+            }
+            else
+            {
+                invoice += $"Delivery: Standard Drop Pod\n";
+            }
 
             // Add quality info if specified
             if (quality.HasValue)
@@ -337,27 +387,103 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 invoice += $"Quality: {quality.Value}\n";
             }
 
-            // Add material info if specified and different from default
+            // Add material info if specified
             if (material != null)
             {
                 invoice += $"Material: {material.LabelCap}\n";
             }
 
-            // Add minification note if applicable
-            var thingDef = DefDatabase<ThingDef>.GetNamedSilentFail(itemName.Replace(" ", ""));
-            if (thingDef != null && thingDef.Minifiable)
+            invoice += $"====================\n";
+
+            // Show pricing breakdown for mixed delivery
+            if (lockerCount > 0 && dropPodCount > 0)
             {
-                invoice += $"Note: Delivered in minified form for easy handling\n";
+                // Calculate price per item
+                float pricePerItem = (float)price / quantity;
+                int lockerPrice = (int)(pricePerItem * dropPodCount); // Only charge for drop pod items
+                int dropPodPrice = (int)(pricePerItem * dropPodCount);
+
+                invoice += $"Locker Delivery (x{lockerCount}): 0{currencySymbol}\n";
+                invoice += $"Drop Pod Delivery (x{dropPodCount}): {dropPodPrice:N0}{currencySymbol}\n";
+                invoice += $"====================\n";
+                invoice += $"Total: {price:N0}{currencySymbol}\n";
+            }
+            else
+            {
+                invoice += $"Total: {price:N0}{currencySymbol}\n";
             }
 
             invoice += $"====================\n";
-            invoice += $"Total: {price:N0}{currencySymbol}\n";
-            invoice += $"====================\n";
             invoice += $"Thank you for shopping with Rimazon!\n";
-            invoice += $"Delivery: Standard Drop Pod\n";
+
+            if (lockerCount > 0 && dropPodCount > 0)
+            {
+                invoice += $"Items delivered via both Locker and Drop Pod.\n";
+            }
+            else if (lockerCount > 0)
+            {
+                invoice += $"Items delivered to your Rimazon Locker.\n";
+            }
+
             invoice += $"Satisfaction guaranteed or your coins back!";
 
             return invoice;
+        }
+
+        // Alternative: Split invoice method
+        private static string CreateSplitInvoice(string username, string itemName, int quantity, int price,
+            string currencySymbol, QualityCategory? quality, ThingDef material, DeliveryResult deliveryResult)
+        {
+            int lockerCount = deliveryResult.LockerDeliveredItems.Sum(t => t.stackCount);
+            int dropPodCount = deliveryResult.DropPodDeliveredItems.Sum(t => t.stackCount);
+
+            StringBuilder invoice = new StringBuilder();
+
+            if (lockerCount > 0)
+            {
+                invoice.AppendLine("=== LOCKER DELIVERY INVOICE ===");
+                invoice.AppendLine($"Customer: {username}");
+                invoice.AppendLine($"Item: {itemName} x{lockerCount}");
+                invoice.AppendLine("====================");
+                invoice.AppendLine($"Delivery: Locker Delivery");
+                invoice.AppendLine($"Status: Delivered ✅");
+                invoice.AppendLine($"Total: 0{currencySymbol}"); // Free
+                invoice.AppendLine("====================");
+                invoice.AppendLine();
+            }
+
+            if (dropPodCount > 0)
+            {
+                invoice.AppendLine("=== DROP POD DELIVERY INVOICE ===");
+                invoice.AppendLine($"Customer: {username}");
+                invoice.AppendLine($"Item: {itemName} x{dropPodCount}");
+                invoice.AppendLine("====================");
+
+                if (quality.HasValue)
+                {
+                    invoice.AppendLine($"Quality: {quality.Value}");
+                }
+
+                if (material != null)
+                {
+                    invoice.AppendLine($"Material: {material.LabelCap}");
+                }
+
+                invoice.AppendLine($"Delivery: Standard Drop Pod");
+                invoice.AppendLine($"Status: Delivered ✅");
+
+                // Calculate price only for drop pod items
+                float pricePerItem = (float)price / quantity;
+                int dropPodPrice = (int)(pricePerItem * dropPodCount);
+
+                invoice.AppendLine($"Total: {dropPodPrice:N0}{currencySymbol}");
+                invoice.AppendLine("====================");
+            }
+
+            invoice.AppendLine("Thank you for shopping with Rimazon!");
+            invoice.AppendLine("Satisfaction guaranteed or your coins back!");
+
+            return invoice.ToString();
         }
 
         private static string CreateRimazonDirectInvoice(string username, string itemName, int quantity, int price, string currencySymbol, string serviceType)
@@ -422,7 +548,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
             return invoice;
         }
-
         // ===== PossessionsPlus  METHODS =====
 
         private static void TrySetItemOwnership(Thing item, Verse.Pawn ownerPawn)

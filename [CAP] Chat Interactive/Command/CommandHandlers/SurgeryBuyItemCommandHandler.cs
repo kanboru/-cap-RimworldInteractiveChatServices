@@ -278,29 +278,83 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     Logger.Debug($"Awarded {karmaEarned} karma for {finalPrice} coin surgery");
                 }
 
+                // Track delivery results
+                List<DeliveryResult> surgeryDeliveryResults = new List<DeliveryResult>();
+                List<Thing> allSurgeryItems = new List<Thing>();
+                IntVec3 surgeryDropPos = IntVec3.Invalid;
+
                 for (int i = 0; i < quantity; i++)
                 {
-                    ItemDeliveryHelper.SpawnItemForPawn(thingDef, 1, null, null, viewerPawn, false); // Add to inventory
+                    var spawnResult = ItemDeliveryHelper.SpawnItemForPawn(thingDef, 1, null, null, viewerPawn, false);
+                    allSurgeryItems.AddRange(spawnResult.spawnedThings);
+                    surgeryDeliveryResults.Add(spawnResult.deliveryResult);
+
+                    if (spawnResult.deliveryPos.IsValid)
+                    {
+                        surgeryDropPos = spawnResult.deliveryPos;
+                    }
+
                     Logger.Debug($"Spawned surgery item {i + 1} of {quantity}: {thingDef.defName}");
                 }
-
-
 
                 // Schedule the surgeries
                 ScheduleSurgeries(viewerPawn, recipe, bodyParts.Take(quantity).ToList());
 
-                // In HandleSurgery method, after scheduling surgeries:
 
+                // Update the LookTargets creation for surgery:
+                LookTargets surgeryLookTargets;
 
-                LookTargets surgeryLookTargets = new LookTargets(viewerPawn);
+                // Determine primary delivery method from all results
+                DeliveryMethod primaryMethod = DeterminePrimaryDeliveryMethod(surgeryDeliveryResults);
+
+                // Create a combined delivery result for the invoice
+                DeliveryResult combinedResult = new DeliveryResult
+                {
+                    DeliveryPosition = surgeryDropPos,
+                    PrimaryMethod = primaryMethod,
+                    LockerDeliveredItems = surgeryDeliveryResults.SelectMany(r => r.LockerDeliveredItems).ToList(),
+                    DropPodDeliveredItems = surgeryDeliveryResults.SelectMany(r => r.DropPodDeliveredItems).ToList()
+                };
+
+                if (combinedResult.PrimaryMethod == DeliveryMethod.Locker && combinedResult.DeliveryPosition.IsValid)
+                {
+                    // Items went to locker - target the locker
+                    surgeryLookTargets = new LookTargets(combinedResult.DeliveryPosition, viewerPawn.Map);
+                    Logger.Debug($"Created LookTargets for locker position: {combinedResult.DeliveryPosition}");
+                }
+                else if (surgeryDropPos.IsValid)
+                {
+                    // Items were dropped somewhere - target that spot
+                    surgeryLookTargets = new LookTargets(surgeryDropPos, viewerPawn.Map);
+                    Logger.Debug($"Created LookTargets for surgery item drop position: {surgeryDropPos}");
+                }
+                else
+                {
+                    // Fallback to targeting the patient
+                    surgeryLookTargets = new LookTargets(viewerPawn);
+                    Logger.Debug($"Created LookTargets for patient: {viewerPawn.Name}");
+                }
+
+                // Create the invoice with actual delivery info
                 string invoiceLabel = $"🏥 Rimazon Surgery - {messageWrapper.Username}";
-                string invoiceMessage = CreateRimazonSurgeryInvoice(messageWrapper.Username, itemName, quantity, finalPrice, currencySymbol, bodyParts.Take(quantity).ToList());
+                string invoiceMessage = CreateRimazonSurgeryInvoice(
+                    messageWrapper.Username, itemName, quantity, finalPrice, currencySymbol,
+                    bodyParts.Take(quantity).ToList(), combinedResult);
                 MessageHandler.SendBlueLetter(invoiceLabel, invoiceMessage, surgeryLookTargets);
 
                 Logger.Debug($"Surgery scheduled: {messageWrapper.Username} scheduled {quantity}x {itemName} for {finalPrice}{currencySymbol}");
 
-                return $"Scheduled {quantity}x {itemName} surgery for {StoreCommandHelper.FormatCurrencyMessage(finalPrice, currencySymbol)}! Implant delivered to pawn's inventory please give them to the doctor. Remaining: {StoreCommandHelper.FormatCurrencyMessage(viewer.Coins, currencySymbol)}.";
+                // Update the return success message:
+                string deliveryMessage = combinedResult.PrimaryMethod switch
+                {
+                    DeliveryMethod.Locker => "delivered to your Rimazon Locker",
+                    DeliveryMethod.DropPod => "delivered via drop pod",
+                    _ => "delivered to colony"
+                };
 
+                return $"Scheduled {quantity}x {itemName} surgery for {StoreCommandHelper.FormatCurrencyMessage(finalPrice, currencySymbol)}! " +
+                       $"Implant {deliveryMessage} please give them to the doctor. " +
+                       $"Remaining: {StoreCommandHelper.FormatCurrencyMessage(viewer.Coins, currencySymbol)}.";
             }
             catch (Exception ex)
             {
@@ -698,7 +752,9 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         }
 
         // ===== INVOICE CREATION METHODS =====
-        private static string CreateRimazonSurgeryInvoice(string username, string itemName, int quantity, int price, string currencySymbol, List<BodyPartRecord> bodyParts)
+        private static string CreateRimazonSurgeryInvoice(string username,
+            string itemName, int quantity, int price,
+            string currencySymbol, List<BodyPartRecord> bodyParts, DeliveryResult deliveryResult = null)
         {
             string invoice = $"RIMAZON SURGERY SERVICE\n";
             invoice += $"====================\n";
@@ -710,15 +766,84 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 invoice += $"Body Parts: {string.Join(", ", bodyParts.Select(bp => bp.Label))}\n";
             }
 
-            invoice += $"Service: Surgical Implantation\n";
+            // Add delivery information based on actual delivery method
+            if (deliveryResult != null)
+            {
+                int lockerCount = deliveryResult.LockerDeliveredItems.Sum(t => t.stackCount);
+                int dropPodCount = deliveryResult.DropPodDeliveredItems.Sum(t => t.stackCount);
+
+                if (deliveryResult.PrimaryMethod == DeliveryMethod.Locker)
+                {
+                    invoice += $"Delivery: Rimazon Locker\n";
+                    invoice += $"Location: Locker Delivery\n";
+                }
+                else if (deliveryResult.PrimaryMethod == DeliveryMethod.DropPod)
+                {
+                    invoice += $"Delivery: Standard Drop Pod\n";
+                    invoice += $"Location: Drop Pod Delivery\n";
+                }
+                else if (lockerCount > 0 && dropPodCount > 0)
+                {
+                    invoice += $"Delivery: Mixed Delivery\n";
+                    invoice += $"  • Locker: x{lockerCount}\n";
+                    invoice += $"  • Drop Pod: x{dropPodCount}\n";
+                }
+                else
+                {
+                    invoice += $"Delivery: Colony Delivery\n";
+                }
+            }
+            else
+            {
+                // Fallback for old behavior
+                invoice += $"Service: Surgical Implantation\n";
+            }
+
             invoice += $"====================\n";
             invoice += $"Total: {price:N0}{currencySymbol}\n";
             invoice += $"====================\n";
             invoice += $"Thank you for using Rimazon Surgery!\n";
-            invoice += $"Implant delivered to pawn's inventory.\n";
+
+            // Update the delivery message based on actual method
+            if (deliveryResult != null)
+            {
+                if (deliveryResult.PrimaryMethod == DeliveryMethod.Locker)
+                {
+                    invoice += $"Implants delivered to your Rimazon Locker.\n";
+                }
+                else if (deliveryResult.PrimaryMethod == DeliveryMethod.DropPod)
+                {
+                    invoice += $"Implants delivered via drop pod.\n";
+                }
+                else
+                {
+                    invoice += $"Implants delivered to colony.\n";
+                }
+            }
+            else
+            {
+                // Old fallback message
+                invoice += $"Implants delivered to pawn's inventory.\n";
+            }
+
             invoice += $"Surgery scheduled with colony doctors.";
 
             return invoice;
+        }
+
+        private static DeliveryMethod DeterminePrimaryDeliveryMethod(List<DeliveryResult> results)
+        {
+            int lockerItems = results.Sum(r => r.LockerDeliveredItems.Count);
+            int dropPodItems = results.Sum(r => r.DropPodDeliveredItems.Count);
+
+            if (lockerItems > 0 && dropPodItems == 0)
+                return DeliveryMethod.Locker;
+            else if (lockerItems == 0 && dropPodItems > 0)
+                return DeliveryMethod.DropPod;
+            else if (lockerItems > 0 && dropPodItems > 0)
+                return DeliveryMethod.DropPod; // Mixed, prioritize drop pod
+            else
+                return DeliveryMethod.DropPod; // Default
         }
 
         // ===== BODY PART METHODS =====
