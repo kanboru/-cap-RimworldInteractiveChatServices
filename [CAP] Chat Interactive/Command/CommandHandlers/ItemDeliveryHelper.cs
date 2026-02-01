@@ -110,7 +110,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                                    $"MapMatch={locker.Map == map}, " +
                                    $"Destroyed={locker.Destroyed}, " +
                                    $"Accepts={locker.Accepts(thing)}, " +
-                                   $"CurrentItems={locker.innerContainer.TotalStackCount}/{locker.MaxStackSlots}");
+                                   $"CurrentItems={locker.innerContainer.TotalStackCount}/{locker.MaxStacks}");
                     }
 
                     return null;
