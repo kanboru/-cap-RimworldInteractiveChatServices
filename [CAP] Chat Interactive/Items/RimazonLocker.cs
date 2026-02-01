@@ -30,41 +30,120 @@ namespace CAP_ChatInteractive
         public int maxStacks = 24;  // Actually means "maximum stack groups/slots"
     }
     // Main Class
-    public class Building_RimazonLocker : Building, IThingHolder, IHaulDestination, IStoreSettingsParent
+    public class Building_RimazonLocker : Building_Storage, IThingHolder, IHaulDestination, IStoreSettingsParent
     {
         public string customName = null;
         public ThingOwner innerContainer;
         public int MaxStacks => def.GetModExtension<LockerExtension>().maxStacks;
-        // public int MaxStacksSlots => def.GetModExtension<LockerExtension>().maxStacks;  // Renamed for clarit
-        public StorageSettings settings;
+        public new StorageSettings settings;
 
-        
+        // Constructor
+        public Building_RimazonLocker()
+        {
+            innerContainer = new ThingOwner<Thing>(this, LookMode.Deep);
+        }
 
-        // === IthingHolder
+        // === IThingHolder
         public ThingOwner GetDirectlyHeldThings() => innerContainer;
-
-        public new IThingHolder ParentHolder => null;
-
         public void GetChildHolders(List<IThingHolder> outChildren)
         {
-            outChildren?.Clear();
+            ThingOwnerUtility.AppendThingHoldersFromThings(outChildren, innerContainer);
         }
+        public new IThingHolder ParentHolder => this; // New in front of this?
+
+        // === IStoreSettingsParent
+        public new bool StorageTabVisible => Spawned && Map != null;
+
+        public new StorageSettings GetStoreSettings()
+        {
+            if (settings == null)
+            {
+                settings = new StorageSettings(this);
+                // Copy from parent if available
+                var parent = GetParentStoreSettings();
+                if (parent != null)
+                {
+                    settings.CopyFrom(parent);
+                }
+            }
+            return settings;
+        }
+
+        public new StorageSettings GetParentStoreSettings()
+        {
+            // Handle null def during construction
+            if (def?.building?.defaultStorageSettings != null)
+            {
+                return def.building.defaultStorageSettings;
+            }
+            return null;
+        }
+
+        public new void Notify_SettingsChanged()
+        {
+            // Refresh haul jobs if needed
+        }
+
+        // === PostMake
+        public override void PostMake()
+        {
+            base.PostMake();
+            //Log.Message($"[DEBUG] Locker created - StorageComp: {this.GetComp<CompStorage>() != null}");
+            Log.Message($"[DEBUG] ThingOwner: {this.GetDirectlyHeldThings() != null}");
+            // Initialize innerContainer if null (shouldn't be, but just in case)
+            if (innerContainer == null)
+            {
+                innerContainer = new ThingOwner<Thing>(this, LookMode.Deep);
+            }
+
+            // GetStoreSettings will initialize settings if null
+            var s = GetStoreSettings();
+        }
+
+        // === SpawnSetup
+        public override void SpawnSetup(Map map, bool respawningAfterReload)
+        {
+            base.SpawnSetup(map, respawningAfterReload);
+
+            // Initialize innerContainer if null
+            if (innerContainer == null)
+            {
+                innerContainer = new ThingOwner<Thing>(this, LookMode.Deep);
+            }
+
+            // GetStoreSettings will initialize settings if null
+            var s = GetStoreSettings();
+        }
+
+        // === GetInspectTabs - Vanilla compatible version
+        private ITab_ContainerStorage cachedStorageTab;
+        private ITab_LockerContents cachedContentsTab;
+        public override IEnumerable<InspectTabBase> GetInspectTabs()
+        {
+            Log.Message($"[DEBUG LOCKER] GetInspectTabs called - Spawned: {Spawned}, Map: {Map != null}");
+
+            if (Spawned && Map != null)
+            {
+                // Create tabs once and cache them
+                if (cachedStorageTab == null)
+                {
+                    Log.Message($"[DEBUG LOCKER] Creating and caching tabs");
+                    cachedStorageTab = new ITab_ContainerStorage();
+                    cachedContentsTab = new ITab_LockerContents();
+                }
+
+                yield return cachedStorageTab;
+                yield return cachedContentsTab;
+            }
+        }
+
+        // every thing above is new 
 
         //  === IHaulDestination
         public new IntVec3 Position => base.Position;           // Inherited from Thing, but explicit for clarity
         public new Map Map => base.Map;                         // Inherited from Thing
-        public bool HaulDestinationEnabled => true;
+        public new bool HaulDestinationEnabled => true;
 
-
-        // IStoreSettingsParent
-        public bool StorageTabVisible => true;
-        public StorageSettings GetStoreSettings() => settings;
-        public StorageSettings GetParentStoreSettings() => def.building.defaultStorageSettings;
-        public void Notify_SettingsChanged()
-        {
-            // Optional: could invalidate haul jobs or refresh AI if needed
-            // For now, empty is perfectly fine
-        }
 
         // === Rename Locker
         public void RenameLocker(string newName)
@@ -72,83 +151,51 @@ namespace CAP_ChatInteractive
             customName = newName.NullOrEmpty() ? null : newName.Trim();
         }
 
-
-        public override void PostMake()
-        {
-            base.PostMake();
-            settings = new StorageSettings(this);
-            if (def.building.defaultStorageSettings != null)
-            {
-                settings.CopyFrom(def.building.defaultStorageSettings);
-            }
-        }
-        public override void SpawnSetup(Map map, bool respawningAfterReload)
-        {
-            base.SpawnSetup(map, respawningAfterReload);
-            if (settings == null)
-            {
-                settings = new StorageSettings(this);
-                if (def.building.defaultStorageSettings != null)
-                {
-                    settings.CopyFrom(def.building.defaultStorageSettings);
-                }
-            }
-        }
-        public Building_RimazonLocker()
-        {
-            innerContainer = new ThingOwner<Thing>(this, LookMode.Deep);
-        }
+        // === ExposeData
         public override void ExposeData()
         {
             base.ExposeData();
             Scribe_Values.Look(ref customName, "customName");
             Scribe_Deep.Look(ref innerContainer, "innerContainer", this);
             Scribe_Deep.Look(ref settings, "settings", this);
+
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 if (innerContainer == null)
                 {
                     innerContainer = new ThingOwner<Thing>(this, LookMode.Deep);
                 }
+
+                // Initialize settings if null after load
                 if (settings == null)
                 {
-                    settings = new StorageSettings(this);
-                    if (def.building.defaultStorageSettings != null)
-                    {
-                        settings.CopyFrom(def.building.defaultStorageSettings);
-                    }
+                    var s = GetStoreSettings(); // This will initialize it
                 }
             }
         }
+
+        // === Depawn
         public override void DeSpawn(DestroyMode mode = DestroyMode.Vanish)
         {
-            if (innerContainer != null && innerContainer.Count > 0)
-            {
-                innerContainer.TryDropAll(Position, Map, ThingPlaceMode.Near);
-            }
+            // Clear cache when despawned
+            cachedStorageTab = null;
+            cachedContentsTab = null;
             base.DeSpawn(mode);
         }
-        // === IAcceptDropPod interface implementation
-        public virtual bool Accepts(Thing thing)
+
+        /// <summary>
+        /// This is how we spawn stuff into the locker
+        /// 5 Referances
+        /// </summary>
+        /// <param name="thing"></param>
+        /// <returns></returns>
+        public new virtual bool Accepts(Thing thing)
         {
             // Debug logging
             // Logger.Debug($"Checking if locker accepts {thing?.def?.defName} x{thing?.stackCount}");
-
             if (thing == null) return false;
-
-            // Don't accept pawns
-            if (thing is Pawn)
-            {
-                // Logger.Debug($"Rejecting {thing.def.defName}: Cannot accept pawns");
-                return false;
-            }
-
-            // Check storage settings filter
-            if (!settings.filter.Allows(thing))
-            {
-                // Logger.Debug($"Rejecting {thing.def.defName}: Not in filter");
-                return false;
-            }
+            if (thing is Pawn) return false;
+            if (!settings.AllowedToAccept(thing)) return false;
 
             // Find potential merge target (exact def + stackable)
             Thing existingStack = innerContainer.FirstOrDefault(t => t.def == thing.def && t.CanStackWith(thing));
@@ -182,6 +229,29 @@ namespace CAP_ChatInteractive
             }
         }
 
+        /// <summary>
+        /// Try to accept a thing
+        /// 2 Referances
+        /// </summary>
+        /// <param name="thing"></param>
+        /// <param name="allowSpecialEffects"></param>
+        /// <returns></returns>
+        public virtual bool TryAcceptThing(Thing thing, bool allowSpecialEffects = true)
+        {
+            if (!Accepts(thing))
+            {
+                return false;
+            }
+
+            bool added = innerContainer.TryAdd(thing, allowSpecialEffects);
+            if (added && allowSpecialEffects)
+            {
+                MoteMaker.ThrowText(this.DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);
+            }
+            return added;
+        }
+        // === IAcceptDropPod interface implementation
+
         public void AcceptDropPod(DropPodIncoming dropPod, Thing[] contents)
         {
             foreach (Thing thing in contents)
@@ -201,21 +271,7 @@ namespace CAP_ChatInteractive
             MoteMaker.ThrowText(this.DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);
         }
 
-
-        public virtual bool TryAcceptThing(Thing thing, bool allowSpecialEffects = true)
-        {
-            if (!Accepts(thing))
-            {
-                return false;
-            }
-
-            bool added = innerContainer.TryAdd(thing, allowSpecialEffects);
-            if (added && allowSpecialEffects)
-            {
-                MoteMaker.ThrowText(this.DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);
-            }
-            return added;
-        }
+        // === Get Gizmos, How we rename our Locker.
         public override IEnumerable<Gizmo> GetGizmos()
         {
             foreach (Gizmo gizmo in base.GetGizmos())
@@ -253,18 +309,23 @@ namespace CAP_ChatInteractive
                 };
             }
         }
+
         public bool CanOpen => true;
+
+        // === How we access the contents
         public void Open()
         {
             Find.WindowStack.Add(new Dialog_LockerContents(this));
         }
+
+        // === Inspect String
         public override string GetInspectString()
         {
             string text = base.GetInspectString();
             if (!customName.NullOrEmpty())
             {
                 if (!text.NullOrEmpty()) text += "\n";
-                text += "Named: " + customName;
+                text += "RICS_Named".Translate(customName);  // Uses translation
             }
             if (!text.NullOrEmpty())
             {
@@ -272,16 +333,13 @@ namespace CAP_ChatInteractive
             }
             if (innerContainer.Count == 0)
             {
-                text += "Empty";
+                text += "RICS_LockerEmpty".Translate();  // Uses translation
             }
             else
             {
                 text += "Contains: " + innerContainer.ContentsString.CapitalizeFirst();
-                // Clarify: MaxStacks = maximum stack GROUPS
-                text += $"\nStack slots: {innerContainer.Count}/{MaxStacks}";
-                text += $"\nTotal items: {innerContainer.TotalStackCount}";
-                int uniqueTypes = innerContainer.GroupBy(t => t.def).Count();
-                text += $"\nStack slots: {innerContainer.Count}/{MaxStacks} (unique types: {uniqueTypes})";
+                text += "\n" + "RICS_StackSlots".Translate(innerContainer.Count, MaxStacks);
+                text += "\n" + "RICS_TotalItems".Translate(innerContainer.TotalStackCount);
             }
             return text;
         }
@@ -297,11 +355,11 @@ namespace CAP_ChatInteractive
                 return base.Label;
             }
         }
-        // Add this method to Building_RimazonLocker class
     }
 
-    
-    // Locker Contents Window
+    /// <summary>
+    /// Locker Contents Window
+    /// </summary>
     public class Dialog_LockerContents : Window
     {
         private Building_RimazonLocker locker;
@@ -333,8 +391,8 @@ namespace CAP_ChatInteractive
         {
             Text.Font = GameFont.Medium;
             string title = locker.customName.NullOrEmpty()
-                ? "Locker Contents"
-                : $"Contents: {locker.customName}";
+                ? "RICS_LockerContents".Translate()  // Use translation
+                : "RICS_ContentsOf".Translate(locker.customName);  // Use translation
             Widgets.Label(new Rect(0f, 0f, inRect.width, 35f), title);
 
             Text.Font = GameFont.Small;
@@ -441,7 +499,105 @@ namespace CAP_ChatInteractive
         }
     }
 
+    /// <summary>
+    /// How we see what our filters are in game
+    /// Filters turned off will prevent us from putting items in our locker
+    /// </summary>
+    public class ITab_ContainerStorage : ITab
+    {
+        private ThingFilterUI.UIState uiState = new ThingFilterUI.UIState();
+        private static readonly Vector2 WinSize = new Vector2(420f, 480f);
 
+        public ITab_ContainerStorage()
+        {
+            size = WinSize;
+            labelKey = "TabStorage";
+            tutorTag = "Storage";
+        }
+
+        public override bool IsVisible => SelThing is Building_RimazonLocker locker && locker.Spawned;
+
+        protected override void FillTab()
+        {
+            //GUI.color = Color.blue;
+            //Widgets.DrawBox(new Rect(0, 0, size.x, size.y), 2);
+            //GUI.color = Color.white;
+            try
+            {
+                var container = SelThing as Building_RimazonLocker;
+                if (container == null || !container.Spawned || container.settings == null)
+                {
+                    Log.Warning("[DEBUG] ITab_ContainerStorage: No valid container");
+                    return;
+                }
+
+                if (container == null || !container.Spawned || container.settings == null)
+                    return;
+
+                // Reset GUI state
+                GUI.color = Color.white;
+                Text.Font = GameFont.Small;
+                Text.Anchor = TextAnchor.UpperLeft;
+
+                Rect mainRect = new Rect(0f, 0f, size.x, size.y).ContractedBy(10f);
+
+                // Draw priority
+                DrawPriority(new Rect(mainRect.x, mainRect.y, mainRect.width, 30f), container.settings);
+
+                // Draw filter (below priority)
+                Rect filterRect = new Rect(mainRect.x, mainRect.y + 35f, mainRect.width, mainRect.height - 35f);
+                DrawFilter(filterRect, container.settings.filter, container.def.building?.defaultStorageSettings?.filter);
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[DEBUG] ITab_ContainerStorage.FillTab error: {ex}");
+            }
+
+
+        }
+
+        private void DrawPriority(Rect rect, StorageSettings settings)
+        {
+            Widgets.Label(rect.LeftHalf(), "Priority".Translate() + ":");
+
+            Rect buttonRect = rect.RightHalf();
+            if (Widgets.ButtonText(buttonRect, settings.Priority.ToString()))
+            {
+                List<FloatMenuOption> options = new List<FloatMenuOption>();
+                foreach (StoragePriority priority in Enum.GetValues(typeof(StoragePriority)))
+                {
+                    options.Add(new FloatMenuOption(priority.ToString(), () =>
+                    {
+                        settings.Priority = priority;
+                    }));
+                }
+                Find.WindowStack.Add(new FloatMenu(options));
+            }
+        }
+
+        private void DrawFilter(Rect rect, ThingFilter filter, ThingFilter parentFilter)
+        {
+            // Use RimWorld's built-in ThingFilterUI with the UIState
+            ThingFilterUI.DoThingFilterConfigWindow(
+                rect: rect,
+                state: uiState,
+                filter: filter,
+                parentFilter: parentFilter,
+                openMask: 1, // Force count check
+                forceHiddenDefs: null,
+                forceHiddenFilters: null,
+                forceHideHitPointsConfig: false,
+                forceHideQualityConfig: false,
+                showMentalBreakChanceRange: false,
+                suppressSmallVolumeTags: null,
+                map: Find.CurrentMap
+            );
+        }
+    }
+
+    /// <summary>
+    /// SHows us what is in the locker
+    /// </summary>
     public class ITab_LockerContents : ITab
     {
         private Vector2 scrollPosition = Vector2.zero;
@@ -453,123 +609,140 @@ namespace CAP_ChatInteractive
             tutorTag = "LockerContents";
         }
 
+        public override bool IsVisible => SelThing is Building_RimazonLocker;
+
         protected override void FillTab()
         {
-            var locker = SelThing as Building_RimazonLocker;
-            if (locker == null || locker.innerContainer == null)
+            try
             {
-                Text.Font = GameFont.Small;
-                Widgets.Label(new Rect(0f, 0f, size.x, size.y).ContractedBy(10f),
-                    "Locker not available.\nTry re-selecting the building.");
-                return;
-            }
-
-            Rect rect = new Rect(0f, 0f, size.x, size.y).ContractedBy(10f);
-            var listing = new Listing_Standard();
-            listing.Begin(rect);
-
-            // Header
-            if (!locker.customName.NullOrEmpty())
-            {
-                listing.Label($"Locker: {locker.customName}");
-                listing.GapLine();
-            }
-
-            float totalMass = locker.innerContainer.Sum(t => t.GetStatValue(StatDefOf.Mass) * t.stackCount);
-            listing.Label($"Total mass: {totalMass:F2} kg");
-            listing.Label($"Stack slots: {locker.innerContainer.Count}/{locker.MaxStacks}");
-            listing.Label($"Total items: {locker.innerContainer.TotalStackCount}");
-            listing.Gap(12f);
-
-            // Search bar
-            Rect searchRect = listing.GetRect(30f);
-            string searchString = ""; // You can make this a field if you want persistence
-            searchString = Widgets.TextField(searchRect, searchString);
-
-            if (locker.innerContainer.Count == 0)
-            {
-                listing.Label("(Empty)");
-            }
-            else
-            {
-                // Filter items (case-insensitive)
-                var filtered = locker.innerContainer
-                    .Where(t => t != null && !t.Destroyed && t.LabelCap.ToLowerInvariant().Contains(searchString.ToLowerInvariant()))
-                    .ToList();
-
-                // Calculate scroll height dynamically (prevents overflow/clipping buttons)
-                float headerUsed = listing.CurHeight;
-                float availableForScroll = rect.height - headerUsed - 50f; // leave room for buttons + gaps
-                if (availableForScroll < 100f) availableForScroll = 100f; // minimum
-
-                Rect scrollOuter = listing.GetRect(availableForScroll);
-                float estimatedContentHeight = filtered.Count * 35f + 20f; // rough per-row height + padding
-                Rect viewRect = new Rect(0f, 0f, scrollOuter.width - 16f, Mathf.Max(estimatedContentHeight, availableForScroll));
-
-                Widgets.BeginScrollView(scrollOuter, ref scrollPosition, viewRect);
-
-                try
+                var container = SelThing as Building_RimazonLocker;
+                if (container == null || !container.Spawned || container.settings == null)
                 {
-                    var innerListing = new Listing_Standard();
-                    innerListing.Begin(viewRect);
+                    Log.Warning("[DEBUG] ITab_ContainerStorage: No valid container");
+                    return;
+                }
 
-                    foreach (Thing thing in filtered)
+
+                var locker = SelThing as Building_RimazonLocker;
+                if (locker == null || locker.innerContainer == null)
+                {
+                    Text.Font = GameFont.Small;
+                    Widgets.Label(new Rect(0f, 0f, size.x, size.y).ContractedBy(10f),
+                        "Locker not available.\nTry re-selecting the building.");
+                    return;
+                }
+
+                Rect rect = new Rect(0f, 0f, size.x, size.y).ContractedBy(10f);
+                var listing = new Listing_Standard();
+                listing.Begin(rect);
+
+                // Header
+                if (!locker.customName.NullOrEmpty())
+                {
+                    listing.Label($"Locker: {locker.customName}");
+                    listing.GapLine();
+                }
+
+                float totalMass = locker.innerContainer.Sum(t => t.GetStatValue(StatDefOf.Mass) * t.stackCount);
+                listing.Label($"Total mass: {totalMass:F2} kg");
+                listing.Label($"Stack slots: {locker.innerContainer.Count}/{locker.MaxStacks}");
+                listing.Label($"Total items: {locker.innerContainer.TotalStackCount}");
+                listing.Gap(12f);
+
+                // Search bar
+                Rect searchRect = listing.GetRect(30f);
+                string searchString = ""; // You can make this a field if you want persistence
+                searchString = Widgets.TextField(searchRect, searchString);
+
+                if (locker.innerContainer.Count == 0)
+                {
+                    listing.Label("(Empty)");
+                }
+                else
+                {
+                    // Filter items (case-insensitive)
+                    var filtered = locker.innerContainer
+                        .Where(t => t != null && !t.Destroyed && t.LabelCap.ToLowerInvariant().Contains(searchString.ToLowerInvariant()))
+                        .ToList();
+
+                    // Calculate scroll height dynamically (prevents overflow/clipping buttons)
+                    float headerUsed = listing.CurHeight;
+                    float availableForScroll = rect.height - headerUsed - 50f; // leave room for buttons + gaps
+                    if (availableForScroll < 100f) availableForScroll = 100f; // minimum
+
+                    Rect scrollOuter = listing.GetRect(availableForScroll);
+                    float estimatedContentHeight = filtered.Count * 35f + 20f; // rough per-row height + padding
+                    Rect viewRect = new Rect(0f, 0f, scrollOuter.width - 16f, Mathf.Max(estimatedContentHeight, availableForScroll));
+
+                    Widgets.BeginScrollView(scrollOuter, ref scrollPosition, viewRect);
+
+                    try
                     {
-                        Rect row = innerListing.GetRect(28f);
+                        var innerListing = new Listing_Standard();
+                        innerListing.Begin(viewRect);
 
-                        // Alternate row highlight
-                        if (filtered.IndexOf(thing) % 2 == 0)
+                        foreach (Thing thing in filtered)
                         {
-                            Widgets.DrawLightHighlight(row);
-                        }
+                            Rect row = innerListing.GetRect(28f);
 
-                        Widgets.ThingIcon(new Rect(row.x, row.y, 28f, 28f), thing);
-
-                        Text.Anchor = TextAnchor.MiddleLeft;
-                        string label = thing.LabelCap ?? thing.def?.LabelCap ?? "[Unknown Item]";
-                        Widgets.Label(new Rect(row.x + 32f, row.y, row.width - 60f, 28f), label);
-                        Text.Anchor = TextAnchor.UpperLeft;  // CRITICAL RESET - prevents alignment error
-
-                        // Info button (safe)
-                        if (Widgets.ButtonImage(new Rect(row.xMax - 24f, row.y + 2f, 24f, 24f), TexButton.Info))
-                        {
-                            if (thing?.def != null)
+                            // Alternate row highlight
+                            if (filtered.IndexOf(thing) % 2 == 0)
                             {
-                                Find.WindowStack.Add(new Dialog_InfoCard(thing.def, thing.Stuff));
+                                Widgets.DrawLightHighlight(row);
                             }
+
+                            Widgets.ThingIcon(new Rect(row.x, row.y, 28f, 28f), thing);
+
+                            Text.Anchor = TextAnchor.MiddleLeft;
+                            string label = thing.LabelCap ?? thing.def?.LabelCap ?? "[Unknown Item]";
+                            Widgets.Label(new Rect(row.x + 32f, row.y, row.width - 60f, 28f), label);
+                            Text.Anchor = TextAnchor.UpperLeft;  // CRITICAL RESET - prevents alignment error
+
+                            // Info button (safe)
+                            if (Widgets.ButtonImage(new Rect(row.xMax - 24f, row.y + 2f, 24f, 24f), TexButton.Info))
+                            {
+                                if (thing?.def != null)
+                                {
+                                    Find.WindowStack.Add(new Dialog_InfoCard(thing.def, thing.Stuff));
+                                }
+                            }
+
+                            TooltipHandler.TipRegion(row, thing.GetInspectString() ?? label);
+
+                            innerListing.Gap(4f);
                         }
 
-                        TooltipHandler.TipRegion(row, thing.GetInspectString() ?? label);
-
-                        innerListing.Gap(4f);
+                        innerListing.End();
                     }
-
-                    innerListing.End();
+                    finally
+                    {
+                        Widgets.EndScrollView();  // Always close
+                    }
                 }
-                finally
+
+                listing.Gap(12f);
+
+                // Buttons (now always visible)
+                Rect btnRect = listing.GetRect(30f);
+                if (Widgets.ButtonText(new Rect(btnRect.x, btnRect.y, btnRect.width / 2 - 5f, 30f), "Eject All"))
                 {
-                    Widgets.EndScrollView();  // Always close
+                    locker.innerContainer.TryDropAll(locker.Position, locker.Map, ThingPlaceMode.Near);
                 }
+
+                if (Widgets.ButtonText(new Rect(btnRect.x + btnRect.width / 2 + 5f, btnRect.y, btnRect.width / 2 - 5f, 30f), "Detailed View"))
+                {
+                    Find.WindowStack.Add(new Dialog_LockerContents(locker));
+                }
+
+                listing.End();
+
+                // Global safety reset (extra protection)
+                Text.Anchor = TextAnchor.UpperLeft;
             }
-
-            listing.Gap(12f);
-
-            // Buttons (now always visible)
-            Rect btnRect = listing.GetRect(30f);
-            if (Widgets.ButtonText(new Rect(btnRect.x, btnRect.y, btnRect.width / 2 - 5f, 30f), "Eject All"))
+            catch (Exception ex)
             {
-                locker.innerContainer.TryDropAll(locker.Position, locker.Map, ThingPlaceMode.Near);
+                Log.Error($"[DEBUG] ITab_ContainerStorage.FillTab error: {ex}");
             }
-
-            if (Widgets.ButtonText(new Rect(btnRect.x + btnRect.width / 2 + 5f, btnRect.y, btnRect.width / 2 - 5f, 30f), "Detailed View"))
-            {
-                Find.WindowStack.Add(new Dialog_LockerContents(locker));
-            }
-
-            listing.End();
-
-            // Global safety reset (extra protection)
-            Text.Anchor = TextAnchor.UpperLeft;
         }
     }
 }
