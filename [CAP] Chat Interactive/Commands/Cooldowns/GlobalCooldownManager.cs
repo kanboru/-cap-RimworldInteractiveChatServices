@@ -239,9 +239,9 @@ namespace CAP_ChatInteractive.Commands.Cooldowns
         private void CleanupOldEvents(EventUsageRecord record, int cooldownDays)
         {
             if (cooldownDays == 0) return; // Never expire
-            Logger.Debug($"Cleaning up for cooldown {cooldownDays}. Current day: {CurrentGameDay}. Before cleanup: {record.UsageDays.Count} uses.");
+            // Logger.Debug($"Cleaning up for cooldown {cooldownDays}. Current day: {CurrentGameDay}. Before cleanup: {record.UsageDays.Count} uses.");
             record.UsageDays.RemoveAll(day => (CurrentGameDay - day) >= cooldownDays);  // Changed > to >=
-            Logger.Debug($"After cleanup: {record.UsageDays.Count} uses remaining.");
+            // Logger.Debug($"After cleanup: {record.UsageDays.Count} uses remaining.");
         }
 
         private void CleanupOldCommandUses(CommandUsageRecord record, int cooldownDays)
