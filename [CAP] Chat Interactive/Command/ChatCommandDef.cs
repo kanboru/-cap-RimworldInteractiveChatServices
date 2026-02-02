@@ -98,7 +98,7 @@ namespace CAP_ChatInteractive
                 {
                     var wrappedCommand = new DefBasedChatCommand(this, commandInstance);
                     ChatCommandProcessor.RegisterCommand(wrappedCommand);
-                    Logger.Debug($"Registered command: {commandText}");
+                    // Logger.Debug($"Registered command: {commandText}");
                 }
                 else
                 {
