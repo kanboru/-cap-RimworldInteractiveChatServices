@@ -47,12 +47,12 @@ namespace CAP_ChatInteractive
 
             Settings = GetSettings<CAPChatInteractiveSettings>();
 
-            // ────────────────────────────────────────────────
-            // Harmony initialization — put this early!
-            var harmony = new Harmony("com.capto.rimazonlocker");  // Unique ID (reverse-domain style is best)
-            harmony.PatchAll();                                    // Applies ALL [HarmonyPatch] classes in your assembly
-            Logger.Message("[RICS] Harmony patches applied successfully.");  // Confirm in log
-            // ────────────────────────────────────────────────
+            //// ────────────────────────────────────────────────
+            //// Harmony initialization — put this early!
+            //var harmony = new Harmony("com.capto.rimazonlocker");  // Unique ID (reverse-domain style is best)
+            //harmony.PatchAll();                                    // Applies ALL [HarmonyPatch] classes in your assembly
+            //Logger.Message("[RICS] Harmony patches applied successfully.");  // Confirm in log
+            //// ────────────────────────────────────────────────
 
             // Ensure modVersion is set in saved settings if it's empty
             if (string.IsNullOrEmpty(Settings.GlobalSettings.modVersionSaved))
