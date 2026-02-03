@@ -16,11 +16,43 @@
 
 // Filename: RimazonLocker.cs
 
+/* === Rimazon Locker
+ * Purpose:  To make a Locker that Chat viewers can send items they purchased in chat (twitch etc)
+ * 
+ * Goal:  Get Pawns to unload the box without crashing
+ * 
+ * 
+ * === crashing issues 
+ * Pawns hauling to the locker crash the game, no log error HARD CRASH .. permanently turn off this behavior see below
+ * Suspected reason, there is not method for pawns to remove or place stuff in locker
+ * and or methods that are Rimworld Core do not account for a BOX, CHEST or hidden container.inventory
+ * 
+ * problem:  Rimworld does not have normal containers.  It uses shelfs.
+ * 
+ * Solution:  (one of these)
+ * 1. Create a Buidling_RimazonLocker custom based on what we want from class Building_Storage and class Building 
+ * 2. Use Adaptive Storage Framework Mod to make the Rimazon Locker
+ *  a. This forces a depandancey that may cuase issues later.
+ *  b. It is a commonly used mod
+ * 3. Allow Deliveries but keep Pawns from using the box
+ *  a. Easy to keep the from storing (forced use "Unstored")  
+ *  b. Code is like this now
+ * 4. Keep Pawns from Delivering to Locker
+ *  a. We want to permananty keep this behavior, so its not used as a storage container, Just a drop off point.
+ *  b. So keeping forced "Unstored" 
+ * 
+ * EVERY THING ELSE WORKS 
+ * CANNOT USE Building_Storage, causes mutliple crashing issues, forces the box to be a shelf.  Unwanted behavior.  Its a box container not a shelf
+ * 
+ */
+
+//using _CAP__Chat_Interactive.Items;
 using LudeonTK;
 using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Management.Instrumentation;
 using UnityEngine;
 using Verse;
 namespace CAP_ChatInteractive
@@ -38,32 +70,65 @@ namespace CAP_ChatInteractive
         };
     }
     // Main Class
-    // public class Building_RimazonLocker : Building_Storage, IThingHolder, IHaulDestination, IStoreSettingsParent
+    // public class Building_RimazonLocker : v, IThingHolder, IHaulDestination, IStoreSettingsParent
     public class Building_RimazonLocker : Building, IThingHolder, IHaulDestination, IStoreSettingsParent
     {
         public string customName = null;
-        public ThingOwner innerContainer;
+
+        // === Add these properties: ===
+        //private ThingOwner innerContainer;
+        private ThingOwner<Thing> innerContainer;
+        public ThingOwner InnerContainer
+        {
+            get
+            {
+                if (innerContainer == null)
+                {
+                    innerContainer = new ThingOwner<Thing>(this, false, LookMode.Deep);
+                }
+                return innerContainer;
+            }
+        }
         public int MaxStacks => def.GetModExtension<LockerExtension>().maxStacks;
         public StorageSettings settings;
+        public int instanceId = 0;
+        public int instanceCounter = 0;
 
         // Constructor
         public Building_RimazonLocker()
         {
-            innerContainer = new ThingOwner<Thing>(this, LookMode.Deep);
+            instanceId = ++instanceCounter;
+            Logger.Debug($"Locker {instanceId}: Constructor called");
+
+            // The key is using the correct constructor parameters:
+            // 1. parentHolder (this)
+            // 2. oneStackOnly (false - we want multiple stacks)
+            // 3. lookMode (LookMode.Deep for proper serialization)
+            innerContainer = new ThingOwner<Thing>(this, false, LookMode.Deep);
+            // innerContainer.maxStacks = MaxStacks; Set in Def         <maxStacks>24</maxStacks>
         }
 
         // === IThingHolder
         public ThingOwner GetDirectlyHeldThings() => innerContainer;
+        // Update your IThingHolder implementation to properly handle position requests
         public void GetChildHolders(List<IThingHolder> outChildren)
         {
-            ThingOwnerUtility.AppendThingHoldersFromThings(outChildren, innerContainer);
+            // This is the CORRECT way - ThingOwnerUtility handles the position chain
+            ThingOwnerUtility.AppendThingHoldersFromThings(outChildren, GetDirectlyHeldThings());
         }
-        public new IThingHolder ParentHolder => this; // New in front of this?
+        public IThingHolder ParentHolder => null; // As a building on map, we're top-level for our items
+
+        public IntVec3 GetPositionForHeldItems()
+        {
+            // Return our position for any items we contain
+            return Position;
+        }
+
 
         // === IStoreSettingsParent
         public bool StorageTabVisible => Spawned && Map != null;
 
-        public new StorageSettings GetStoreSettings()
+        public StorageSettings GetStoreSettings()
         {
             if (settings != null)
             {
@@ -121,7 +186,7 @@ namespace CAP_ChatInteractive
             return settings;
         }
 
-        public new StorageSettings GetParentStoreSettings()
+        public StorageSettings GetParentStoreSettings()
         {
             if (def?.building?.defaultStorageSettings != null)
             {
@@ -133,7 +198,7 @@ namespace CAP_ChatInteractive
             return null;
         }
 
-        public new void Notify_SettingsChanged()
+        public void Notify_SettingsChanged()
         {
             // Refresh haul jobs if needed
         }
@@ -159,46 +224,22 @@ namespace CAP_ChatInteractive
         public override void SpawnSetup(Map map, bool respawningAfterReload)
         {
             base.SpawnSetup(map, respawningAfterReload);
-            _ = GetStoreSettings();  // Just access it to trigger creation
-            Log.Message($"[DEBUG] Locker {this} settings after init: {(settings != null ? "exists" : "NULL")} | Parent defaults: {(def.building?.defaultStorageSettings != null ? "exists" : "NULL")}");
-            // Initialize innerContainer if null
+
             if (innerContainer == null)
             {
-                innerContainer = new ThingOwner<Thing>(this, LookMode.Deep);
+                innerContainer = new ThingOwner<Thing>(this, false, LookMode.Deep);
             }
 
-            // GetStoreSettings will initialize settings if null
-            var s = GetStoreSettings();
+            Logger.Debug($"[RICS] Locker has {innerContainer.Count} items after spawn");
+
+            _ = GetStoreSettings();
         }
-
-        // === GetInspectTabs - Vanilla compatible version
-        private ITab_ContainerStorage cachedStorageTab;
-        private ITab_LockerContents cachedContentsTab;
-        public override IEnumerable<InspectTabBase> GetInspectTabs()
-        {
-            // Logger.Debug($"[DEBUG LOCKER] GetInspectTabs called - Spawned: {Spawned}, Map: {Map != null}");
-
-            if (Spawned && Map != null)
-            {
-                // Create tabs once and cache them
-                if (cachedStorageTab == null)
-                {
-                    Log.Message($"[DEBUG LOCKER] Creating and caching tabs");
-                    cachedStorageTab = new ITab_ContainerStorage();
-                    cachedContentsTab = new ITab_LockerContents();
-                }
-
-                yield return cachedStorageTab;
-                yield return cachedContentsTab;
-            }
-        }
-
-        // every thing above is new 
 
         //  === IHaulDestination
         public new IntVec3 Position => base.Position;           // Inherited from Thing, but explicit for clarity
         public new Map Map => base.Map;                         // Inherited from Thing
-        public bool HaulDestinationEnabled => true;
+        // Testing Note.  tested as false and was unable to drop stuff into locker, so this must be true
+        public bool HaulDestinationEnabled => true;            
 
 
         // === Rename Locker
@@ -212,76 +253,92 @@ namespace CAP_ChatInteractive
         {
             base.ExposeData();
             Scribe_Values.Look(ref customName, "customName");
-            Scribe_Deep.Look(ref innerContainer, "innerContainer", this);
             Scribe_Deep.Look(ref settings, "settings", this);
-
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                if (innerContainer == null)
-                {
-                    innerContainer = new ThingOwner<Thing>(this, LookMode.Deep);
-                }
-
-                // Initialize settings if null after load
-                if (settings == null)
-                {
-                    var s = GetStoreSettings(); // This will initialize it
-                }
-            }
+            Scribe_Deep.Look(ref innerContainer, "innerContainer", this);
         }
 
-        // === Depawn
+        // === DeSpawn
         public override void DeSpawn(DestroyMode mode = DestroyMode.Vanish)
         {
-            // Clear cache when despawned
-            cachedStorageTab = null;
-            cachedContentsTab = null;
+            // Save items before despawn
+            // GameComponent_LockerManager.SaveLockerInventory(this);
+
             base.DeSpawn(mode);
         }
 
         /// <summary>
         /// This is how we spawn stuff into the locker
+        /// From CHAT viewers buying items.
         /// 5 Referances
         /// </summary>
         /// <param name="thing"></param>
         /// <returns></returns>
-        public new virtual bool Accepts(Thing thing)
+        public virtual bool Accepts(Thing thing)
         {
-            // Debug logging
-            // Logger.Debug($"Checking if locker accepts {thing?.def?.defName} x{thing?.stackCount}");
-            if (thing == null) return false;
-            if (thing is Pawn) return false;
-            if (!settings.AllowedToAccept(thing)) return false;
+            Log.Message($"[DEBUG-ACCEPTS] Called for {thing?.LabelShort ?? "null"}" +
+                $" stack {thing?.stackCount}, pawn job? {Find.TickManager?.Paused == false}," +
+                $" container count {innerContainer.Count}, total items {innerContainer.TotalStackCount}");
 
-            // Find potential merge target (exact def + stackable)
-            Thing existingStack = innerContainer.FirstOrDefault(t => t.def == thing.def && t.CanStackWith(thing));
-            int spaceInExisting = existingStack != null ? existingStack.def.stackLimit - existingStack.stackCount : 0;
+            if (thing == null || thing.Destroyed || thing is Pawn)
+                return false;
 
-            if (existingStack != null && spaceInExisting > 0)
+            if (settings == null || !settings.AllowedToAccept(thing))
             {
-                // True merge possible → no new slot consumed
-                // Logger.Debug($"Accept: True merge into existing {thing.def.defName} (space left: {spaceInExisting}, adding up to {thing.stackCount})");
-                return true;
+                Log.Error($"[DEBUG-ACCEPTS] !settings.AllowedToAccept({thing?.LabelShort ?? "null"})");
+                return false;
             }
-            else
+
+            try
             {
-                // No merge possible (no existing OR existing full) → requires NEW stack slot
-                if (innerContainer.Count >= MaxStacks)
+                // Calculate how many stacks we currently have of this item type
+                int existingStacksOfSameType = 0;
+                int totalSpaceForThisType = 0;
+
+                // Create a snapshot to avoid modification during iteration
+                var snapshot = innerContainer.ToList();
+
+                foreach (var existingThing in snapshot)
                 {
-                    // Logger.Debug($"Reject: {thing.def.defName} needs new stack slot but at limit ({innerContainer.Count}/{MaxStacks})");
-                    return false;
+                    if (existingThing == null || existingThing.Destroyed) continue;
+
+                    if (existingThing.def == thing.def && existingThing.CanStackWith(thing))
+                    {
+                        existingStacksOfSameType++;
+                        int spaceLeft = existingThing.def.stackLimit - existingThing.stackCount;
+                        totalSpaceForThisType += Mathf.Max(0, spaceLeft);
+                    }
                 }
 
-                // Fallback safety: does the container even have capacity? (rarely fails post-filter)
-                bool hasCapacity = innerContainer.CanAcceptAnyOf(thing);
-                if (!hasCapacity)
+                // If we have existing stacks of this type, check if they have space
+                if (existingStacksOfSameType > 0)
                 {
-                    // Logger.Debug($"Reject: {thing.def.defName} fails container capacity check");
-                    return false;
+                    // We can merge into existing stacks if they have space
+                    if (totalSpaceForThisType >= thing.stackCount)
+                    {
+                        return true; // Can merge completely into existing stacks
+                    }
+                    else if (totalSpaceForThisType > 0)
+                    {
+                        // We can partially merge, need to check if we have room for remaining items
+                        int itemsRemainingAfterMerge = thing.stackCount - totalSpaceForThisType;
+                        int stacksNeededForRemaining = Mathf.CeilToInt((float)itemsRemainingAfterMerge / thing.def.stackLimit);
+
+                        // Check if we have enough empty stack slots
+                        int emptyStackSlots = MaxStacks - innerContainer.Count;
+                        return emptyStackSlots >= stacksNeededForRemaining;
+                    }
                 }
 
-                // Logger.Debug($"Accept: New stack slot available for {thing.def.defName} x{thing.stackCount} ({innerContainer.Count + 1}/{MaxStacks} after add)");
-                return true;
+                // No existing stacks to merge with, need new stack(s)
+                int stacksRequired = Mathf.CeilToInt((float)thing.stackCount / thing.def.stackLimit);
+                int availableStackSlots = MaxStacks - innerContainer.Count;
+
+                return availableStackSlots >= stacksRequired;
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorOnce($"[RimazonLocker] Accepts crash prevented for {thing?.LabelShort ?? "null"}: {ex.Message}\nStack: {ex.StackTrace}", "LockerAcceptsCrash".GetHashCode());
+                return false;  // Fail closed: reject instead of crash game
             }
         }
 
@@ -294,17 +351,112 @@ namespace CAP_ChatInteractive
         /// <returns></returns>
         public virtual bool TryAcceptThing(Thing thing, bool allowSpecialEffects = true)
         {
-            if (!Accepts(thing))
+            if (!Spawned || Map == null || thing == null || thing.Destroyed)
             {
+                Log.Warning("[Locker TryAcceptThing] Early reject: invalid state/thing");
                 return false;
             }
 
-            bool added = innerContainer.TryAdd(thing, allowSpecialEffects);
-            if (added && allowSpecialEffects)
+            if (!Accepts(thing))
             {
-                MoteMaker.ThrowText(this.DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);
+                Log.Message($"[Locker] Rejected {thing.LabelShort} x{thing.stackCount} - Accepts() returned false");
+                Log.Message($"[Locker] Container status: {innerContainer.Count}/{MaxStacks} stacks, {innerContainer.TotalStackCount} total items");
+                return false;
             }
-            return added;
+
+            Log.Message($"[CRITICAL-DEBUG] Reached TryAcceptThing for {thing.LabelShort} x{thing.stackCount} | Current: {innerContainer.Count}/{MaxStacks} stacks");
+
+            try
+            {
+                // First, try to merge with existing stacks
+                bool merged = false;
+                if (innerContainer.Count > 0)
+                {
+                    var snapshot = innerContainer.ToList();
+                    foreach (var existingThing in snapshot)
+                    {
+                        if (existingThing == null || existingThing.Destroyed) continue;
+
+                        if (existingThing.def == thing.def && existingThing.CanStackWith(thing))
+                        {
+                            int spaceLeft = existingThing.def.stackLimit - existingThing.stackCount;
+                            if (spaceLeft > 0)
+                            {
+                                int amountToMerge = Mathf.Min(spaceLeft, thing.stackCount);
+                                if (amountToMerge > 0)
+                                {
+                                    existingThing.stackCount += amountToMerge;
+                                    thing.stackCount -= amountToMerge;
+
+                                    if (thing.stackCount <= 0)
+                                    {
+                                        thing.Destroy();
+                                        Log.Message($"[Locker] SUCCESS: Merged all items into existing stack");
+                                        if (allowSpecialEffects)
+                                        {
+                                            MoteMaker.ThrowText(DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);
+                                        }
+                                        return true;
+                                    }
+                                    merged = true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // If we still have items to add after merging
+                if (thing.stackCount > 0)
+                {
+                    // Force remove from any prior owner
+                    if (thing.ParentHolder != null && thing.ParentHolder != this)
+                    {
+                        thing.ParentHolder.GetDirectlyHeldThings()?.Remove(thing);
+                        Log.Message("[CRITICAL-DEBUG] Detached thing from previous holder");
+                    }
+
+                    bool added = innerContainer.TryAdd(thing, allowSpecialEffects);
+
+                    if (added)
+                    {
+                        if (thing is Thing t)
+                        {
+                            // This helps with position tracking
+                            t.holdingOwner = innerContainer;
+                        }
+
+                        Log.Message($"[Locker] SUCCESS: Added {thing.LabelShort} x{thing.stackCount}" + (merged ? " (partial merge)" : ""));
+                        if (allowSpecialEffects)
+                        {
+                            MoteMaker.ThrowText(DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);
+                        }
+                        return true;
+                    }
+                    else
+                    {
+                        Log.Warning($"[Locker] TryAdd returned false for {thing.LabelShort} x{thing.stackCount}");
+                        return false;
+                    }
+                }
+
+                // If we merged completely but had no items left to add
+                if (merged)
+                {
+                    Log.Message($"[Locker] SUCCESS: Merged all items into existing stack(s)");
+                    if (allowSpecialEffects)
+                    {
+                        MoteMaker.ThrowText(DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);
+                    }
+                    return true;
+                }
+
+                return false;
+            }
+            catch (System.Exception ex)
+            {
+                Log.Error($"[Locker CRASH CAUGHT in TryAcceptThing] For {thing?.LabelShort ?? "null"} x{thing?.stackCount ?? 0}:\n{ex.Message}\nStackTrace:\n{ex.StackTrace}");
+                return false;
+            }
         }
         // === IAcceptDropPod interface implementation
 
@@ -378,6 +530,7 @@ namespace CAP_ChatInteractive
             }
         }
 
+        // Add this method to your Building_RimazonLocker class
 
         /// <summary>
         /// Safely ejects all contents without placing them on the locker itself
@@ -417,12 +570,14 @@ namespace CAP_ChatInteractive
                     if (!success)
                     {
                         Logger.Warning("SafeEjectAllContents: TryDropAll failed, trying individual drops");
+                        
                         SafeDropItemsIndividually();
                     }
                 }
                 else
                 {
                     Logger.Warning("SafeEjectAllContents: No valid drop cell found near locker, trying individual drops");
+                    
                     SafeDropItemsIndividually();
                 }
 
@@ -434,6 +589,7 @@ namespace CAP_ChatInteractive
                 Logger.Error($"Stack trace: {ex.StackTrace}");
 
                 // Emergency fallback: try to save items
+                
                 EmergencyEject();
             }
 
@@ -502,12 +658,14 @@ namespace CAP_ChatInteractive
 
                     if (dropCell.IsValid)
                     {
+                        
                         Logger.Debug($"Dropping {thing.LabelCap} at {dropCell}");
                         bool dropped = innerContainer.TryDrop(thing, dropCell, Map, ThingPlaceMode.Direct, out Thing result);
                         Logger.Debug($"  - Drop result: {dropped}, result: {result?.LabelCap ?? "null"}");
                     }
                     else
                     {
+                        
                         Logger.Warning($"No valid drop cell found for {thing.LabelCap}, forcing drop at position");
                         innerContainer.TryDrop(thing, Position, Map, ThingPlaceMode.Near, out Thing result);
                     }
@@ -534,10 +692,12 @@ namespace CAP_ChatInteractive
                         Logger.Error($"Destroying: {thing.LabelCap} x{thing.stackCount}");
                         thing.Destroy();
                     }
+                    
                     innerContainer.Remove(thing);
                 }
                 catch
                 {
+                    
                     // If even this fails, clear the container forcefully
                     innerContainer.Clear();
                     break;
@@ -598,6 +758,31 @@ namespace CAP_ChatInteractive
                 return base.Label;
             }
         }
+
+        public override void PostMapInit()
+        {
+            base.PostMapInit();
+
+            // Fix position tracking for items in our container
+            if (innerContainer != null && innerContainer.Count > 0)
+            {
+                foreach (Thing thing in innerContainer)
+                {
+                    if (thing != null)
+                    {
+                        // Ensure proper position tracking
+                        thing.holdingOwner = innerContainer;
+
+                        // If the thing has a comp that needs position, update it
+                        if (thing is ThingWithComps twc)
+                        {
+                            // Update any comps that need position info
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
     /// <summary>
@@ -622,9 +807,9 @@ namespace CAP_ChatInteractive
         private void CacheContents()
         {
             cachedContents = new List<Thing>();
-            if (locker?.innerContainer != null)
+            if (locker?.InnerContainer != null)
             {
-                cachedContents.AddRange(locker.innerContainer);
+                cachedContents.AddRange(locker.InnerContainer);
             }
         }
 
@@ -640,9 +825,9 @@ namespace CAP_ChatInteractive
 
             Text.Font = GameFont.Small;
             Widgets.Label(new Rect(0f, 40f, inRect.width, 25f),
-                $"Stack slots: {locker.innerContainer.Count}/{locker.MaxStacks}");
+                $"Stack slots: {locker.InnerContainer.Count}/{locker.MaxStacks}");
             Widgets.Label(new Rect(0f, 60f, inRect.width, 25f),
-                $"Total items: {locker.innerContainer.TotalStackCount}");
+                $"Total items: {locker.InnerContainer.TotalStackCount}");
 
             Rect viewRect = new Rect(0f, 120f, inRect.width, inRect.height - 120f);
             Rect listRect = new Rect(0f, 0f, viewRect.width - 20f, cachedContents.Count * 35f);
@@ -793,20 +978,30 @@ namespace CAP_ChatInteractive
         {
             Widgets.Label(rect.LeftHalf(), "Priority".Translate() + ":");
 
-            Rect buttonRect = rect.RightHalf();
-            if (Widgets.ButtonText(buttonRect, settings.Priority.ToString()))
-            {
-                List<FloatMenuOption> options = new List<FloatMenuOption>();
-                foreach (StoragePriority priority in Enum.GetValues(typeof(StoragePriority)))
-                {
-                    options.Add(new FloatMenuOption(priority.ToString(), () =>
-                    {
-                        settings.Priority = priority;
-                        locker.Notify_SettingsChanged();
-                    }));
-                }
-                Find.WindowStack.Add(new FloatMenu(options));
-            }
+            // In DrawPriority (Dialog_StorageSettings or ITab)
+            // Remove Button to prevent Crash
+            // Keep Player/Streamer from using the Locker as a storage point
+            // prevents pawns from delivering to the box.
+            Widgets.Label(rect.LeftHalf(), "Priority".Translate() + ":");
+            Widgets.Label(rect.RightHalf(), "Unstored (fixed)");  
+                                                                  
+            // === DO NOT DELETE WE NEED THIS FOR THE ADAPTIVE FRAMEWORK VERSION
+            // FOR NOW
+            
+            //Rect buttonRect = rect.RightHalf();
+            //if (Widgets.ButtonText(buttonRect, settings.Priority.ToString()))
+            //{
+            //    List<FloatMenuOption> options = new List<FloatMenuOption>();
+            //    foreach (StoragePriority priority in Enum.GetValues(typeof(StoragePriority)))
+            //    {
+            //        options.Add(new FloatMenuOption(priority.ToString(), () =>
+            //        {
+            //            settings.Priority = priority;
+            //            locker.Notify_SettingsChanged();
+            //        }));
+            //    }
+            //    Find.WindowStack.Add(new FloatMenu(options));
+            //}
         }
 
         private void DrawFilter(Rect rect, ThingFilter filter, ThingFilter parentFilter)
@@ -825,253 +1020,6 @@ namespace CAP_ChatInteractive
                 suppressSmallVolumeTags: null,
                 map: Find.CurrentMap
             );
-        }
-    }
-
-    /// <summary>
-    /// How we see what our filters are in game
-    /// Filters turned off will prevent us from putting items in our locker
-    /// </summary>
-    public class ITab_ContainerStorage : ITab
-    {
-        private ThingFilterUI.UIState uiState = new ThingFilterUI.UIState();
-        private static readonly Vector2 WinSize = new Vector2(420f, 480f);
-
-        public ITab_ContainerStorage()
-        {
-            size = WinSize;
-            labelKey = "TabStorage";
-            tutorTag = "Storage";
-        }
-
-        public override bool IsVisible => SelThing is Building_RimazonLocker locker && locker.Spawned;
-
-        protected override void FillTab()
-        {
-            //GUI.color = Color.blue;
-            //Widgets.DrawBox(new Rect(0, 0, size.x, size.y), 2);
-            //GUI.color = Color.white;
-            try
-            {
-                var container = SelThing as Building_RimazonLocker;
-                if (container == null || !container.Spawned || container.settings == null)
-                {
-                    Log.Warning("[DEBUG] ITab_ContainerStorage: No valid container");
-                    return;
-                }
-
-                if (container == null || !container.Spawned || container.settings == null)
-                    return;
-
-                // Reset GUI state
-                GUI.color = Color.white;
-                Text.Font = GameFont.Small;
-                Text.Anchor = TextAnchor.UpperLeft;
-
-                Rect mainRect = new Rect(0f, 0f, size.x, size.y).ContractedBy(10f);
-
-                // Draw priority
-                DrawPriority(new Rect(mainRect.x, mainRect.y, mainRect.width, 30f), container.settings);
-
-                // Draw filter (below priority)
-                Rect filterRect = new Rect(mainRect.x, mainRect.y + 35f, mainRect.width, mainRect.height - 35f);
-                DrawFilter(filterRect, container.settings.filter, container.def.building?.defaultStorageSettings?.filter);
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"[DEBUG] ITab_ContainerStorage.FillTab error: {ex}");
-            }
-
-
-        }
-
-        private void DrawPriority(Rect rect, StorageSettings settings)
-        {
-            Widgets.Label(rect.LeftHalf(), "Priority".Translate() + ":");
-
-            Rect buttonRect = rect.RightHalf();
-            if (Widgets.ButtonText(buttonRect, settings.Priority.ToString()))
-            {
-                List<FloatMenuOption> options = new List<FloatMenuOption>();
-                foreach (StoragePriority priority in Enum.GetValues(typeof(StoragePriority)))
-                {
-                    options.Add(new FloatMenuOption(priority.ToString(), () =>
-                    {
-                        settings.Priority = priority;
-                    }));
-                }
-                Find.WindowStack.Add(new FloatMenu(options));
-            }
-        }
-
-        private void DrawFilter(Rect rect, ThingFilter filter, ThingFilter parentFilter)
-        {
-            // Use RimWorld's built-in ThingFilterUI with the UIState
-            ThingFilterUI.DoThingFilterConfigWindow(
-                rect: rect,
-                state: uiState,
-                filter: filter,
-                parentFilter: parentFilter,
-                openMask: 1, // Force count check
-                forceHiddenDefs: null,
-                forceHiddenFilters: null,
-                forceHideHitPointsConfig: false,
-                forceHideQualityConfig: false,
-                showMentalBreakChanceRange: false,
-                suppressSmallVolumeTags: null,
-                map: Find.CurrentMap
-            );
-        }
-    }
-
-    /// <summary>
-    /// SHows us what is in the locker
-    /// </summary>
-    public class ITab_LockerContents : ITab
-    {
-        private Vector2 scrollPosition = Vector2.zero;
-
-        public ITab_LockerContents()
-        {
-            size = new Vector2(520f, 480f);
-            labelKey = "TabLockerContents";
-            tutorTag = "LockerContents";
-        }
-
-        public override bool IsVisible => SelThing is Building_RimazonLocker;
-
-        protected override void FillTab()
-        {
-            try
-            {
-                var container = SelThing as Building_RimazonLocker;
-                if (container == null || !container.Spawned || container.settings == null)
-                {
-                    Log.Warning("[DEBUG] ITab_ContainerStorage: No valid container");
-                    return;
-                }
-
-
-                var locker = SelThing as Building_RimazonLocker;
-                if (locker == null || locker.innerContainer == null)
-                {
-                    Text.Font = GameFont.Small;
-                    Widgets.Label(new Rect(0f, 0f, size.x, size.y).ContractedBy(10f),
-                        "Locker not available.\nTry re-selecting the building.");
-                    return;
-                }
-
-                Rect rect = new Rect(0f, 0f, size.x, size.y).ContractedBy(10f);
-                var listing = new Listing_Standard();
-                listing.Begin(rect);
-
-                // Header
-                if (!locker.customName.NullOrEmpty())
-                {
-                    listing.Label($"Locker: {locker.customName}");
-                    listing.GapLine();
-                }
-
-                float totalMass = locker.innerContainer.Sum(t => t.GetStatValue(StatDefOf.Mass) * t.stackCount);
-                listing.Label($"Total mass: {totalMass:F2} kg");
-                listing.Label($"Stack slots: {locker.innerContainer.Count}/{locker.MaxStacks}");
-                listing.Label($"Total items: {locker.innerContainer.TotalStackCount}");
-                listing.Gap(12f);
-
-                // Search bar
-                Rect searchRect = listing.GetRect(30f);
-                string searchString = ""; // You can make this a field if you want persistence
-                searchString = Widgets.TextField(searchRect, searchString);
-
-                if (locker.innerContainer.Count == 0)
-                {
-                    listing.Label("(Empty)");
-                }
-                else
-                {
-                    // Filter items (case-insensitive)
-                    var filtered = locker.innerContainer
-                        .Where(t => t != null && !t.Destroyed && t.LabelCap.ToLowerInvariant().Contains(searchString.ToLowerInvariant()))
-                        .ToList();
-
-                    // Calculate scroll height dynamically (prevents overflow/clipping buttons)
-                    float headerUsed = listing.CurHeight;
-                    float availableForScroll = rect.height - headerUsed - 50f; // leave room for buttons + gaps
-                    if (availableForScroll < 100f) availableForScroll = 100f; // minimum
-
-                    Rect scrollOuter = listing.GetRect(availableForScroll);
-                    float estimatedContentHeight = filtered.Count * 35f + 20f; // rough per-row height + padding
-                    Rect viewRect = new Rect(0f, 0f, scrollOuter.width - 16f, Mathf.Max(estimatedContentHeight, availableForScroll));
-
-                    Widgets.BeginScrollView(scrollOuter, ref scrollPosition, viewRect);
-
-                    try
-                    {
-                        var innerListing = new Listing_Standard();
-                        innerListing.Begin(viewRect);
-
-                        foreach (Thing thing in filtered)
-                        {
-                            Rect row = innerListing.GetRect(28f);
-
-                            // Alternate row highlight
-                            if (filtered.IndexOf(thing) % 2 == 0)
-                            {
-                                Widgets.DrawLightHighlight(row);
-                            }
-
-                            Widgets.ThingIcon(new Rect(row.x, row.y, 28f, 28f), thing);
-
-                            Text.Anchor = TextAnchor.MiddleLeft;
-                            string label = thing.LabelCap ?? thing.def?.LabelCap ?? "[Unknown Item]";
-                            Widgets.Label(new Rect(row.x + 32f, row.y, row.width - 60f, 28f), label);
-                            Text.Anchor = TextAnchor.UpperLeft;  // CRITICAL RESET - prevents alignment error
-
-                            // Info button (safe)
-                            if (Widgets.ButtonImage(new Rect(row.xMax - 24f, row.y + 2f, 24f, 24f), TexButton.Info))
-                            {
-                                if (thing?.def != null)
-                                {
-                                    Find.WindowStack.Add(new Dialog_InfoCard(thing.def, thing.Stuff));
-                                }
-                            }
-
-                            TooltipHandler.TipRegion(row, thing.GetInspectString() ?? label);
-
-                            innerListing.Gap(4f);
-                        }
-
-                        innerListing.End();
-                    }
-                    finally
-                    {
-                        Widgets.EndScrollView();  // Always close
-                    }
-                }
-
-                listing.Gap(12f);
-
-                // Buttons (now always visible)
-                Rect btnRect = listing.GetRect(30f);
-                if (Widgets.ButtonText(new Rect(btnRect.x, btnRect.y, btnRect.width / 2 - 5f, 30f), "Eject All"))
-                {
-                    locker.SafeEjectAllContents();
-                }
-
-                if (Widgets.ButtonText(new Rect(btnRect.x + btnRect.width / 2 + 5f, btnRect.y, btnRect.width / 2 - 5f, 30f), "Detailed View"))
-                {
-                    Find.WindowStack.Add(new Dialog_LockerContents(locker));
-                }
-
-                listing.End();
-
-                // Global safety reset (extra protection)
-                Text.Anchor = TextAnchor.UpperLeft;
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"[DEBUG] ITab_ContainerStorage.FillTab error: {ex}");
-            }
         }
     }
 }

@@ -110,7 +110,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                                    $"MapMatch={locker.Map == map}, " +
                                    $"Destroyed={locker.Destroyed}, " +
                                    $"Accepts={locker.Accepts(thing)}, " +
-                                   $"CurrentItems={locker.innerContainer.TotalStackCount}/{locker.MaxStacks}");
+                                   $"CurrentItems={locker.InnerContainer.TotalStackCount}/{locker.MaxStacks}");
                     }
 
                     return null;
@@ -123,7 +123,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 // 1. Try to find lockers that already have this item type (for stack merging)
                 var lockersWithSameItem = suitableLockers
-                    .Where(l => l.innerContainer.Any(t => t.def == thing.def))
+                    .Where(l => l.InnerContainer.Any(t => t.def == thing.def))
                     .ToList();
 
                 if (lockersWithSameItem.Any())
@@ -146,14 +146,14 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
                 bestLocker = suitableLockers
                     .OrderBy(locker => locker.Position.DistanceToSquared(targetPos))
-                    .ThenByDescending(locker => locker.MaxStacks - locker.innerContainer.TotalStackCount) // Most space left
+                    .ThenByDescending(locker => locker.MaxStacks - locker.InnerContainer.TotalStackCount) // Most space left
                     .FirstOrDefault();
 
                 if (bestLocker != null)
                 {
                     Logger.Debug($"Selected locker at {bestLocker.Position} " +
                                 $"(distance to target: {bestLocker.Position.DistanceTo(targetPos):F1}, " +
-                                $"space left: {bestLocker.MaxStacks - bestLocker.innerContainer.TotalStackCount})");
+                                $"space left: {bestLocker.MaxStacks - bestLocker.InnerContainer.TotalStackCount})");
                 }
 
                 return bestLocker;

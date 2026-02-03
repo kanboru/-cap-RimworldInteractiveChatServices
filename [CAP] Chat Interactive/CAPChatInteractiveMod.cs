@@ -18,6 +18,8 @@
 // Store, Traits, Weather, and other systems will be initialized when the game starts.
 
 using _CAP__Chat_Interactive.Interfaces;
+//using _CAP__Chat_Interactive.Items;
+using HarmonyLib;
 using RimWorld;
 using System;   
 using System.IO;
@@ -25,7 +27,6 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using Verse;
-using HarmonyLib;
 
 namespace CAP_ChatInteractive
 {
@@ -74,7 +75,16 @@ namespace CAP_ChatInteractive
                     Logger.Debug("GameComponent added to existing game");
                 }
             }
-
+            /*
+            // INITIALIZE RIMAZON LOCKER MANAGER 
+            LongEventHandler.ExecuteWhenFinished(() =>
+            {
+                if (Current.Game != null)
+                {
+                    Current.Game.GetComponent<GameComponent_LockerManager>();
+                }
+            });
+            */
             Logger.Message("RICS mod loaded successfully!");
 
             // Force viewer loading by accessing the All property
@@ -85,6 +95,8 @@ namespace CAP_ChatInteractive
             {
                 Current.Game.GetComponent<GameComponent_RaceSettingsInitializer>();
             }
+
+
 
             // Then initialize services (which will use the registered commands)
             InitializeServices();
