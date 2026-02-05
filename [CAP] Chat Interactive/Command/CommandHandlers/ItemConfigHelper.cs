@@ -160,87 +160,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             };
         }
 
-        public static Thing CreateMinifiedThing(ThingDef thingDef, QualityCategory? quality, ThingDef material)
-        {
-            try
-            {
-                // Create the original thing first
-                Thing originalThing = ThingMaker.MakeThing(thingDef, material);
-
-                // Set quality if applicable
-                if (quality.HasValue && thingDef.HasComp(typeof(CompQuality)))
-                {
-                    if (originalThing.TryGetQuality(out QualityCategory existingQuality))
-                    {
-                        originalThing.TryGetComp<CompQuality>()?.SetQuality(quality.Value, ArtGenerationContext.Outsider);
-                    }
-                }
-
-                // Minify the thing
-                Thing minifiedThing = MinifyUtility.TryMakeMinified(originalThing);
-
-                if (minifiedThing != null)
-                {
-                    Logger.Debug($"Successfully minified {thingDef.defName}");
-                    return minifiedThing;
-                }
-                else
-                {
-                    Logger.Debug($"Minification returned null for {thingDef.defName}, returning original");
-                    return originalThing;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Error minifying {thingDef.defName}: {ex}");
-                // Return regular thing as fallback
-                return ThingMaker.MakeThing(thingDef, material);
-            }
-        }
-
-        public static List<Thing> CreateThingsForDelivery(ThingDef thingDef, int quantity, QualityCategory? quality, ThingDef material)
-        {
-            List<Thing> things = new List<Thing>();
-            int remainingQuantity = quantity;
-
-            // Check if this item should be minified
-            bool shouldMinify = ShouldMinifyForDelivery(thingDef);
-
-            while (remainingQuantity > 0)
-            {
-                Thing thing;
-
-                if (shouldMinify)
-                {
-                    // For minified items, deliver one at a time
-                    thing = CreateMinifiedThing(thingDef, quality, material);
-                    remainingQuantity -= 1;
-                }
-                else
-                {
-                    // For regular items, use normal stack logic
-                    int stackSize = Math.Min(remainingQuantity, thingDef.stackLimit);
-                    thing = ThingMaker.MakeThing(thingDef, material);
-                    thing.stackCount = stackSize;
-
-                    // Set quality if applicable
-                    if (quality.HasValue && thingDef.HasComp(typeof(CompQuality)))
-                    {
-                        if (thing.TryGetQuality(out QualityCategory existingQuality))
-                        {
-                            thing.TryGetComp<CompQuality>()?.SetQuality(quality.Value, ArtGenerationContext.Outsider);
-                        }
-                    }
-
-                    remainingQuantity -= stackSize;
-                }
-
-                things.Add(thing);
-            }
-
-            return things;
-        }
-
         public static float GetQualityMultiplier(QualityCategory quality)
         {
             // Get settings from the mod instance
@@ -274,21 +193,6 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 QualityCategory.Legendary => settings.LegendaryQuality,
                 _ => 1.0f
             };
-        }
-
-        public static bool ShouldMinifyForDelivery(ThingDef thingDef)
-        {
-            if (thingDef == null) return false;
-
-            // Only check if the thing can be minified - that's the main requirement
-            if (!thingDef.Minifiable)
-            {
-                Logger.Debug($"{thingDef.defName} is not minifiable");
-                return false;
-            }
-
-            Logger.Debug($"{thingDef.defName} should be minified for delivery");
-            return true;
         }
     }
 }

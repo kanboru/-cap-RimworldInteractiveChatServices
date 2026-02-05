@@ -20,39 +20,12 @@
  * Purpose:  To make a Locker that Chat viewers can send items they purchased in chat (twitch etc)
  * 
  * Goal:  Get Pawns to unload the box without crashing
- * 
- * 
- * === crashing issues 
- * Pawns hauling to the locker crash the game, no log error HARD CRASH .. permanently turn off this behavior see below
- * Suspected reason, there is not method for pawns to remove or place stuff in locker
- * and or methods that are Rimworld Core do not account for a BOX, CHEST or hidden container.inventory
- * 
- * problem:  Rimworld does not have normal containers.  It uses shelfs.
- * 
- * Solution:  (one of these)
- * 1. Create a Buidling_RimazonLocker custom based on what we want from class Building_Storage and class Building 
- * 2. Use Adaptive Storage Framework Mod to make the Rimazon Locker
- *  a. This forces a depandancey that may cuase issues later.
- *  b. It is a commonly used mod
- * 3. Allow Deliveries but keep Pawns from using the box
- *  a. Easy to keep the from storing (forced use "Unstored")  
- *  b. Code is like this now
- * 4. Keep Pawns from Delivering to Locker
- *  a. We want to permananty keep this behavior, so its not used as a storage container, Just a drop off point.
- *  b. So keeping forced "Unstored" 
- * 
- * EVERY THING ELSE WORKS 
- * CANNOT USE Building_Storage, causes mutliple crashing issues, forces the box to be a shelf.  Unwanted behavior.  Its a box container not a shelf
- * 
  */
 
-//using _CAP__Chat_Interactive.Items;
-using LudeonTK;
 using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Management.Instrumentation;
 using UnityEngine;
 using Verse;
 namespace CAP_ChatInteractive
@@ -148,11 +121,11 @@ namespace CAP_ChatInteractive
                 {
                     settings.CopyFrom(parentSettings);
                     copied = true;
-                    Log.Message($"[RICS Locker] Successfully copied settings from parent/defaults for {this.def.defName} at {this.Position}");
+                    Logger.Debug($"[RICS Locker] Successfully copied settings from parent/defaults for {this.def.defName} at {this.Position}");
                 }
                 catch (Exception ex)
                 {
-                    Log.Warning($"[RICS Locker] Failed to copy parent settings during lazy init: {ex.Message}. Using fallback.");
+                    Logger.Error($"[RICS Locker] Failed to copy parent settings during lazy init: {ex.Message}. Using fallback.");
                 }
             }
 
@@ -163,11 +136,11 @@ namespace CAP_ChatInteractive
                 {
                     settings.CopyFrom(def.building.defaultStorageSettings);
                     copied = true;
-                    Log.Message($"[RICS Locker] Recovered by copying directly from def.defaultStorageSettings for {this.def.defName}");
+                    Logger.Debug($"[RICS Locker] Recovered by copying directly from def.defaultStorageSettings for {this.def.defName}");
                 }
                 catch (Exception ex)
                 {
-                    Log.Warning($"[RICS Locker] Failed to copy def defaults: {ex.Message}. Using allow-all fallback.");
+                    Logger.Debug($"[RICS Locker] Failed to copy def defaults: {ex.Message}. Using allow-all fallback.");
                 }
             }
 
@@ -177,7 +150,7 @@ namespace CAP_ChatInteractive
                 settings.filter = new ThingFilter();
                 //settings.filter.SetAllowAllWhoCanHold(this);  // Or just SetAllowEverything() if you prefer broader
                 settings.Priority = StoragePriority.Low;      // Matches your XML intent
-                Log.Warning($"[RICS Locker] No valid settings source found for {this.def.defName} at {this.Position}. Using full allow-all fallback.");
+                Logger.Warning($"[RICS Locker] No valid settings source found for {this.def.defName} at {this.Position}. Using full allow-all fallback.");
             }
 
             // Optional: enforce any fixed restrictions from your XML <fixedStorageSettings> if you want
@@ -194,7 +167,7 @@ namespace CAP_ChatInteractive
             }
 
             // If def is null or no defaults (very rare during normal play)
-            Log.Warning($"[RICS] No defaultStorageSettings found on def for {def?.defName ?? "unknown"}");
+            Logger.Warning($"[RICS] No defaultStorageSettings found on def for {def?.defName ?? "unknown"}");
             return null;
         }
 
@@ -207,9 +180,8 @@ namespace CAP_ChatInteractive
         public override void PostMake()
         {
             base.PostMake();
-            //Log.Message($"[DEBUG] Locker created - StorageComp: {this.GetComp<CompStorage>() != null}");
-            Log.Message($"[DEBUG] ThingOwner: {this.GetDirectlyHeldThings() != null}");
-            Log.Message($"[DEBUG] Locker {this} settings after init: {(settings != null ? "exists" : "NULL")} | Parent defaults: {(def.building?.defaultStorageSettings != null ? "exists" : "NULL")}");
+            Logger.Debug($"ThingOwner: {this.GetDirectlyHeldThings() != null}");
+            Logger.Debug($"Locker {this} settings after init: {(settings != null ? "exists" : "NULL")} | Parent defaults: {(def.building?.defaultStorageSettings != null ? "exists" : "NULL")}");
             // Initialize innerContainer if null (shouldn't be, but just in case)
             if (innerContainer == null)
             {
@@ -275,16 +247,16 @@ namespace CAP_ChatInteractive
         /// <returns></returns>
         public virtual bool Accepts(Thing thing)
         {
-            Log.Message($"[DEBUG-ACCEPTS] Called for {thing?.LabelShort ?? "null"}" +
-                $" stack {thing?.stackCount}, pawn job? {Find.TickManager?.Paused == false}," +
-                $" container count {innerContainer.Count}, total items {innerContainer.TotalStackCount}");
+            // Logger.Debug($"[DEBUG-ACCEPTS] Called for {thing?.LabelShort ?? "null"}" +
+            //    $" stack {thing?.stackCount}, pawn job? {Find.TickManager?.Paused == false}," +
+            //    $" container count {innerContainer.Count}, total items {innerContainer.TotalStackCount}");
 
             if (thing == null || thing.Destroyed || thing is Pawn)
                 return false;
 
             if (settings == null || !settings.AllowedToAccept(thing))
             {
-                Log.Error($"[DEBUG-ACCEPTS] !settings.AllowedToAccept({thing?.LabelShort ?? "null"})");
+                Logger.Debug($"[DEBUG-ACCEPTS] !settings.AllowedToAccept({thing?.LabelShort ?? "null"})");
                 return false;
             }
 
@@ -353,18 +325,18 @@ namespace CAP_ChatInteractive
         {
             if (!Spawned || Map == null || thing == null || thing.Destroyed)
             {
-                Log.Warning("[Locker TryAcceptThing] Early reject: invalid state/thing");
+                //Logger.Warning("[Locker TryAcceptThing] Early reject: invalid state/thing");
                 return false;
             }
 
             if (!Accepts(thing))
             {
-                Log.Message($"[Locker] Rejected {thing.LabelShort} x{thing.stackCount} - Accepts() returned false");
-                Log.Message($"[Locker] Container status: {innerContainer.Count}/{MaxStacks} stacks, {innerContainer.TotalStackCount} total items");
+                //Logger.Message($"[Locker] Rejected {thing.LabelShort} x{thing.stackCount} - Accepts() returned false");
+                //Logger.Message($"[Locker] Container status: {innerContainer.Count}/{MaxStacks} stacks, {innerContainer.TotalStackCount} total items");
                 return false;
             }
 
-            Log.Message($"[CRITICAL-DEBUG] Reached TryAcceptThing for {thing.LabelShort} x{thing.stackCount} | Current: {innerContainer.Count}/{MaxStacks} stacks");
+            //Logger.Message($"[CRITICAL-DEBUG] Reached TryAcceptThing for {thing.LabelShort} x{thing.stackCount} | Current: {innerContainer.Count}/{MaxStacks} stacks");
 
             try
             {
@@ -391,7 +363,7 @@ namespace CAP_ChatInteractive
                                     if (thing.stackCount <= 0)
                                     {
                                         thing.Destroy();
-                                        Log.Message($"[Locker] SUCCESS: Merged all items into existing stack");
+                                        // Logger.Debug($"[Locker] SUCCESS: Merged all items into existing stack");
                                         if (allowSpecialEffects)
                                         {
                                             MoteMaker.ThrowText(DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);
@@ -412,7 +384,7 @@ namespace CAP_ChatInteractive
                     if (thing.ParentHolder != null && thing.ParentHolder != this)
                     {
                         thing.ParentHolder.GetDirectlyHeldThings()?.Remove(thing);
-                        Log.Message("[CRITICAL-DEBUG] Detached thing from previous holder");
+                        Logger.Debug("[CRITICAL-DEBUG] Detached thing from previous holder");
                     }
 
                     bool added = innerContainer.TryAdd(thing, allowSpecialEffects);
@@ -425,7 +397,7 @@ namespace CAP_ChatInteractive
                             t.holdingOwner = innerContainer;
                         }
 
-                        Log.Message($"[Locker] SUCCESS: Added {thing.LabelShort} x{thing.stackCount}" + (merged ? " (partial merge)" : ""));
+                        Logger.Debug($"[Locker] SUCCESS: Added {thing.LabelShort} x{thing.stackCount}" + (merged ? " (partial merge)" : ""));
                         if (allowSpecialEffects)
                         {
                             MoteMaker.ThrowText(DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);
@@ -442,7 +414,7 @@ namespace CAP_ChatInteractive
                 // If we merged completely but had no items left to add
                 if (merged)
                 {
-                    Log.Message($"[Locker] SUCCESS: Merged all items into existing stack(s)");
+                    Logger.Debug($"[Locker] SUCCESS: Merged all items into existing stack(s)");
                     if (allowSpecialEffects)
                     {
                         MoteMaker.ThrowText(DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);

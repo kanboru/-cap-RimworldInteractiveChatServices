@@ -57,6 +57,12 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                     return null;
                 }
 
+                if (thing.def.Minifiable)
+                {
+                    Logger.Debug($"{thing.def.defName} is minifiable - skipping locker delivery");
+                    return null;
+                }
+
                 // Get all lockers on the map
                 var allLockers = new List<Building_RimazonLocker>();
 
@@ -322,11 +328,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
             }
         }
 
-
-
         // === ItemDeliveryHelper
-
-        // Update this overload to return DeliveryResult too
         public static (List<Thing> spawnedThings, IntVec3 deliveryPos, DeliveryResult deliveryResult) SpawnItemForPawn(ThingDef thingDef, int quantity, QualityCategory? quality,
             ThingDef material, Pawn pawn, bool addToInventory = false)
         {
@@ -656,31 +658,46 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static List<Thing> CreateItemsForDelivery(ThingDef thingDef, int quantity, QualityCategory? quality, ThingDef material)
         {
-            // Use your existing ItemConfigHelper.CreateThingsForDelivery or implement a simple version
-            List<Thing> items = new List<Thing>();
-            int remaining = quantity;
+            List<Thing> things = new List<Thing>();
+            int remainingQuantity = quantity;
 
-            while (remaining > 0)
+            // Simple check: minifiable items get minified
+            bool shouldMinify = thingDef.Minifiable;
+
+            while (remainingQuantity > 0)
             {
-                Thing item = ThingMaker.MakeThing(thingDef, material);
-                int stackSize = Math.Min(remaining, thingDef.stackLimit);
-                item.stackCount = stackSize;
+                Thing thing;
 
-                // Set quality if applicable
-                if (quality.HasValue && thingDef.HasComp(typeof(CompQuality)))
+                if (shouldMinify)
                 {
-                    if (item.TryGetQuality(out QualityCategory existingQuality))
+                    // For minified items, deliver one at a time
+                    thing = CreateMinifiedThing(thingDef, quality, material);
+                    remainingQuantity -= 1;
+                }
+                else
+                {
+                    // For regular items, use normal stack logic
+                    int stackSize = Math.Min(remainingQuantity, thingDef.stackLimit);
+                    thing = ThingMaker.MakeThing(thingDef, material);
+                    thing.stackCount = stackSize;
+
+                    // Set quality if applicable
+                    if (quality.HasValue && thingDef.HasComp(typeof(CompQuality)))
                     {
-                        item.TryGetComp<CompQuality>()?.SetQuality(quality.Value, ArtGenerationContext.Outsider);
+                        if (thing.TryGetQuality(out QualityCategory existingQuality))
+                        {
+                            thing.TryGetComp<CompQuality>()?.SetQuality(quality.Value, ArtGenerationContext.Outsider);
+                        }
                     }
+
+                    remainingQuantity -= stackSize;
                 }
 
-                items.Add(item);
-                remaining -= stackSize;
+                things.Add(thing);
             }
 
-            Logger.Debug($"Created {items.Count} items with total quantity {quantity}");
-            return items;
+            Logger.Debug($"Created {things.Count} items (minified: {shouldMinify})");
+            return things;
         }
 
         private static void DeliverItemsInDropPods(List<Thing> thingsToDeliver, IntVec3 dropPos, Map map)
@@ -1039,6 +1056,102 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 Logger.Error($"Error in delivery at position {dropPos}: {ex}");
                 return false;
             }
+        }
+
+        public static bool ShouldMinifyForDelivery(ThingDef thingDef)
+        {
+            if (thingDef == null) return false;
+
+            // All minifiable items should be minified for delivery
+            if (thingDef.Minifiable)
+            {
+                Logger.Debug($"{thingDef.defName} is minifiable - will be minified for delivery");
+                return true;
+            }
+
+            Logger.Debug($"{thingDef.defName} is not minifiable - will be delivered normally");
+            return false;
+        }
+
+        public static Thing CreateMinifiedThing(ThingDef thingDef, QualityCategory? quality, ThingDef material)
+        {
+            try
+            {
+                // Create the original thing first
+                Thing originalThing = ThingMaker.MakeThing(thingDef, material);
+
+                // Set quality if applicable
+                if (quality.HasValue && thingDef.HasComp(typeof(CompQuality)))
+                {
+                    if (originalThing.TryGetQuality(out QualityCategory existingQuality))
+                    {
+                        originalThing.TryGetComp<CompQuality>()?.SetQuality(quality.Value, ArtGenerationContext.Outsider);
+                    }
+                }
+
+                // Minify the thing
+                Thing minifiedThing = MinifyUtility.TryMakeMinified(originalThing);
+
+                if (minifiedThing != null)
+                {
+                    Logger.Debug($"Successfully minified {thingDef.defName}");
+                    return minifiedThing;
+                }
+                else
+                {
+                    Logger.Debug($"Minification returned null for {thingDef.defName}, returning original");
+                    return originalThing;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error minifying {thingDef.defName}: {ex}");
+                // Return regular thing as fallback
+                return ThingMaker.MakeThing(thingDef, material);
+            }
+        }
+
+        public static List<Thing> CreateThingsForDelivery(ThingDef thingDef, int quantity, QualityCategory? quality, ThingDef material)
+        {
+            List<Thing> things = new List<Thing>();
+            int remainingQuantity = quantity;
+
+            // Check if this item should be minified
+            bool shouldMinify = ShouldMinifyForDelivery(thingDef);
+
+            while (remainingQuantity > 0)
+            {
+                Thing thing;
+
+                if (shouldMinify)
+                {
+                    // For minified items, deliver one at a time
+                    thing = CreateMinifiedThing(thingDef, quality, material);
+                    remainingQuantity -= 1;
+                }
+                else
+                {
+                    // For regular items, use normal stack logic
+                    int stackSize = Math.Min(remainingQuantity, thingDef.stackLimit);
+                    thing = ThingMaker.MakeThing(thingDef, material);
+                    thing.stackCount = stackSize;
+
+                    // Set quality if applicable
+                    if (quality.HasValue && thingDef.HasComp(typeof(CompQuality)))
+                    {
+                        if (thing.TryGetQuality(out QualityCategory existingQuality))
+                        {
+                            thing.TryGetComp<CompQuality>()?.SetQuality(quality.Value, ArtGenerationContext.Outsider);
+                        }
+                    }
+
+                    remainingQuantity -= stackSize;
+                }
+
+                things.Add(thing);
+            }
+
+            return things;
         }
     }
 }
