@@ -37,9 +37,9 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static readonly Dictionary<string, string> BiotechSurgeryCommands = new()
         {
             { "hemogen", "ExtractHemogenPack" },
+            { "giveblood", "ExtractHemogenPack" },
             { "transfusion", "BloodTransfusion" },
-            { "blood", "BloodTransfusion" },
-            { "giveblood", "BloodTransfusion" },
+            { "getblood", "BloodTransfusion" },
             { "tubal", "TubalLigation" },
             { "tuballigation", "TubalLigation" },
             { "vasectomy", "Vasectomy" },
