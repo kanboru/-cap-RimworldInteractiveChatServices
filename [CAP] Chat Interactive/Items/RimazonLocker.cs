@@ -121,11 +121,11 @@ namespace CAP_ChatInteractive
                 {
                     settings.CopyFrom(parentSettings);
                     copied = true;
-                    Logger.Debug($"[RICS Locker] Successfully copied settings from parent/defaults for {this.def.defName} at {this.Position}");
+                    // Logger.Debug($"[RICS Locker] Successfully copied settings from parent/defaults for {this.def.defName} at {this.Position}");
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"[RICS Locker] Failed to copy parent settings during lazy init: {ex.Message}. Using fallback.");
+                    // Logger.Error($"[RICS Locker] Failed to copy parent settings during lazy init: {ex.Message}. Using fallback.");
                 }
             }
 
@@ -136,11 +136,11 @@ namespace CAP_ChatInteractive
                 {
                     settings.CopyFrom(def.building.defaultStorageSettings);
                     copied = true;
-                    Logger.Debug($"[RICS Locker] Recovered by copying directly from def.defaultStorageSettings for {this.def.defName}");
+                    // Logger.Debug($"[RICS Locker] Recovered by copying directly from def.defaultStorageSettings for {this.def.defName}");
                 }
                 catch (Exception ex)
                 {
-                    Logger.Debug($"[RICS Locker] Failed to copy def defaults: {ex.Message}. Using allow-all fallback.");
+                    // Logger.Debug($"[RICS Locker] Failed to copy def defaults: {ex.Message}. Using allow-all fallback.");
                 }
             }
 
@@ -150,7 +150,7 @@ namespace CAP_ChatInteractive
                 settings.filter = new ThingFilter();
                 //settings.filter.SetAllowAllWhoCanHold(this);  // Or just SetAllowEverything() if you prefer broader
                 settings.Priority = StoragePriority.Low;      // Matches your XML intent
-                Logger.Warning($"[RICS Locker] No valid settings source found for {this.def.defName} at {this.Position}. Using full allow-all fallback.");
+                // Logger.Warning($"[RICS Locker] No valid settings source found for {this.def.defName} at {this.Position}. Using full allow-all fallback.");
             }
 
             // Optional: enforce any fixed restrictions from your XML <fixedStorageSettings> if you want
@@ -167,7 +167,7 @@ namespace CAP_ChatInteractive
             }
 
             // If def is null or no defaults (very rare during normal play)
-            Logger.Warning($"[RICS] No defaultStorageSettings found on def for {def?.defName ?? "unknown"}");
+            // Logger.Warning($"[RICS] No defaultStorageSettings found on def for {def?.defName ?? "unknown"}");
             return null;
         }
 
@@ -180,8 +180,8 @@ namespace CAP_ChatInteractive
         public override void PostMake()
         {
             base.PostMake();
-            Logger.Debug($"ThingOwner: {this.GetDirectlyHeldThings() != null}");
-            Logger.Debug($"Locker {this} settings after init: {(settings != null ? "exists" : "NULL")} | Parent defaults: {(def.building?.defaultStorageSettings != null ? "exists" : "NULL")}");
+            // Logger.Debug($"ThingOwner: {this.GetDirectlyHeldThings() != null}");
+            // Logger.Debug($"Locker {this} settings after init: {(settings != null ? "exists" : "NULL")} | Parent defaults: {(def.building?.defaultStorageSettings != null ? "exists" : "NULL")}");
             // Initialize innerContainer if null (shouldn't be, but just in case)
             if (innerContainer == null)
             {
@@ -256,7 +256,7 @@ namespace CAP_ChatInteractive
 
             if (settings == null || !settings.AllowedToAccept(thing))
             {
-                Logger.Debug($"[DEBUG-ACCEPTS] !settings.AllowedToAccept({thing?.LabelShort ?? "null"})");
+                // Logger.Debug($"[DEBUG-ACCEPTS] !settings.AllowedToAccept({thing?.LabelShort ?? "null"})");
                 return false;
             }
 
@@ -384,7 +384,7 @@ namespace CAP_ChatInteractive
                     if (thing.ParentHolder != null && thing.ParentHolder != this)
                     {
                         thing.ParentHolder.GetDirectlyHeldThings()?.Remove(thing);
-                        Logger.Debug("[CRITICAL-DEBUG] Detached thing from previous holder");
+                        // Logger.Debug("[CRITICAL-DEBUG] Detached thing from previous holder");
                     }
 
                     bool added = innerContainer.TryAdd(thing, allowSpecialEffects);
@@ -397,7 +397,7 @@ namespace CAP_ChatInteractive
                             t.holdingOwner = innerContainer;
                         }
 
-                        Logger.Debug($"[Locker] SUCCESS: Added {thing.LabelShort} x{thing.stackCount}" + (merged ? " (partial merge)" : ""));
+                        // Logger.Debug($"[Locker] SUCCESS: Added {thing.LabelShort} x{thing.stackCount}" + (merged ? " (partial merge)" : ""));
                         if (allowSpecialEffects)
                         {
                             MoteMaker.ThrowText(DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);
@@ -414,7 +414,7 @@ namespace CAP_ChatInteractive
                 // If we merged completely but had no items left to add
                 if (merged)
                 {
-                    Logger.Debug($"[Locker] SUCCESS: Merged all items into existing stack(s)");
+                    // Logger.Debug($"[Locker] SUCCESS: Merged all items into existing stack(s)");
                     if (allowSpecialEffects)
                     {
                         MoteMaker.ThrowText(DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);
@@ -426,7 +426,7 @@ namespace CAP_ChatInteractive
             }
             catch (System.Exception ex)
             {
-                Log.Error($"[Locker CRASH CAUGHT in TryAcceptThing] For {thing?.LabelShort ?? "null"} x{thing?.stackCount ?? 0}:\n{ex.Message}\nStackTrace:\n{ex.StackTrace}");
+                // Log.Error($"[Locker CRASH CAUGHT in TryAcceptThing] For {thing?.LabelShort ?? "null"} x{thing?.stackCount ?? 0}:\n{ex.Message}\nStackTrace:\n{ex.StackTrace}");
                 return false;
             }
         }
