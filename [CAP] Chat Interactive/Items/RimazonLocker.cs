@@ -417,7 +417,8 @@ namespace CAP_ChatInteractive
                     // Logger.Debug($"[Locker] SUCCESS: Merged all items into existing stack(s)");
                     if (allowSpecialEffects)
                     {
-                        MoteMaker.ThrowText(DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);
+                        // MoteMaker.ThrowText(DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Delivery Received", Color.white, 2f);
+                        MoteMaker.ThrowText(this.DrawPos + new Vector3(0f, 0f, 0.25f), Map, "RICS.Locker.DeliveryReceived".Translate(), Color.white, 2f);
                     }
                     return true;
                 }
@@ -511,33 +512,22 @@ namespace CAP_ChatInteractive
         {
             if (innerContainer.Count == 0 || Map == null)
             {
-                Logger.Debug("SafeEjectAllContents: Container empty or no map");
+                // Logger.Debug("SafeEjectAllContents: Container empty or no map");
                 return;
             }
 
-            Logger.Debug($"SafeEjectAllContents: Attempting to eject {innerContainer.Count} items from locker at {Position}");
+            // Logger.Debug($"SafeEjectAllContents: Attempting to eject {innerContainer.Count} items from locker at {Position}");
 
             try
             {
-                // List all items before ejecting for debugging
-                foreach (Thing thing in innerContainer)
-                {
-                    if (thing == null)
-                    {
-                        Logger.Error("SafeEjectAllContents: Found null thing in container!");
-                        continue;
-                    }
-                    Logger.Debug($"  - {thing.LabelCap} x{thing.stackCount}, def={thing.def?.defName}, MarketValue={thing.MarketValue}");
-                }
-
                 // Find a valid cell to drop items near the locker
                 IntVec3 dropCell = FindValidDropCell(Position, Map);
 
                 if (dropCell.IsValid)
                 {
-                    Logger.Debug($"SafeEjectAllContents: Dropping items at {dropCell}");
+                    // Logger.Debug($"SafeEjectAllContents: Dropping items at {dropCell}");
                     bool success = innerContainer.TryDropAll(dropCell, Map, ThingPlaceMode.Near);
-                    Logger.Debug($"SafeEjectAllContents: TryDropAll result = {success}");
+                    //Logger.Debug($"SafeEjectAllContents: TryDropAll result = {success}");
 
                     if (!success)
                     {
@@ -553,7 +543,7 @@ namespace CAP_ChatInteractive
                     SafeDropItemsIndividually();
                 }
 
-                Logger.Debug($"SafeEjectAllContents: After ejection, container count = {innerContainer.Count}");
+                // Logger.Debug($"SafeEjectAllContents: After ejection, container count = {innerContainer.Count}");
             }
             catch (Exception ex)
             {
@@ -570,7 +560,7 @@ namespace CAP_ChatInteractive
             {
                 try
                 {
-                    MoteMaker.ThrowText(this.DrawPos + new Vector3(0f, 0f, 0.25f), Map, "Items Ejected", Color.white, 2f);
+                    MoteMaker.ThrowText(this.DrawPos + new Vector3(0f, 0f, 0.25f), Map, "RICS.Locker.ItemsEjected".Translate(), Color.white, 2f);
                 }
                 catch (Exception ex)
                 {
@@ -631,9 +621,9 @@ namespace CAP_ChatInteractive
                     if (dropCell.IsValid)
                     {
                         
-                        Logger.Debug($"Dropping {thing.LabelCap} at {dropCell}");
+                        // Logger.Debug($"Dropping {thing.LabelCap} at {dropCell}");
                         bool dropped = innerContainer.TryDrop(thing, dropCell, Map, ThingPlaceMode.Direct, out Thing result);
-                        Logger.Debug($"  - Drop result: {dropped}, result: {result?.LabelCap ?? "null"}");
+                        // Logger.Debug($"  - Drop result: {dropped}, result: {result?.LabelCap ?? "null"}");
                     }
                     else
                     {
@@ -712,7 +702,7 @@ namespace CAP_ChatInteractive
             }
             else
             {
-                text += "Contains: " + innerContainer.ContentsString.CapitalizeFirst();
+                text += "RICS_Contains".Translate() + innerContainer.ContentsString.CapitalizeFirst();
                 text += "\n" + "RICS_StackSlots".Translate(innerContainer.Count, MaxStacks);
                 text += "\n" + "RICS_TotalItems".Translate(innerContainer.TotalStackCount);
             }
@@ -796,10 +786,13 @@ namespace CAP_ChatInteractive
             Widgets.Label(new Rect(0f, 0f, inRect.width, 35f), title);
 
             Text.Font = GameFont.Small;
-            Widgets.Label(new Rect(0f, 40f, inRect.width, 25f),
-                $"Stack slots: {locker.InnerContainer.Count}/{locker.MaxStacks}");
-            Widgets.Label(new Rect(0f, 60f, inRect.width, 25f),
-                $"Total items: {locker.InnerContainer.TotalStackCount}");
+            // Widgets.Label(new Rect(0f, 40f, inRect.width, 25f), $"Stack slots: {locker.InnerContainer.Count}/{locker.MaxStacks}");
+            Widgets.Label(new Rect(0f, 40f, inRect.width, 25f), 
+                "RICS.Storage.StackSlots".Translate(locker.InnerContainer.Count, locker.MaxStacks));
+
+            //Widgets.Label(new Rect(0f, 60f, inRect.width, 25f), $"Total items: {locker.InnerContainer.TotalStackCount}");
+            Widgets.Label(new Rect(0f, 60f, inRect.width, 25f), 
+                "RICS.Storage.TotalItems".Translate(locker.InnerContainer.TotalStackCount));
 
             Rect viewRect = new Rect(0f, 120f, inRect.width, inRect.height - 120f);
             Rect listRect = new Rect(0f, 0f, viewRect.width - 20f, cachedContents.Count * 35f);
@@ -814,13 +807,18 @@ namespace CAP_ChatInteractive
 
                 Text.Anchor = TextAnchor.MiddleLeft;
                 // Item column
-                Widgets.Label(new Rect(headerRect.x + 30f, headerRect.y, 180f, 25f), "Item");
+                // Widgets.Label(new Rect(headerRect.x + 30f, headerRect.y, 180f, 25f), "Item");
+                Widgets.Label(new Rect(headerRect.x + 30f, headerRect.y, 180f, 25f), "RICS.Storage.Item".Translate());
                 // Quantity column
-                Widgets.Label(new Rect(headerRect.x + 220f, headerRect.y, 70f, 25f), "Qty");
+                // Widgets.Label(new Rect(headerRect.x + 220f, headerRect.y, 70f, 25f), "Qty");
+                Widgets.Label(new Rect(headerRect.x + 220f, headerRect.y, 70f, 25f), "RICS.Storage.Quantity".Translate());
                 // Individual item value
-                Widgets.Label(new Rect(headerRect.x + 300f, headerRect.y, 90f, 25f), "Each Value");
+                // Widgets.Label(new Rect(headerRect.x + 300f, headerRect.y, 90f, 25f), "Each Value");
                 // Total value (item value × quantity)
-                Widgets.Label(new Rect(headerRect.x + 400f, headerRect.y, 120f, 25f), "Total Value");
+                Widgets.Label(new Rect(headerRect.x + 300f, headerRect.y, 90f, 25f), "RICS.Storage.EachValue".Translate());
+
+                // Widgets.Label(new Rect(headerRect.x + 400f, headerRect.y, 120f, 25f), "Total Value");
+                Widgets.Label(new Rect(headerRect.x + 400f, headerRect.y, 120f, 25f), "RICS.Storage.TotalValue".Translate());
                 Text.Anchor = TextAnchor.UpperLeft;
             }
 
@@ -843,7 +841,7 @@ namespace CAP_ChatInteractive
 
                 // Name - Manually include stack count since we're not using Building_Storage
                 Text.Anchor = TextAnchor.MiddleLeft;
-                string itemName = thing.LabelCapNoCount ?? thing.def?.label ?? "Unknown";
+                string itemName = thing.LabelCapNoCount ?? thing.def?.label ?? "RICS.Unknown".Translate();
                 Widgets.Label(new Rect(30f, y, 190f, 32f), itemName);
 
                 // Quantity
@@ -869,7 +867,8 @@ namespace CAP_ChatInteractive
                     }
                     else
                     {
-                        Messages.Message("Cannot show info for this item", MessageTypeDefOf.RejectInput);
+                        // Messages.Message("Cannot show info for this item", MessageTypeDefOf.RejectInput);
+                        Messages.Message("RICS.CannotShowInfo".Translate(), MessageTypeDefOf.RejectInput);
                     }
                 }
 
@@ -888,7 +887,8 @@ namespace CAP_ChatInteractive
 
             // Bottom buttons
             Rect buttonRect = new Rect(0f, inRect.height - 30f, inRect.width, 30f);
-            if (Widgets.ButtonText(new Rect(buttonRect.x, buttonRect.y, 150f, 30f), "Eject All"))
+            // if (Widgets.ButtonText(new Rect(buttonRect.x, buttonRect.y, 150f, 30f), "Eject All"))
+            if (Widgets.ButtonText(new Rect(buttonRect.x, buttonRect.y, 150f, 30f), "RICS.EjectAll".Translate()))
             {
                 // With this:
                 locker.SafeEjectAllContents();
@@ -922,7 +922,8 @@ namespace CAP_ChatInteractive
             {
                 if (locker?.settings == null)
                 {
-                    Widgets.Label(inRect, "Storage settings not available.");
+                    // Widgets.Label(inRect, "Storage settings not available.");
+                    Widgets.Label(inRect, "RICS.Locker.StorageSettingsUnavailable".Translate());
                     return;
                 }
 
@@ -942,7 +943,7 @@ namespace CAP_ChatInteractive
             }
             catch (Exception ex)
             {
-                Log.Error($"[RICS] Error in storage settings window: {ex}");
+                Log.Error($"Error in storage settings window: {ex}");
             }
         }
 
@@ -954,26 +955,8 @@ namespace CAP_ChatInteractive
             // Remove Button to prevent Crash
             // Keep Player/Streamer from using the Locker as a storage point
             // prevents pawns from delivering to the box.
-            Widgets.Label(rect.LeftHalf(), "Priority".Translate() + ":");
-            Widgets.Label(rect.RightHalf(), "Unstored (fixed)");  
-                                                                  
-            // === DO NOT DELETE WE NEED THIS FOR THE ADAPTIVE FRAMEWORK VERSION
-            // FOR NOW
-            
-            //Rect buttonRect = rect.RightHalf();
-            //if (Widgets.ButtonText(buttonRect, settings.Priority.ToString()))
-            //{
-            //    List<FloatMenuOption> options = new List<FloatMenuOption>();
-            //    foreach (StoragePriority priority in Enum.GetValues(typeof(StoragePriority)))
-            //    {
-            //        options.Add(new FloatMenuOption(priority.ToString(), () =>
-            //        {
-            //            settings.Priority = priority;
-            //            locker.Notify_SettingsChanged();
-            //        }));
-            //    }
-            //    Find.WindowStack.Add(new FloatMenu(options));
-            //}
+            Widgets.Label(rect.LeftHalf(), "RICS.Priority".Translate() + ":");
+            Widgets.Label(rect.RightHalf(), "RICS.Unstored".Translate());  
         }
 
         private void DrawFilter(Rect rect, ThingFilter filter, ThingFilter parentFilter)

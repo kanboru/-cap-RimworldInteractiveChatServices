@@ -12,7 +12,33 @@
   
   <!-- Common -->
   <RICS.Events>events</RICS.Events>
+  <RICS_Named>Named: </RICS_Named>
+  <RICS_StackSlots>Stacks: </RICS_StackSlots>
+  <RICS_TotalItems>Total Items: </RICS_TotalItems>
+  <RICS_Contains>"Contains: </RICS_Contains>
+  <RICS.Unknown>Unknown</RICS.Unknown>
+  <RICS.CannotShowInfo>Cannot show info for this item</RICS.CannotShowInfo>
+  <RICS.EjectAll>Eject All</RICS.EjectAll>
+  <RICS.Priority>Priority</RICS.Priority>
+  <RICS.Unstored>Unstored</RICS.Unstored>
+  
   
   <!-- Rimazon Locker -->
+  <RICS.Locker.DeliveryReceived>Delivery Received</RICS.Locker.DeliveryReceived>
+  <RICS.Locker.ItemsEjected>Items Ejected</RICS.Locker.ItemsEjected>
+  <RICS_LockerContents>Locker Contents</RICS_LockerContents>
+  <RICS_ContentsOf>Contents of</RICS_ContentsOf>
+  <RICS.Storage.StackSlots>Stack slots: {0}/{1}</RICS.Storage.StackSlots>
+  <RICS.Storage.TotalItems>Total items: {0}</RICS.Storage.TotalItems>
+  <RICS.Storage.Item>Item</RICS.Storage.Item>
+  <RICS.Storage.Quantity>Qty</RICS.Storage.Quantity>
+  <RICS.Storage.EachValue>Each Value</RICS.Storage.EachValue>
+  <RICS.Storage.TotalValue>Total Value</RICS.Storage.TotalValue>
+
+  <RICS.Locker.StorageSettingsUnavailable>Storage settings not available.</RICS.Locker.StorageSettingsUnavailable>
+  
+  
+  
+  
 
 </LanguageData>
