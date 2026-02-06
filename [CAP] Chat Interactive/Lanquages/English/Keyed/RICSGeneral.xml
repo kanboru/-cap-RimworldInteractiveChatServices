@@ -34,11 +34,16 @@
   <RICS.Storage.Quantity>Qty</RICS.Storage.Quantity>
   <RICS.Storage.EachValue>Each Value</RICS.Storage.EachValue>
   <RICS.Storage.TotalValue>Total Value</RICS.Storage.TotalValue>
-
   <RICS.Locker.StorageSettingsUnavailable>Storage settings not available.</RICS.Locker.StorageSettingsUnavailable>
-  
-  
-  
-  
 
+  <!-- Dialog_EventSetCustomCooldown Window -->
+  <RICS.Label.SetCustomCooldown>Set Custom Cooldown</RICS.Label.SetCustomCooldown>
+  <RICS.Label.CooldownDays>Cooldown Days (0-1000):</RICS.Label.CooldownDays>
+  <RICS.Label.ApplyToFilteredOnly>Apply to filtered events only</RICS.Label.ApplyToFilteredOnly>
+  <RICS.Label.ApplyToFilteredWithDesc>Apply to filtered events only ({0})</RICS.Label.ApplyToFilteredWithDesc>
+  <RICS.Label.FilteredOnlyInfo>Will only affect events matching current filters</RICS.Label.FilteredOnlyInfo>
+  <RICS.Label.AllEventsInfo>Will affect ALL events, regardless of filters</RICS.Label.AllEventsInfo>
+  <RICS.Label.NoFilterWarning>No active filter - will apply to all events</RICS.Label.NoFilterWarning>
+
+  
 </LanguageData>
