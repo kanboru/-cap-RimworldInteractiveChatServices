@@ -120,11 +120,11 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 .FirstOrDefault(p => p.knowledgeCategory.overflowCategory != null);
 
             string bas = basic != null
-                ? $"{basic.LabelCap} - {basic.ProgressApparent}/{basic.CostApparent} ({basic.ProgressPercent}%)"
+                ? $"{basic.LabelCap} - {Math.Round(basic.ProgressApparent,1)}/{Math.Round(basic.CostApparent,1)} ({Math.Round(basic.ProgressPercent)}%)"
                 : "none";
 
             string adv = advanced != null
-                ? $"{advanced.LabelCap} - {advanced.ProgressApparent}/{advanced.CostApparent} ({advanced.ProgressPercent}%)"
+                ? $"{advanced.LabelCap} - {Math.Round(advanced.ProgressApparent,1)}/{Math.Round(advanced.CostApparent,1)} ({Math.Round(advanced.ProgressPercent,1)}%)"
                 : "none";
 
             return $"Basic: {bas} | Advanced: {adv}";
