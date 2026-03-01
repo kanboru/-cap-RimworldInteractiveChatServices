@@ -67,13 +67,23 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 // Calculate remaining active time
                 string activeTimeInfo = GetRemainingActiveTimeInfo(viewer, settings);
 
-                return $"💰 Balance: {formattedCoins} {currencySymbol}\n" +
-                       $"📊 Karma: {viewer.Karma} {karmaEmoji}\n" +
-                       $"💸 Earnings: {coinsPerAward} {currencySymbol} every 2 minutes\n" +
-                       $"⏱️ Rate: ~{coinsPerHour} {currencySymbol}/hour"; // +
-                                                                          //activeTimeInfo;
+
+                string line1 = "RICS.CC.bal.line1".Translate(viewer.Coins.ToString("N0"), currencySymbol);
+                string line2 = "RICS.CC.bal.line2".Translate(viewer.Karma, karmaEmoji);
+
+                string line3 = "RICS.CC.bal.line3".Translate(coinsPerAward.ToString("N0"), currencySymbol);
+                string line4 = "RICS.CC.bal.line4".Translate(coinsPerHour.ToString("N0"), currencySymbol);
+
+                // Change to (with dividers; assumes you want to keep activeTimeInfo commented):
+
+                return $"{line1} | {line2} | {line3} | {line4}"; // + (string.IsNullOrEmpty(activeTimeInfo) ? "" : $" | {activeTimeInfo}");
+                //return $"💰 Balance: {formattedCoins} {currencySymbol}\n" +
+                //       $"📊 Karma: {viewer.Karma} {karmaEmoji}\n" +
+                //       $"💸 Earnings: {coinsPerAward} {currencySymbol} every 2 minutes\n" +
+                //       $"⏱️ Rate: ~{coinsPerHour} {currencySymbol}/hour"; // +
+                //                                                          //activeTimeInfo;
             }
-            return "Could not find your viewer data.";
+            return "RICS.CC.bal.notfound".Translate();
         }
 
         private string GetRemainingActiveTimeInfo(Viewer viewer, CAPGlobalChatSettings settings)
@@ -88,11 +98,11 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
                 if (minutesRemaining > 0)
                 {
-                    return $"\n⏰ Active for: {minutesRemaining} more minutes";
+                    return "RICS.CC.bal.activeRemaining".Translate(minutesRemaining);
                 }
                 else
                 {
-                    return "\n⚠️ Not currently active (chat to become active!)";
+                    return "RICS.CC.bal.notActive".Translate();
                 }
             }
             catch
@@ -109,7 +119,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            return "Karma affects your coin rewards! Higher karma = more coins per message. Be active and positive to increase your karma!";
+            return "RICS.CC.whatiskarma".Translate();
         }
     }
 
@@ -119,7 +129,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            return "Full command list: https://tinyurl.com/RICSCommands (mobile friendly!)";
+            return "RICS.CC.help".Translate();
         }
     }
 
@@ -128,9 +138,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         public override string Name => "commands";
         public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            var availableCommands = ChatCommandProcessor.GetAvailableCommands(messageWrapper);
-            var commandList = string.Join(", ", availableCommands.Select(cmd => $"!{cmd.Name}"));
-            return $"Available commands: {commandList}";
+            var available = ChatCommandProcessor.GetAvailableCommands(messageWrapper);
+            var cmdList = string.Join(", ", available.Select(c => $"!{c.Name}"));
+            return "RICS.CC.commands.header".Translate() + " " + cmdList;
         }
     }
 
@@ -142,8 +152,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !lookup [item|event|weather|trait|race|xenotype] [name] - Search specific categories.\n" +
-                       "Examples: !lookup item rifle, !lookup race (lists all races), !lookup event raid";
+                return "RICS.CC.lookup.usage".Translate();
+                // return "Usage: !lookup [item|event|weather|trait|race|xenotype] [name] - Search specific categories. Examples: !lookup item rifle, !lookup race (lists all races), !lookup event raid";
+
             }
 
             string searchType = args[0].ToLower();
@@ -164,18 +175,16 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                     }
                     else
                     {
+                        return "RICS.CC.lookup.needTerm".Translate(searchType, searchType);
                         // For other categories: tell user they need a search term (or expand later)
-                        return $"Usage: !lookup {searchType} <name> - Search for {searchType}s.\n" +
-                               $"Example: !lookup {searchType} {GetExampleForType(searchType)}\n" +
-                               "(Use just !lookup {searchType} to list all — currently only supported for race)";
+                        // return $"Usage: !lookup {searchType} <name> - Search for {searchType}s.";
                     }
                 }
 
                 // Normal search with term
                 if (args.Length < 2)
                 {
-                    return $"Usage: !lookup {searchType} <name> - Search for {searchType}s.\n" +
-                           $"Example: !lookup {searchType} {GetExampleForType(searchType)}";
+                    return "RICS.CC.lookup.needTerm".Translate(searchType, searchType);
                 }
 
                 searchTerm = string.Join(" ", args.Skip(1)).ToLower();
@@ -188,7 +197,6 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return LookupCommandHandler.HandleLookupCommand(user, searchTerm, "all");
             }
         }
-
         private static string GetAllRacesList()
         {
             try
@@ -238,20 +246,6 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return "RICS.LCH.ErrorListingRaces".Translate(ex.Message.Length > 80 ? ex.Message.Substring(0, 80) + "..." : ex.Message);
             }
         }
-
-        private static string GetExampleForType(string type)
-        {
-            return type switch
-            {
-                "item" => "rifle",
-                "event" => "raid",
-                "weather" => "rain",
-                "trait" => "kind",
-                "race" => "human",
-                "xenotype" => "baseliner",  
-                _ => "search_term"
-            };
-        }
     }
 
     public class GiftCoins : ChatCommand
@@ -263,7 +257,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             // Check if we have enough arguments
             if (args.Length < 2)
             {
-                return "Usage: !giftcoins <viewer> <amount>";
+                return "RICS.CC.giftcoins.usage".Translate();
             }
 
             // Handle @username format - remove @ if present
@@ -277,13 +271,13 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             // Parse the coin amount
             if (!int.TryParse(args[1], out int coinAmount) || coinAmount <= 0)
             {
-                return "Please specify a valid positive number of coins to give.";
+                return "RICS.CC.giftcoins.invalidAmount".Translate();
             }
 
             // Early self-check (case-insensitive)
             if (targetUsername.Equals(messageWrapper.Username.ToLowerInvariant()))
             {
-                return "You cannot give coins to yourself.";
+                return "RICS.CC.giftcoins.selfGift".Translate();
             }
 
             // Get both viewers WITHIN THE SAME LOCK to ensure consistency
@@ -294,7 +288,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 Viewer sender = Viewers.GetViewer(messageWrapper);
                 if (sender == null)
                 {
-                    return "Error: Could not find your viewer data.";
+                    return "RICS.CC.bal.notfound".Translate();
                 }
 
                 // Check if sender has enough coins
@@ -302,26 +296,27 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 {
                     var formattedSenderCoins = sender.GetCoins().ToString("N0");
                     var formattedCoinAmount = coinAmount.ToString("N0");
-                    return $"You don't have enough coins. You have {formattedSenderCoins} coins but tried to give {formattedCoinAmount}.";
+                    // return $"You don't have enough coins. You have {formattedSenderCoins} coins but tried to give {formattedCoinAmount}.";
+                    return "RICS.CC.giftcoins.notEnough".Translate(formattedSenderCoins, formattedCoinAmount);
                 }
 
                 // Get the target viewer
                 Viewer target = Viewers.GetViewer(targetUsername);
                 if (target == null)
                 {
-                    return $"Viewer '{targetUsername}' not found.";
+                    return "RICS.CC.giftcoins.targetNotFound".Translate(targetUsername);
                 }
 
                 // Final self-check (in case GetViewer normalized the username differently)
                 if (sender.Username.Equals(target.Username, StringComparison.OrdinalIgnoreCase))
                 {
-                    return "You cannot give coins to yourself.";
+                    return "RICS.CC.giftcoins.selfGift".Translate();
                 }
 
                 // Ensure target can receive coins (not banned, etc.)
                 if (target.IsBanned)
                 {
-                    return $"Cannot give coins to banned viewer '{target.DisplayName}'.";
+                    return "RICS.CC.giftcoins.targetBanned".Translate(target.DisplayName);
                 }
 
                 // Perform atomic transaction
@@ -340,20 +335,21 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                     Logger.Debug($"GiftCoins: {sender.Username} gave {coinAmount} coins to {target.Username}. " +
                                $"Sender now has {sender.GetCoins()}, receiver now has {target.GetCoins()}");
 
-                    result = $"Successfully gave {coinAmount} coins to {target.DisplayName}. You now have {sender.GetCoins():N0} coins remaining.";
+                    //result = $"Successfully gave {coinAmount} coins to {target.DisplayName}. You now have {sender.GetCoins():N0} coins remaining.";
+                    result = "RICS.CC.giftcoins.success".Translate(
+                        coinAmount.ToString("N0"),
+                        target.DisplayName,
+                        sender.GetCoins().ToString("N0"));
                 }
                 catch (Exception ex)
                 {
                     // If anything fails, attempt to rollback
                     Logger.Error($"GiftCoins transaction failed: {ex.Message}");
-
                     // In a real implementation, you might want to rollback here
                     // But since we SaveViewers() after both operations, they should be atomic
-
                     result = "An error occurred during the transaction. Please try again.";
                 }
             }
-
             return result;
         }
     }
@@ -374,7 +370,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
-            Logger.Debug("research command Called");
+            // Logger.Debug("research command Called");
             return ResearchCommandHandler.HandleResearchCommand(messageWrapper, args);
         }
     }
@@ -387,7 +383,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (!ModsConfig.AnomalyActive)
             {
-                return "Requires anomaly DLC";
+                return "RICS.CC.study.dlcrequired".Translate();
+                // return "Requires anomaly DLC";
             }
             return ResearchCommandHandler.HandleStudyCommand(messageWrapper, args);
         }
@@ -412,24 +409,20 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
             var currencySymbol = settings.CurrencyName?.Trim() ?? "¢";
 
-            string response = $"👋 Coins: {settings.BaseCoinReward}{currencySymbol}/2 min | Karma Max: {settings.MaxKarma} 🎯";
-
+            //string response = $"👋 Currency: {settings.BaseCoinReward}{currencySymbol}/2 min | Karma Max: {settings.MaxKarma} 🎯";
+            string response = "RICS.CC.modsettings.currencysettings".Translate(settings.BaseCoinReward, currencySymbol, settings.MaxKarma);
             if (settings.EventCooldownsEnabled)
             {
-                response += $" | Events: {settings.EventsperCooldown}/{settings.EventCooldownDays}d";
-
+                response += " | " + "RICS.CC.modsettings.eventsOn".Translate(settings.EventsperCooldown, settings.EventCooldownDays);
                 if (settings.KarmaTypeLimitsEnabled)
-                    response += $" (🔴{settings.MaxBadEvents} 🟢{settings.MaxGoodEvents} ⚪{settings.MaxNeutralEvents})";
-
-                response += $" | Purchases: {settings.MaxItemPurchases}/{settings.EventCooldownDays}d";
+                    response += "RICS.CC.modsettings.karmaLimits".Translate(settings.MaxBadEvents, settings.MaxGoodEvents, settings.MaxNeutralEvents);
+                response += " | " + "RICS.CC.modsettings.purchases".Translate(settings.MaxItemPurchases, settings.EventCooldownDays);
             }
             else
             {
-                response += " | Event cooldowns: OFF ❌";
+                response += "RICS.CC.modsettings.eventoff".Translate();
             }
-
-            response += $" | 🎭Trait Max: {settings.MaxTraits}";
-
+            response += " | " + "RICS.CC.modsettings.maxtraits".Translate(settings.MaxTraits);
             return response;
         }
     }
@@ -441,7 +434,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
             var globalChatSettings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
-            return $"RICS ver {globalChatSettings.modVersion} --- GitHub Releases:  https://github.com/ekudram/-cap-RimworldInteractiveChatServices/releases";
+            return "RICS.CC.modinfo".Translate(globalChatSettings.modVersion);
+            // return $"RICS ver {globalChatSettings.modVersion} --- GitHub Releases:  https://github.com/ekudram/-cap-RimworldInteractiveChatServices/releases";
         }
     }
 
@@ -486,18 +480,18 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 }
             }
 
-            var resultParts = new List<string>();
+            var parts = new List<string>();
 
-            if (allies.Count > 0)
-                resultParts.Add($"Allies: {string.Join(" • ", allies)}");
+            if (allies.Any())
+                parts.Add("RICS.CC.factions.allies".Translate() + ": " + string.Join("RICS.CC.factions.separator".Translate(), allies));
 
-            if (neutrals.Count > 0)
-                resultParts.Add($"Neutrals: {string.Join(" • ", neutrals)}");
+            if (neutrals.Any())
+                parts.Add("RICS.CC.factions.neutrals".Translate() + ": " + string.Join("RICS.CC.factions.separator".Translate(), neutrals));
 
-            if (enemies.Count > 0)
-                resultParts.Add($"Enemies: {string.Join(" • ", enemies)}");
+            if (enemies.Any())
+                parts.Add("RICS.CC.factions.enemies".Translate() + ": " + string.Join("RICS.CC.factions.separator".Translate(), enemies));
 
-            return string.Join(" | ", resultParts);
+            return string.Join(" | ", parts);
         }
     }
 
@@ -520,24 +514,12 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             if (assignmentManager == null)
             {
                 // Fallback / safety
-                return $"There are {colonistCount} colonists and {animalCount} colony animals.";
+                return "RICS.CC.colonists.basic".Translate(colonistCount, animalCount);
             }
 
-            // Count unique pawns that are:
-            // • Assigned to a viewer
-            // • Still alive (most common expectation for viewer commands)
-            int viewerPawnCount = assignmentManager.GetAllViewerPawns()
-                .Count;  // This method already filters out dead pawns
+            int viewerPawnCount = assignmentManager.GetAllViewerPawns().Count;  // This method already filters out dead pawns
 
-            // Alternative version (more explicit - use whichever style you prefer):
-            /*
-            int viewerPawnCount = assignmentManager.viewerPawnAssignments
-                .Values
-                .Select(thingId => GameComponent_PawnAssignmentManager.FindPawnByThingId(thingId))
-                .Count(p => p != null && !p.Dead);
-            */
-
-            return $"There are {colonistCount} colonists ({viewerPawnCount} controlled by viewers) and {animalCount} colony animals.";
+            return "RICS.CC.colonists.withViewers".Translate(colonistCount, viewerPawnCount, animalCount);
         }
     }
 
@@ -548,15 +530,11 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
             if (args.Length == 0)
-            {
-                return "Usage: !storage [item name] (e.g. !storage steel, !storage plasteel longsword, !storage hyperweave)";
-            }
+                return "RICS.CC.storage.usage".Translate();
 
             var map = Current.Game?.CurrentMap;
             if (map == null)
-            {
-                return "No active map found.";
-            }
+                return "RICS.CC.storage.noMap".Translate();
 
             // Use the shared parser (most fields are ignored here, but we get clean ItemName)
             var parsed = CommandParserUtility.ParseCommandArguments(
@@ -575,11 +553,12 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             string searchName = parsed.ItemName;
             if (string.IsNullOrWhiteSpace(searchName))
             {
-                return "No valid item name could be parsed.";
+                return "RICS.CC.storage.noMatch".Translate(searchName);
+                // return "No valid item name could be parsed.";
             }
 
             // Optional: log what was parsed for debugging
-            Logger.Debug($"Storage command parsed: Item='{searchName}', Quality='{parsed.Quality}', Material='{parsed.Material}'");
+           // Logger.Debug($"Storage command parsed: Item='{searchName}', Quality='{parsed.Quality}', Material='{parsed.Material}'");
 
             // ────────────────────────────────────────────────
             // Collect all things in stockpiles + storage buildings
@@ -595,9 +574,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             var allThings = zoneThings.Concat(storageThings).ToList();
 
             if (!allThings.Any())
-            {
-                return "No items found in any storage/stockpile on this map.";
-            }
+                return "RICS.CC.storage.noItemsAtAll".Translate();
 
             // Find matching ThingDef(s) using flexible matching on defName or label
             var matchingDefs = allThings
@@ -609,9 +586,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 .ToList();
 
             if (!matchingDefs.Any())
-            {
-                return $"No items matching '{searchName}' found in storage.";
-            }
+                return "RICS.CC.storage.noMatch".Translate(searchName);
 
             // If multiple defs match, we can either:
             // A) Show all of them (most user-friendly)
@@ -628,20 +603,23 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
                 if (count > 0)
                 {
-                    results.AppendLine($"{count}× {def.label}");
+                    results.AppendLine("RICS.CC.storage.line".Translate(count.ToString(), def.label) + " | ");
+                    // results.AppendLine($"{count}× {def.label}");
                 }
             }
 
             if (results.Length == 0)
             {
-                return $"Found matching definitions for '{searchName}', but none in storage right now.";
+                return "RICS.CC.storage.defsButZero".Translate(searchName);
+                // return $"Found matching definitions for '{searchName}', but none in storage right now.";
             }
 
             string header = matchingDefs.Count == 1
-                ? $"Found in storage:"
-                : $"Found {matchingDefs.Count} matching item types for '{searchName}':";
+                ? "RICS.CC.storage.headerOne".Translate() : "RICS.CC.storage.headerMultiple".Translate(matchingDefs.Count, searchName);
+            // : $"Found {matchingDefs.Count} matching item types for '{searchName}':";
 
-            return header + "\n" + results.ToString().TrimEnd();
+            string resultsStr = results.ToString().TrimEnd(' ', '|');
+            return header + " " + resultsStr;
         }
     }
 }

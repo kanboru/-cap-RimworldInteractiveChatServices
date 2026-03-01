@@ -31,7 +31,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            Logger.Debug($"MilitaryAid command executed by {user.Username} with args: [{string.Join(", ", args)}]");
+            //Logger.Debug($"MilitaryAid command executed by {user.Username} with args: [{string.Join(", ", args)}]");
 
             // Get command settings
             var settings = GetCommandSettings();
@@ -54,7 +54,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            Logger.Debug($"Raid command executed by {user.Username} with args: [{string.Join(", ", args)}]");
+            //Logger.Debug($"Raid command executed by {user.Username} with args: [{string.Join(", ", args)}]");
 
             // Get command settings
             var settingsCommand = GetCommandSettings();
@@ -93,20 +93,23 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 }
                 else
                 {
-                    return $"Unknown argument: {arg}. Use !raidinfo for available options.";
+                    // return $"Unknown argument: {arg}. Use !raidinfo for available options.";
+                    return "RICS.CC.raid.unkownarg".Translate(arg);
                 }
             }
 
             // Check if this specific raid type is allowed
             if (!validRaidTypes.Contains(raidType))
             {
-                return $"Raid type '{raidType}' is not allowed. Available types: {string.Join(", ", validRaidTypes)}";
+                // return $"Raid type '{raidType}' is not allowed. Available types: {string.Join(", ", validRaidTypes)}";
+                return "RICS.CC.raid.invalidraidtype".Translate(raidType, string.Join(", ", validRaidTypes));
             }
 
             // Check if this strategy is allowed
             if (!validStrategies.Contains(strategy))
             {
-                return $"Strategy '{strategy}' is not allowed. Available strategies: {string.Join(", ", validStrategies)}";
+                // return $"Strategy '{strategy}' is not allowed. Available strategies: {string.Join(", ", validStrategies)}";
+                return "RICS.CC.raid.invalidstratagy".Translate(strategy, string.Join(", ", validStrategies));
             }
 
             return RaidCommandHandler.HandleRaidCommand(user, raidType, strategy, wager);
@@ -119,7 +122,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
-            return "Learn raids: https://tinyurl.com/RaidCommand | Usage: !raid [type] [strategy] [wager]";
+            // return "Raid Wiki: https://tinyurl.com/RaidCommand | Usage: !raid [type] [strategy] [wager]";
+            return "RICS.CC.raidinfo".Translate();
         }
     }
 }

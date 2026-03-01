@@ -32,7 +32,8 @@ namespace CAP_ChatInteractive.Commands.ModCommands
             // Check if we have enough arguments
             if (args.Length < 2)
             {
-                return "Usage: !givecoins <viewer|all> <amount>";
+                // return "Usage: !givecoins <viewer|all> <amount>";
+                return "RICS.CC.givecoins.usage".Translate();
             }
 
             string target = args[0].ToLowerInvariant();
@@ -40,7 +41,8 @@ namespace CAP_ChatInteractive.Commands.ModCommands
             // Parse the coin amount
             if (!int.TryParse(args[1], out int coinAmount) || coinAmount <= 0)
             {
-                return "Please specify a valid positive number of coins to give.";
+                // return "Please specify a valid positive number of coins to give.";
+                return "RICS.CC.givecoins.errorcoin".Translate();
             }
 
             // Handle "all" case
@@ -48,7 +50,8 @@ namespace CAP_ChatInteractive.Commands.ModCommands
             {
                 // Give coins to all viewers
                 Viewers.GiveAllViewersCoins(coinAmount);
-                return $"Gave {coinAmount:N0} coins to all viewers.";
+                // return $"Gave {coinAmount:N0} coins to all viewers.";
+                return "RICS.CC.giveocoins".Translate(coinAmount);
             }
 
             // Handle individual viewer case (original logic)
@@ -57,7 +60,8 @@ namespace CAP_ChatInteractive.Commands.ModCommands
             Viewer targetViewer = Viewers.GetViewerNoAdd(targetUsername);
             if (targetViewer == null)
             {
-                return $"Viewer '{targetUsername}' not found.";
+                // return $"Viewer '{targetUsername}' not found.";
+                return "RICS.CC.givecoins.notfound".Translate(targetUsername);
             }
 
             // Give coins to the target
@@ -66,7 +70,8 @@ namespace CAP_ChatInteractive.Commands.ModCommands
             // Save the changes
             Viewers.SaveViewers();
 
-            return $"Gave {coinAmount:N0} coins to {targetViewer.DisplayName}. {targetViewer.GetCoins()} now has coins.";
+            // return $"Gave {coinAmount:N0} coins to {targetViewer.DisplayName}. {targetViewer.GetCoins()} now has coins.";
+            return "RICS.CC.givecoins.success".Translate(coinAmount, targetViewer.DisplayName, targetViewer.GetCoins());
         }
     }
 
@@ -115,9 +120,7 @@ namespace CAP_ChatInteractive.Commands.ModCommands
     public class ToggleStore : ChatCommand
     {
         public override string Name => "togglestore";
-        public override string PermissionLevel => "moderator";
-        public override int CooldownSeconds => 1;
-
+        
         // Hardcoded list of store/interaction commands affected by the toggle
         public static readonly HashSet<string> StoreCommands = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -136,7 +139,7 @@ namespace CAP_ChatInteractive.Commands.ModCommands
             bool currentState = globalSettings.StoreCommandsEnabled;
             bool newState = currentState;
             bool changedState = false;
-            Logger.Debug($"[ToggleStore] Current store commands enabled state: {currentState}");
+            // Logger.Debug($"[ToggleStore] Current store commands enabled state: {currentState}");
 
             // Parse argument if provided
             if (args.Length > 0)
@@ -153,9 +156,12 @@ namespace CAP_ChatInteractive.Commands.ModCommands
                 }
                 else
                 {
-                    return $"Invalid argument.\n" +
-                           $"Usage: !togglestore [on/off]  or just !togglestore to toggle\n" +
-                           $"Current store status: {(currentState ? "**ENABLED**" : "**DISABLED**")}";
+                    string statusKey = currentState ? "RICS.CC.common.store.enabled" : "RICS.CC.common.store.disabled";
+                    return "RICS.CC.togglestore.invalid_and_usage".Translate(statusKey.Translate());
+
+                    //return $"Invalid argument.\n" +
+                    //       $"Usage: !togglestore [on/off]  or just !togglestore to toggle\n" +
+                    //       $"Current store status: {(currentState ? "**ENABLED**" : "**DISABLED**")}";
                 }
             }
             else
@@ -176,12 +182,12 @@ namespace CAP_ChatInteractive.Commands.ModCommands
                 foreach (string cmdName in StoreCommands)
                 {
                     var cmdSettings = CommandSettingsManager.GetSettings(cmdName);
-                    Logger.Debug($"[ToggleStore] Processing command '{cmdName}' for store toggle");
+                    //Logger.Debug($"[ToggleStore] Processing command '{cmdName}' for store toggle");
                     if (cmdSettings != null)
                     {
                         cmdSettings.Enabled = newState;
                         // Optional: more detailed logging
-                        Logger.Debug($"Store toggle → {cmdName} Enabled set to {newState}");
+                        //Logger.Debug($"Store toggle → {cmdName} Enabled set to {newState}");
                     }
                     else
                     {
@@ -192,11 +198,12 @@ namespace CAP_ChatInteractive.Commands.ModCommands
                 // 3. Save changes to disk
                 CommandSettingsManager.SaveSettings();  // ← Make sure this method exists and works!
 
-                string statusWord = newState ? "**ENABLED**" : "**DISABLED**";
-
+                //string statusWord = newState ? "**ENABLED**" : "**DISABLED**";
+                string statusWord = newState ? "RICS.CC.common.store.enabled" : "RICS.CC.common.store.disabled";
                 Logger.Message($"[CAP] Store commands toggled to {statusWord} by {user.Username}");
 
-                return $"Store commands now {statusWord}!";
+                // return $"Store commands now {statusWord}!";
+                return "RICS.CC.Togglestore.success".Translate(statusWord);
             }
 
             // No change occurred
@@ -314,7 +321,7 @@ namespace CAP_ChatInteractive.Commands.ModCommands
 
                         case "all":
                             if (args.Length < 2 || args[1] != "really")
-                                return "DANGEROUS! Use !cleanviewers all really to wipe EVERY viewer";
+                                return "DANGEROUS! Use [!cleanviewers all really] to wipe EVERY viewer";
                             shouldRemove = true;
                             break;
 

@@ -17,6 +17,7 @@
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 using CAP_ChatInteractive.Commands.CommandHandlers;
 using RimWorld;
+using Verse;
 
 namespace CAP_ChatInteractive.Commands.InteractionCommands
 {
@@ -67,7 +68,8 @@ namespace CAP_ChatInteractive.Commands.InteractionCommands
         public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
             if (InteractionDefOf.Reassure == null)
-                return "The 'reassure' interaction requires the Ideology DLC.";
+                // return "The 'reassure' interaction requires the Ideology DLC.";
+                return "RICS.CC.common.interaction.dlc_required".Translate();
             return EnhancedInteractionCommandHandler.HandleInteractionCommand(messageWrapper, InteractionDefOf.Reassure, args);
         }
     }
@@ -119,7 +121,7 @@ namespace CAP_ChatInteractive.Commands.InteractionCommands
         public override string Execute(ChatMessageWrapper messageWrapper, string[] args)
         {
             if (InteractionDefOf.ConvertIdeoAttempt == null)
-                return "The 'convert' interaction requires the Ideology DLC.";
+                return "RICS.CC.common.interaction.dlc_required".Translate();
             return EnhancedInteractionCommandHandler.HandleInteractionCommand(messageWrapper, InteractionDefOf.ConvertIdeoAttempt, args);
         }
     }

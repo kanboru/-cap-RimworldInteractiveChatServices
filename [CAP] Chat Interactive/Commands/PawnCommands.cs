@@ -62,7 +62,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         private string ShowPawnHelp()
         {
-            return "Usage: !pawn [race] [xenotype] [gender] [age] OR !pawn list [races|xenotypes] OR !pawn mypawn";
+            // return "Usage: !pawn [race] [xenotype] [gender] [age] OR !pawn list [races|xenotypes] OR !pawn mypawn";
+            return "RICS.CC.pawn.usage".Translate();
         }
 
         private string HandleListCommand(ChatMessageWrapper user, string[] args)
@@ -84,7 +85,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 }
             }
 
-            return "List types: races, xenotypes [race]. Examples: !pawn list races, !pawn list xenotypes human";
+            // return "List types: races, xenotypes [race]. Examples: !pawn list races, !pawn list xenotypes human";
+            return "RICS.CC.pawn.handlist.usage".Translate() ;
         }
 
         private string HandleMyPawnCommand(ChatMessageWrapper user)
@@ -115,7 +117,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
         private string ShowMyPawnHelp()
         {
-            return "!mypawn [type]: body, health, implants, gear, kills, needs, relations, skills, stats, story, traits, work" ;
+            // return "!mypawn [type]: body, health, implants, gear, kills, needs, relations, skills, stats, story, traits, work" ;
+            return "RICS.CC.mypawn.usage".Translate();  
                 
         }
     }
@@ -191,13 +194,17 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             // Check if user has a pawn assigned
             if (!assignmentManager.HasAssignedPawn(messageWrapper))
             {
-                return "You don't have a pawn assigned to release.";
+                // return "You don't have a pawn assigned to release.";
+                return "RICS.CC.leave.nopawn".Translate();
             }
 
             // Get the pawn info before unassigning for the message
             Verse.Pawn pawn = assignmentManager.GetAssignedPawn(messageWrapper);
-            string pawnName = pawn?.Name?.ToStringShort ?? "your pawn";
-            string pawnStatus = (pawn == null || pawn.Dead) ? " (deceased)" : "";
+            //string pawnName = pawn?.Name?.ToStringShort ?? "your pawn";
+            string pawnName = pawn?.Name?.ToStringShort ?? "RICS.CC.leave.yourpawn".Translate();
+
+            //string pawnStatus = (pawn == null || pawn.Dead) ? " (deceased)" : "";
+            string pawnStatus = (pawn == null || pawn.Dead) ? "RICS.CC.leave.deceased".Translate() : "";
 
             // Handle live pawn departure
             if (pawn != null && !pawn.Dead && pawn.Spawned)
@@ -211,7 +218,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             // Send storytelling letter
             SendDepartureLetter(messageWrapper.Username, pawn, pawnName);
 
-            return $"✅ You have released {pawnName}{pawnStatus}. You can now get a new pawn with !pawn command.";
+            // return $"✅ You have released {pawnName}{pawnStatus}. You can now get a new pawn with !pawn command.";
+            return "RICS.CC.leave.successs".Translate(pawnName, pawnStatus);
         }
 
         private void PreparePawnForDeparture(Verse.Pawn pawn)
@@ -243,12 +251,14 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             string message;
             if (pawn == null || pawn.Dead)
             {
-                message = $"{username} has released their connection to the deceased {pawnName}. Their story in the colony has come to a close.";
+                // message = $"{username} has released their connection to the deceased {pawnName}. Their story in the colony has come to a close.";
+                message = "RICS.CC.leave.deadpawnletter".Translate(username,pawnName);
                 MessageHandler.SendBlueLetter(label, message);
             }
             else
             {
-                message = $"{username} has decided to part ways with {pawnName}. The colonist, feeling the severed bond, has chosen to leave the settlement behind.";
+                // message = $"{username} has decided to part ways with {pawnName}. The colonist, feeling the severed bond, has chosen to leave the settlement behind.";
+                message = "RICS.CC.leave.pawnletter".Translate(username,pawnName);
                 MessageHandler.SendPinkLetter(label, message);
             }
 
@@ -314,7 +324,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
                 if (!cooldownManager.CanPurchaseItem())
                 {
-                    return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
+                    // return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
+                    return "RICS.CC.common.PurchaseLimit".Translate(globalSettings.MaxItemPurchases, globalSettings.EventCooldownDays);
                 }
 
                 return RevivePawnCommandHandler.HandleRevivePawn(messageWrapper, args);
@@ -345,7 +356,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
                 if (!cooldownManager.CanPurchaseItem())
                 {
-                    return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
+                    // return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
+                    return "RICS.CC.common.PurchaseLimit".Translate(globalSettings.MaxItemPurchases, globalSettings.EventCooldownDays);
                 }
 
                 return HealPawnCommandHandler.HandleHealPawn(messageWrapper, args);
@@ -377,27 +389,11 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             // Check if Ideology DLC is active
             if (!ModsConfig.IdeologyActive)
             {
-                return "The !setfavoritecolor command requires the Ideology DLC to be enabled.";
+                // return "The !setfavoritecolor command requires the Ideology DLC to be enabled.";
+                return "RICS.CC.setfavoritecolor.nodlc".Translate();
             }
 
             return SetFavoriteColorCommandHandler.HandleSetFavoriteColorCommand(messageWrapper, args);
-        }
-    }
-
-    public class DebugRaces : ChatCommand
-    {
-        public override string Name => "debugraces";
-
-        public override string Execute(ChatMessageWrapper user, string[] args)
-        {
-            var excluded = RaceUtils.GetExcludedRaceList();
-            var allHumanlike = DefDatabase<ThingDef>.AllDefs.Where(d => d.race?.Humanlike ?? false).Count();
-            var available = RaceUtils.GetAllHumanlikeRaces().Count();
-
-            string result = $"Races - Total Humanlike: {allHumanlike}, Available: {available}, Excluded: {excluded.Count}\n";
-            result += "Excluded races: " + string.Join(", ", excluded.Take(5)); // Show first 5 for chat
-
-            return result;
         }
     }
 }

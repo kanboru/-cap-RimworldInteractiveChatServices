@@ -20,6 +20,7 @@ using _CAP__Chat_Interactive.Command.CommandHelpers;
 using CAP_ChatInteractive.Commands.CommandHandlers;
 using CAP_ChatInteractive.Commands.Cooldowns;
 using CAP_ChatInteractive.Utilities;
+using RimWorld;
 using System;
 using System.Linq;
 using Verse;
@@ -34,7 +35,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !buy <item> [quality] [material] [quantity], only used for items.  Also !use !equip !wear";
+                // return "Usage: !buy {item} [quality] [material] [quantity], only used for items.  Also !use !equip !wear";
+                return "RICS.CC.Buy.Usage".Translate();
             }
 
             // Check if this is a pawn purchase
@@ -94,7 +96,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
                 if (!cooldownManager.CanPurchaseItem())
                 {
-                  return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
+                  // return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
+                  return "RICS.CC.Buy.PurchaseLimit".Translate(globalSettings.MaxItemPurchases, globalSettings.EventCooldownDays);
                 }
 
                 return BuyItemCommandHandler.HandleBuyItem(messageWrapper, args, false, false,false);
@@ -115,7 +118,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !use [item] ";
+                // return "Usage: !use [item] ";
+                return "RICS.CC.use.usage".Translate();
             }
             var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
             if (cooldownManager == null)
@@ -126,7 +130,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             var globalSettings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
             if (!cooldownManager.CanPurchaseItem())
             {
-               return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
+                // return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
+                return "RICS.CC.common.PurchaseLimit".Translate(globalSettings.MaxItemPurchases, globalSettings.EventCooldownDays);
             }
             return UseItemCommandHandler.HandleUseItem(user, args);
         }
@@ -140,7 +145,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !equip [item] [quality] [material]";
+                // return "Usage: !equip [item] [quality] [material]";
+                return "RICS.CC.equip.usage".Translate() ;
             }
 
             var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
@@ -152,7 +158,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             var globalSettings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
             if (!cooldownManager.CanPurchaseItem())
             {
-                return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
+                return "RICS.CC.common.PurchaseLimit".Translate(globalSettings.MaxItemPurchases, globalSettings.EventCooldownDays);
             }
 
             return BuyItemCommandHandler.HandleBuyItem(user, args, true, false);
@@ -167,7 +173,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !wear [item] [quality] [material]";
+                return "RICS.CC.wear.usage".Translate();
             }
 
             var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
@@ -179,7 +185,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             var globalSettings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
             if (!cooldownManager.CanPurchaseItem())
             {
-                return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
+                return "RICS.CC.common.PurchaseLimit".Translate(globalSettings.MaxItemPurchases, globalSettings.EventCooldownDays);
             }
             return BuyItemCommandHandler.HandleBuyItem(user, args, false, true);
         }
@@ -193,7 +199,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !backpack [item] [quality] [material]";
+                return "RICS.CC.backpack.usage".Translate();
             }
             var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
             if (cooldownManager == null)
@@ -204,7 +210,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             var globalSettings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
             if (!cooldownManager.CanPurchaseItem())
             {
-                return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
+                return "RICS.CC.common.PurchaseLimit".Translate(globalSettings.MaxItemPurchases, globalSettings.EventCooldownDays);
             }
             return BuyItemCommandHandler.HandleBuyItem(user, args, false, false, true);
         }
@@ -217,7 +223,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         public override string Execute(ChatMessageWrapper user, string[] args)
         {
             var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
-            return $"Check out the item prices and purchase list here: {settings.priceListUrl}";
+            // return $"Check out the item prices and purchase list here: {settings.priceListUrl}";
+            return "RICS.CC.purchaselist.message".Translate(settings.priceListUrl);
         }
     }
 
@@ -229,7 +236,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !pricecheck [item] [quality] [material] [quantity] - Example: !pricecheck assault rifle masterwork 1";
+                return "RICS.CC.pricecheck.usage".Translate();
             }
             var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
             var currencySymbol = settings.CurrencyName?.Trim() ?? "¢";
@@ -240,7 +247,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                     args,
                     allowQuality: true,
                     allowMaterial: true,
-                    allowSide: false,  // Side doesn't affect price for non-surgery items
+                    allowSide: false,  // Side doesn't affect price
                     allowQuantity: true
                 );
 
@@ -249,7 +256,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                     return $"❌ {parsed.Error}";
                 }
 
-                Logger.Debug($"PriceCheck parsing - Item: '{parsed.ItemName}', Quality: '{parsed.Quality}', Material: '{parsed.Material}', Quantity: {parsed.Quantity}");
+                // Logger.Debug($"PriceCheck parsing - Item: '{parsed.ItemName}', Quality: '{parsed.Quality}', Material: '{parsed.Material}', Quantity: {parsed.Quantity}");
 
                 var storeItem = StoreCommandHelper.GetStoreItemByName(parsed.ItemName);
                 if (storeItem == null)
@@ -261,14 +268,15 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                     //    var suggestionList = string.Join(", ", suggestions.Select(s => s.DisplayName));
                     //    return $"❌ Item '{parsed.ItemName}' not found. Did you mean: {suggestionList}?";
                     //}
-                    return $"❌ Item '{parsed.ItemName}' not found in the store.";
+                    return $"RICS.CC.pricecheck.notfound".Translate(parsed.ItemName);
                 }
 
                 // Get the ThingDef for price calculation
                 var thingDef = DefDatabase<ThingDef>.GetNamedSilentFail(storeItem.DefName);
                 if (thingDef == null)
                 {
-                    return $"❌ Could not find item definition for '{parsed.ItemName}'";
+                    // return $"❌ Could not find item definition for '{parsed.ItemName}'";
+                    return "RICS.CC.pricecheck.errorthingdef".Translate(parsed.ItemName);
                 }
 
                 // Parse quality using ItemConfigHelper
@@ -281,7 +289,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                     material = ItemConfigHelper.ParseMaterial(parsed.Material, thingDef);
                     if (material == null)
                     {
-                        return $"❌ Material '{parsed.Material}' not found or cannot be used for {parsed.ItemName}";
+                        parsed.Material = "";
                     }
                 }
 
@@ -290,7 +298,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 {
                     if (settings != null)
                     {
-                        return $"❌ {quality.Value} quality is disabled in settings";
+                        // return $"❌ {quality.Value} quality is not purchasable.";
+                        return "RICS.CC.pricecheck.errorquality".Translate(quality.Value.ToString());
                     }
                 }
 
@@ -302,12 +311,33 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                     material
                 );
 
+
                 // Build a clear response message
-                string qualityStr = quality.HasValue ? quality.Value.ToString().ToLower() : "normal";
-                string materialStr = material != null ? material.label : "default";
                 string quantityStr = parsed.Quantity > 1 ? $"{parsed.Quantity}x " : "";
 
-                return $"💰 Price Check: {quantityStr}{storeItem.CustomName} ({qualityStr}, {materialStr}) = {price} {currencySymbol}";
+                string qualityStr = "";
+                if (quality.HasValue)
+                {
+                    qualityStr = quality.Value.ToString().ToLower();
+                }
+                else if (thingDef.HasComp(typeof(CompQuality)))
+                {
+                    qualityStr = "normal";  // default only when quality is supported
+                }
+
+                // materialStr stays the same
+                string materialStr = material != null ? material.label : "";
+
+                // Optional: trim extra spaces if both quality and material are present
+                string details = string.Join(" ", new[] { qualityStr, materialStr }.Where(s => !string.IsNullOrEmpty(s)));
+                string itemDisplay = $"{quantityStr}{storeItem.CustomName}";
+                if (!string.IsNullOrEmpty(details))
+                {
+                    itemDisplay += $" {details}";
+                }
+
+                // return $"💰 Price Check: {quantityStr}{storeItem.CustomName} {qualityStr} {materialStr} = {price} {currencySymbol}";
+                return "RICS.CC.pricecheck.success".Translate(quantityStr, storeItem.CustomName, qualityStr, materialStr, price, currencySymbol);
             }
             catch (Exception ex)
             {
@@ -325,7 +355,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         {
             if (args.Length == 0)
             {
-                return "Usage: !surgery [implant] [left/right] [quantity] - Example: !surgery bionic arm left 1";
+                //return "Usage: !surgery [implant/BiotechSurgery] [left/right] [quantity] https://tinyurl.com/SurgeryCmdWiki";
+                return "RICS.CC.surgery.usage".Translate();
             }
             var cooldownManager = Current.Game.GetComponent<GlobalCooldownManager>();
                            if (cooldownManager == null)
@@ -336,7 +367,7 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
             var globalSettings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
             if (!cooldownManager.CanPurchaseItem())
             {
-                return $"Store purchase limit reached ({globalSettings.MaxItemPurchases} per {globalSettings.EventCooldownDays} days)";
+                return "RICS.CC.common.PurchaseLimit".Translate(globalSettings.MaxItemPurchases, globalSettings.EventCooldownDays);
             }
             return SurgeryItemCommandHandler.HandleSurgery(user, args);
         }

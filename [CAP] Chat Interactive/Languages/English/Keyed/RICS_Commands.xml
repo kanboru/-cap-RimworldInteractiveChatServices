@@ -1,0 +1,348 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+
+  <!-- DO NOT USE < or > as RICS will strip anything out in <anything> -->
+  
+  <!-- Event Command -->
+  <RICS.CC.event.usage>
+    Usage: !event [event_name] or !lookup event [name].
+  </RICS.CC.event.usage>
+
+  <!-- Weather Command -->
+  <RICS.CC.weather.usage>
+    Usage: !weather [type]. Available types: rain, snow, fog, thunderstorm, clear, etc.
+  </RICS.CC.weather.usage>
+  
+  <!-- Buy Command -->
+  <RICS.CC.Buy.Usage>
+    Usage: !buy {item} [quality] [material] [quantity], only used for items.  Also !use !equip !wear
+  </RICS.CC.Buy.Usage>
+
+  <!-- Use Command-->
+  <RICS.CC.use.usage>
+    Usage: !use [item]
+  </RICS.CC.use.usage>
+  
+  <!-- Equip Command-->
+  <RICS.CC.equip.usage>
+    Usage: !equip [item] [quality] [material]
+  </RICS.CC.equip.usage>
+  
+  <!-- Wear Command-->
+  <RICS.CC.wear.usage>
+    Usage: !wear [item] [quality] [material]
+  </RICS.CC.wear.usage>
+  
+  <!-- Backpack Command-->
+  <RICS.CC.backpack.usage>
+    Usage: !backpack [item] [quality] [material]
+  </RICS.CC.backpack.usage>
+  
+  <!-- Purchase list Command-->
+  <RICS.CC.purchaselist.message>
+    Check out the item prices and purchase list here: {0}
+  </RICS.CC.purchaselist.message>
+  
+  <!-- Pricecheck Command-->
+  <RICS.CC.pricecheck.usage>
+    Usage: !pricecheck [item] [quality] [material] [quantity]
+  </RICS.CC.pricecheck.usage>
+
+  <RICS.CC.pricecheck.notfound>
+    ❌ Item '{0}' not found in the store.
+  </RICS.CC.pricecheck.notfound>
+
+  <RICS.CC.pricecheck.errorthingdef>
+    ❌ Could not find item definition for '{0}'
+  </RICS.CC.pricecheck.errorthingdef>
+
+  <RICS.CC.pricecheck.errorquality>
+    ❌ {0} quality is not purchasable.
+  </RICS.CC.pricecheck.errorquality>
+
+  <RICS.CC.pricecheck.success>
+    💰 Price Check: {0}{1} {2} {3} = {4} {5}
+  </RICS.CC.pricecheck.success>
+  
+  <!-- Surgery Command-->
+  <RICS.CC.surgery.usage>
+    Usage: !surgery [implant/BiotechSurgery] [left/right] [quantity] https://tinyurl.com/SurgeryCmdWiki
+  </RICS.CC.surgery.usage>
+  
+  <!-- Raid Command-->
+  <RICS.CC.raid.unkownarg>
+    Unknown argument: {0}. Use !raidinfo for available options.
+  </RICS.CC.raid.unkownarg>
+
+  <RICS.CC.raid.invalidraidtype>
+    Raid type '{0}' is not allowed. Available types: {1}
+  </RICS.CC.raid.invalidraidtype>
+
+  <RICS.CC.raid.invalidstratagy>
+    Strategy '{0}' is not allowed. Available strategies: {1}
+  </RICS.CC.raid.invalidstratagy>
+
+  <RICS.CC.raidinfo>
+    Raid Wiki: https://tinyurl.com/RaidCommand | Usage: !raid [type] [strategy] [wager]
+  </RICS.CC.raidinfo>
+
+  <!-- Generic / Common strings used across commands -->
+  <RICS.CC.common.interaction.dlc_required>
+    This command requires the Ideology DLC.
+  </RICS.CC.common.interaction.dlc_required>
+
+  <RICS.CC.common.PurchaseLimit>
+    Store purchase limit reached ({0} per {1} days)
+  </RICS.CC.common.PurchaseLimit>
+
+  <!-- ToggleStore Command -->
+  <RICS.CC.togglestore.invalid_and_usage>
+    Invalid argument.\nUsage: !togglestore [on/off] or just !togglestore to toggle\nCurrent store status: {0}
+  </RICS.CC.togglestore.invalid_and_usage>
+
+  <RICS.CC.togglestore.already_status>
+    Store commands already {0}.
+  </RICS.CC.togglestore.already_status>
+  
+  <!-- Pawn Command-->
+  <RICS.CC.pawn.usage>
+    Usage: !pawn [race] [xenotype] [gender] [age] OR !pawn list [races|xenotypes] OR !pawn mypawn
+  </RICS.CC.pawn.usage>
+
+  <RICS.CC.pawn.handlist.usage>
+    List types: races, xenotypes [race]. Examples: !pawn list races, !pawn list xenotypes human
+  </RICS.CC.pawn.handlist.usage>
+  
+  <!-- MyPawn Command-->
+  <RICS.CC.mypawn.usage>
+    !mypawn [type]: body, health, implants, gear, kills, needs, relations, skills, stats, story, traits, work
+  </RICS.CC.mypawn.usage>
+  
+  <!-- Leave Command-->
+  <RICS.CC.leave.nopawn>
+    You don't have a pawn assigned to release.
+  </RICS.CC.leave.nopawn>
+
+  <RICS.CC.leave.successs>
+    ✅ You have released {0}{1}. You can now get a new pawn with !pawn command.
+  </RICS.CC.leave.successs>
+
+  <RICS.CC.leave.yourpawn>
+    your pawn
+  </RICS.CC.leave.yourpawn>
+
+  <RICS.CC.leave.deceased>
+    (deceased)
+  </RICS.CC.leave.deceased>
+
+  <RICS.CC.leave.deadpawnletter>
+    {0} has released their connection to the deceased {1}. Their story in the colony has come to a close.
+  </RICS.CC.leave.deadpawnletter>
+
+  <RICS.CC.leave.pawnletter>
+    {0} has decided to part ways with {1}. The colonist, feeling the severed bond, has chosen to leave the settlement behind.
+  </RICS.CC.leave.pawnletter>
+  
+  <!-- SetFavoriteColor command-->
+  <RICS.CC.setfavoritecolor.nodlc>
+    The !setfavoritecolor command requires the Ideology DLC to be enabled.
+  </RICS.CC.setfavoritecolor.nodlc>
+
+  <!-- Bal command -->
+  <RICS.CC.bal.notfound>
+    Could not find your viewer data.
+  </RICS.CC.bal.notfound>
+
+  <RICS.CC.bal.line1>
+    Balance: {0} {1}
+  </RICS.CC.bal.line1>
+
+  <RICS.CC.bal.line2>
+    Karma: {0} {1}
+  </RICS.CC.bal.line2>
+
+  <RICS.CC.bal.line3>
+    Earnings: {0} {1} every 2 minutes
+  </RICS.CC.bal.line3>
+
+  <RICS.CC.bal.line4>
+    Rate: ~{0} {1}/hour
+  </RICS.CC.bal.line4>
+
+  <RICS.CC.bal.activeRemaining>
+    Active for: {0} more minutes
+  </RICS.CC.bal.activeRemaining>
+
+  <RICS.CC.bal.notActive>
+    Not currently active (chat to become active!)
+  </RICS.CC.bal.notActive>
+
+  <!-- WhatIsKarma -->
+  <RICS.CC.whatiskarma>
+    Karma affects your coin rewards! Higher karma = more coins per 2 min cycle. Be active and positive to increase karma.
+  </RICS.CC.whatiskarma>
+
+  <!-- Help -->
+  <RICS.CC.help>
+    Full command list: https://tinyurl.com/RICSCommands (mobile friendly!)
+  </RICS.CC.help>
+
+  <!-- Commands (list) -->
+  <RICS.CC.commands.header>
+    Available commands:
+  </RICS.CC.commands.header>
+
+  <!-- Lookup command -->
+  <RICS.CC.lookup.usage>
+    Usage: !lookup [item|event|weather|trait|race|xenotype] [name]
+    Examples: !lookup item rifle, !lookup race (lists races), !lookup event raid
+  </RICS.CC.lookup.usage>
+
+  <RICS.CC.lookup.needTerm>
+    Usage: !lookup {0} [name] - search for {0}s.
+  </RICS.CC.lookup.needTerm>
+
+  <!-- GiftCoins -->
+  <RICS.CC.giftcoins.usage>
+    Usage: !giftcoins [viewer]
+      [amount]
+  </RICS.CC.giftcoins.usage>
+
+  <RICS.CC.giftcoins.invalidAmount>
+    Please specify a valid positive number of coins.
+  </RICS.CC.giftcoins.invalidAmount>
+
+  <RICS.CC.giftcoins.selfGift>
+    You cannot give coins to yourself.
+  </RICS.CC.giftcoins.selfGift>
+
+  <RICS.CC.giftcoins.notEnough>
+    You don't have enough coins. You have {0} but tried to give {1}.
+  </RICS.CC.giftcoins.notEnough>
+
+  <RICS.CC.giftcoins.targetNotFound>
+    Viewer '{0}' not found.
+  </RICS.CC.giftcoins.targetNotFound>
+
+  <RICS.CC.giftcoins.targetBanned>
+    Cannot give coins to banned viewer '{0}'.
+  </RICS.CC.giftcoins.targetBanned>
+
+  <RICS.CC.giftcoins.success>
+    Gave {0} coins to {1}. You now have {2} remaining.
+  </RICS.CC.giftcoins.success>
+
+  <RICS.CC.giftcoins.error>
+    An error occurred during the transaction. Please try again.
+  </RICS.CC.giftcoins.error>
+
+  <!-- Study -->
+  <RICS.CC.study.dlcrequired>
+    Requires anomaly DLC
+  </RICS.CC.study.dlcrequired>
+  
+  <!-- ModSettings -->
+  <RICS.CC.modsettings.currencysettings>
+    👋 v: {0}{1}/2 min | Karma Max: {2} 🎯
+  </RICS.CC.modsettings.currencysettings>
+  
+  <RICS.CC.modsettings.eventsOn>
+    Events: {0}/{1}d
+  </RICS.CC.modsettings.eventsOn>
+
+  <RICS.CC.modsettings.eventsOff>
+    Event cooldowns: OFF
+  </RICS.CC.modsettings.eventsOff>
+
+  <RICS.CC.modsettings.karmaLimits>
+    (🔴{0} 🟢{1} ⚪{2})
+  </RICS.CC.modsettings.karmaLimits>
+
+  <RICS.CC.modsettings.purchases>
+    Purchases: {0}/{1}d
+  </RICS.CC.modsettings.purchases>
+
+  <RICS.CC.modsettings.eventoff>
+    | Event cooldowns: OFF ❌
+  </RICS.CC.modsettings.eventoff>
+
+  <RICS.CC.modsettings.maxtaits>
+    | 🎭Trait Max: {0}
+  </RICS.CC.modsettings.maxtaits>
+
+  <!-- ModInfo -->
+  <RICS.CC.modinfo>
+    RICS ver {0} --- GitHub Releases: https://github.com/ekudram/-cap-RimworldInteractiveChatServices/releases
+  </RICS.CC.modinfo>
+
+  <!-- Wealth → assume WealthCommandHandler already translated or will be -->
+
+  <!-- Factions -->
+  <RICS.CC.factions.allies>
+    Allies
+  </RICS.CC.factions.allies>
+
+  <RICS.CC.factions.neutrals>
+    Neutrals
+  </RICS.CC.factions.neutrals>
+
+  <RICS.CC.factions.enemies>
+    Enemies
+  </RICS.CC.factions.enemies>
+
+  <RICS.CC.factions.separator>
+    •
+  </RICS.CC.factions.separator>
+
+  <!-- Colonists -->
+  <RICS.CC.colonists.basic>
+    There are {0} colonists and {1} colony animals.
+  </RICS.CC.colonists.basic>
+
+  <RICS.CC.colonists.withViewers>
+    There are {0} colonists ({1} controlled by viewers) and {2} colony animals.
+  </RICS.CC.colonists.withViewers>
+
+  <!-- Storage -->
+  <RICS.CC.storage.usage>
+    Usage: !storage [item name] (examples: !storage steel, !storage plasteel longsword, !storage hyperweave)
+  </RICS.CC.storage.usage>
+
+  <RICS.CC.storage.noMap>
+    No active map found.
+  </RICS.CC.storage.noMap>
+
+  <RICS.CC.storage.noMatch>
+    No items matching '{0}' found in storage.
+  </RICS.CC.storage.noMatch>
+
+  <RICS.CC.storage.noItemsAtAll>
+    No items found in any storage/stockpile on this map.
+  </RICS.CC.storage.noItemsAtAll>
+
+  <RICS.CC.storage.headerOne>
+    Found in storage:
+  </RICS.CC.storage.headerOne>
+
+  <RICS.CC.storage.headerMultiple>
+    Found {0} matching item types for '{1}':
+  </RICS.CC.storage.headerMultiple>
+
+  <RICS.CC.storage.line>
+    {0}× {1}
+  </RICS.CC.storage.line>
+
+  <RICS.CC.storage.defsButZero>
+    Found matching definitions for '{0}', but none in storage right now.
+  </RICS.CC.storage.defsButZero>
+
+  <!-- Reusable status strings (optional but cleaner if you use them elsewhere) -->
+  <RICS.CC.common.store.enabled>
+    **ENABLED**
+  </RICS.CC.common.store.enabled>
+
+  <RICS.CC.common.store.disabled>
+    **DISABLED**
+  </RICS.CC.common.store.disabled>
+
+</LanguageData>

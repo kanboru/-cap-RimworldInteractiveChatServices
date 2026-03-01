@@ -16,6 +16,7 @@
 
 
 using CAP_ChatInteractive.Commands.CommandHandlers;
+using Verse;
 
 namespace CAP_ChatInteractive.Commands.ViewerCommands
 {
@@ -29,7 +30,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
             if (args.Length == 0)
             {
-                return "Usage: !event [event_name] or !lookup event [name].";
+                // return "Usage: !event [event_name] or !lookup event [name].";
+                return "RICS.CC.event.usage".Translate();
             }
 
             string incidentType = string.Join(" ", args).Trim();
@@ -46,7 +48,8 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
             if (args.Length == 0)
             {
-                return "Usage: !weather [type>] Types: rain, snow, fog, thunderstorm, clear, etc.";
+                // return "Usage: !weather [type>] Types: rain, snow, fog, thunderstorm, clear, etc.";
+                return "RICS.CC.weather.usage".Translate();
             }
 
             string weatherType = args[0].ToLower();
