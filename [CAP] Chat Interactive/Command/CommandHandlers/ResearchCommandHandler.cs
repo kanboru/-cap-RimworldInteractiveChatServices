@@ -48,22 +48,30 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         private static string GetCurrentResearchStatus()
         {
             var researchManager = Find.ResearchManager;
-            var currentProject = researchManager.GetProject();
+            var currentProject = researchManager.GetProject();  // note: in 1.5 this is .CurrentProject
 
             if (currentProject == null)
             {
                 return "RICS.Research.NoArgsCurrent".Translate();
             }
 
-            float progressPercent = currentProject.ProgressApparent;
-            float totalCost = currentProject.CostApparent;
-            float percent = totalCost > 0 ? (progressPercent / totalCost) * 100 : 0;
+            // Use defensive defaults
+            float progress = Math.Max(0f, currentProject.ProgressApparent);
+            float cost = Math.Max(1f, currentProject.CostApparent);   // prevent div-by-zero
 
+            // Prevent NaN / div-by-zero / empty formatting
+            if (float.IsNaN(progress) || float.IsInfinity(progress)) progress = 0f;
+            if (float.IsNaN(cost) || float.IsInfinity(cost)) cost = 0f;
+            if (cost <= 0f) cost = 1f;  // avoid div-by-zero in percent
+
+            float percent = (progress / cost) * 100f;
+
+            // Optional: show at least "0" even if values are tiny
             return "RICS.Research.CurrentStatus".Translate(
                 currentProject.LabelCap,
-                progressPercent,
-                totalCost,
-                percent
+                progress > 0.001f ? progress : 0f,
+                cost > 0.001f ? cost : 0f,
+                percent >= 0f ? percent : 0f
             );
         }
 
