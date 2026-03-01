@@ -627,7 +627,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string GetBiomeRestrictionMessage(Map map)
         {
             string biomeName = map.Biome?.label ?? "this location";
-            return "RICS.WCH.BiomeRestriction".Translate(biomeName);
+            return "RICS.WCH.BiomeRestrictionError".Translate(biomeName);
         }
 
         [DebugAction("CAP", "Test Weather Conversion", allowedGameStates = AllowedGameStates.Playing)]

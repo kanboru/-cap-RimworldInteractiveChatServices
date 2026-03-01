@@ -48,54 +48,85 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
         private static string GetCurrentResearchStatus()
         {
             var researchManager = Find.ResearchManager;
-            var currentProject = researchManager.GetProject();  // note: in 1.5 this is .CurrentProject
+            var currentProject = researchManager.GetProject();  // or .CurrentProject if 1.5+
 
             if (currentProject == null)
             {
                 return "RICS.Research.NoArgsCurrent".Translate();
             }
 
-            // Use defensive defaults
             float progress = Math.Max(0f, currentProject.ProgressApparent);
-            float cost = Math.Max(1f, currentProject.CostApparent);   // prevent div-by-zero
+            float cost = Math.Max(1f, currentProject.CostApparent);
 
-            // Prevent NaN / div-by-zero / empty formatting
             if (float.IsNaN(progress) || float.IsInfinity(progress)) progress = 0f;
             if (float.IsNaN(cost) || float.IsInfinity(cost)) cost = 0f;
-            if (cost <= 0f) cost = 1f;  // avoid div-by-zero in percent
 
             float percent = (progress / cost) * 100f;
 
-            // Optional: show at least "0" even if values are tiny
+            // Log as before
+            Logger.Debug($"Current: {currentProject.LabelCap} - raw progress {currentProject.ProgressApparent} / {currentProject.CostApparent} → clamped {progress}/{cost} → {percent:F1}%");
+
+            // Format numbers manually with .ToString("F0") or "0"
+            string progStr = progress.ToString("F0");   // or just progress > 0.1f ? progress.ToString("F0") : "0"
+            string costStr = cost.ToString("F0");
+            string percStr = percent.ToString("F1");
+
             return "RICS.Research.CurrentStatus".Translate(
                 currentProject.LabelCap,
-                progress > 0.001f ? progress : 0f,
-                cost > 0.001f ? cost : 0f,
-                percent >= 0f ? percent : 0f
+                progStr,
+                costStr,
+                percStr
             );
         }
 
         private static string GetSpecificResearchStatus(string researchName)
         {
             var allResearch = DefDatabase<ResearchProjectDef>.AllDefs;
-            var matchingProjects = allResearch.Where(r =>
-                r.LabelCap.ToString().ToLower().Contains(researchName.ToLower()) ||
-                r.defName.ToLower().Contains(researchName.ToLower())
-            ).ToList();
+            string inputLower = researchName.ToLower().Trim();
 
-            if (matchingProjects.Count == 0)
+            // 1. Try exact matches first (case-insensitive)
+            var exactMatches = allResearch
+                .Where(r =>
+                    string.Equals(r.LabelCap.ToString(), inputLower, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(r.defName, inputLower, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (exactMatches.Count == 1)
+            {
+                return GetProjectStatusString(exactMatches[0]);
+            }
+
+            if (exactMatches.Count > 1)
+            {
+                var names = string.Join(", ", exactMatches.Select(p => p.LabelCap));
+                return $"Multiple exact matches for '{researchName}': {names}";
+            }
+
+            // 2. No exact → fall back to partial contains
+            var partialMatches = allResearch
+                .Where(r =>
+                    r.LabelCap.ToString().ToLower().Contains(inputLower) ||
+                    r.defName.ToLower().Contains(inputLower))
+                .ToList();
+
+            if (partialMatches.Count == 0)
             {
                 return "RICS.Research.NoMatch".Translate(researchName);
             }
 
-            if (matchingProjects.Count > 1)
+            if (partialMatches.Count > 1)
             {
-                var projectNames = string.Join(", ", matchingProjects.Take(3).Select(p => p.LabelCap));
-                string ellipsis = matchingProjects.Count > 3 ? "RICS.Research.MultipleEllipsis".Translate() : "";
-                return "RICS.Research.MultipleMatches".Translate(researchName, projectNames, ellipsis);
+                var names = string.Join(", ", partialMatches.Take(3).Select(p => p.LabelCap));
+                string ellipsis = partialMatches.Count > 3 ? "RICS.Research.MultipleEllipsis".Translate() : "";
+                return "RICS.Research.MultipleMatches".Translate(researchName, names, ellipsis);
             }
 
-            var project = matchingProjects[0];
+            // Single partial match
+            return GetProjectStatusString(partialMatches[0]);
+        }
+
+        private static string GetProjectStatusString(ResearchProjectDef project)
+        {
             var researchManager = Find.ResearchManager;
 
             if (project.IsFinished)
@@ -103,9 +134,22 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 return "RICS.Research.Completed".Translate(project.LabelCap);
             }
 
-            float progress = researchManager.GetProgress(project);
-            float totalCost = project.CostApparent;
-            float percent = totalCost > 0 ? (progress / totalCost) * 100 : 0;
+            // Defensive handling
+            float rawProgress = project.ProgressApparent;
+            float rawCost = project.CostApparent;
+
+            float progress = Math.Max(0f, rawProgress);
+            float cost = Math.Max(1f, rawCost);
+
+            if (float.IsNaN(progress) || float.IsInfinity(progress)) progress = 0f;
+            if (float.IsNaN(cost) || float.IsInfinity(cost)) cost = 1f;
+
+            float percent = (progress / cost) * 100f;
+
+            // Pre-format as strings (same as current research)
+            string progStr = progress.ToString("F0");
+            string costStr = cost.ToString("F0");
+            string percStr = percent.ToString("F1");  // keeps one decimal like 5.6
 
             string status = project.CanStartNow
                 ? "RICS.Research.StatusAvailable".Translate()
@@ -113,9 +157,9 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
 
             return "RICS.Research.SpecificStatus".Translate(
                 project.LabelCap,
-                progress,
-                totalCost,
-                percent,
+                progStr,
+                costStr,
+                percStr,
                 status
             );
         }
@@ -141,22 +185,41 @@ namespace CAP_ChatInteractive.Commands.ViewerCommands
                 .FirstOrDefault(p => p.knowledgeCategory.overflowCategory != null);
 
             string bas = basic != null
-                ? "RICS.Research.StudyFormat".Translate(
-                    basic.LabelCap,
-                    basic.ProgressApparent,
-                    basic.CostApparent,
-                    basic.ProgressPercent)
+                ? FormatStudyProject(basic)
                 : "RICS.Research.StudyNone".Translate();
 
             string adv = advanced != null
-                ? "RICS.Research.StudyFormat".Translate(
-                    advanced.LabelCap,
-                    advanced.ProgressApparent,
-                    advanced.CostApparent,
-                    advanced.ProgressPercent)
+                ? FormatStudyProject(advanced)
                 : "RICS.Research.StudyNone".Translate();
 
             return "RICS.Research.StudyStatus".Translate(bas, adv);
+        }
+
+        // New helper to avoid duplication and keep formatting consistent
+        private static string FormatStudyProject(ResearchProjectDef project)
+        {
+            // Use same defensive logic
+            float rawProg = project.ProgressApparent;
+            float rawCost = project.CostApparent;
+
+            float progress = Math.Max(0f, rawProg);
+            float cost = Math.Max(1f, rawCost);
+
+            if (float.IsNaN(progress) || float.IsInfinity(progress)) progress = 0f;
+            if (float.IsNaN(cost) || float.IsInfinity(cost)) cost = 1f;
+
+            float percent = (progress / cost) * 100f;
+
+            string progStr = progress.ToString("F0");
+            string costStr = cost.ToString("F0");
+            string percStr = percent.ToString("F1");
+
+            return "RICS.Research.StudyFormat".Translate(
+                project.LabelCap,
+                progStr,
+                costStr,
+                percStr
+            );
         }
     }
 }

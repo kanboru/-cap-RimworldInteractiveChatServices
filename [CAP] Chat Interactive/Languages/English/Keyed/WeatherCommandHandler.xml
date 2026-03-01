@@ -98,6 +98,6 @@
   <RICS.WCH.WeatherListPageNoMore>No more weather types to display.</RICS.WCH.WeatherListPageNoMore>
 
   <!-- Biome restriction message -->
-  <RICS.WCH.BiomeRestriction>Sorry, you can't change the weather in {0}.</RICS.WCH.BiomeRestriction>
+  <RICS.WCH.BiomeRestrictionError>Sorry, you can't change the weather in {0}.</RICS.WCH.BiomeRestrictionError>
 
 </LanguageData>
