@@ -51,7 +51,7 @@ namespace CAP_ChatInteractive.Commands.ModCommands
                 // Give coins to all viewers
                 Viewers.GiveAllViewersCoins(coinAmount);
                 // return $"Gave {coinAmount:N0} coins to all viewers.";
-                return "RICS.CC.giveocoins".Translate(coinAmount);
+                return "RICS.CC.givecoins".Translate(coinAmount);
             }
 
             // Handle individual viewer case (original logic)

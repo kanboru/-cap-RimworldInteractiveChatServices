@@ -336,6 +336,29 @@
     Found matching definitions for '{0}', but none in storage right now.
   </RICS.CC.storage.defsButZero>
 
+
+  <!-- ModCommands - givecoins (moderator version) -->
+  <RICS.CC.givecoins.usage>
+    Usage: !givecoins &lt;viewer|all&gt; &lt;amount&gt;
+  </RICS.CC.givecoins.usage>
+
+  <RICS.CC.givecoins.errorcoin>
+    Please specify a valid positive number of coins.
+  </RICS.CC.givecoins.errorcoin>
+
+  <RICS.CC.givecoins.notfound>
+    Viewer '{0}' not found.
+  </RICS.CC.givecoins.notfound>
+
+  <RICS.CC.givecoins.success>
+    Gave {0:N0} coins to {1}. {1} now has {2:N0} coins.
+  </RICS.CC.givecoins.success>
+
+  <!-- ToggleStore -->
+  <RICS.CC.togglestore.success>
+    Store commands now {0}!
+  </RICS.CC.togglestore.success>
+
   <!-- Reusable status strings (optional but cleaner if you use them elsewhere) -->
   <RICS.CC.common.store.enabled>
     **ENABLED**
