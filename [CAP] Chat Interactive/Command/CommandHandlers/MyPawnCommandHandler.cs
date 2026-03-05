@@ -2047,25 +2047,30 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
         private static string GetSpecificStats(Pawn pawn, string[] args)
         {
             var report = new StringBuilder();
-            // report.AppendLine($"📊 Stats: "); // for {pawn.Name}:
             report.AppendLine("RICS.MPCH.StatsHeader".Translate());
 
-            var foundStats = new List<string>();
+            const int MAX_STATS_TO_SHOW = 5;
+            var foundDefs = new HashSet<string>(); // dedup by defName (handles "psychic" + "sensitivity" both matching same stat)
             var notFoundStats = new List<string>();
+            int statsShown = 0;
 
             foreach (var statName in args)
             {
+                if (statsShown >= MAX_STATS_TO_SHOW) break;
+
                 var statDef = FindStatDef(statName);
                 if (statDef != null)
                 {
+                    if (!foundDefs.Add(statDef.defName)) continue; // already shown - skip duplicate
+
                     float value = pawn.GetStatValue(statDef);
                     string formattedValue = FormatStatValue(statDef, value);
                     string description = StripTags(statDef.description) ?? "";
 
-                    // Truncate long descriptions
-                    if (description.Length > 80)
+                    // Aggressive truncation for chat (keeps total message <500 chars)
+                    if (description.Length > 60)
                     {
-                        description = description.Substring(0, 77) + "...";
+                        description = description.Substring(0, 57) + "...";
                     }
 
                     report.AppendLine($"• {StripTags(statDef.LabelCap)}: {formattedValue}");
@@ -2074,7 +2079,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                         report.AppendLine($"  {description}");
                     }
 
-                    foundStats.Add(statName);
+                    statsShown++;
                 }
                 else
                 {
@@ -2082,13 +2087,16 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 }
             }
 
+            if (args.Length > MAX_STATS_TO_SHOW)
+            {
+                report.AppendLine($"... and {args.Length - MAX_STATS_TO_SHOW} more (max {MAX_STATS_TO_SHOW} shown per message)");
+            }
+
             // Add not found stats at the end
             if (notFoundStats.Count > 0)
             {
                 report.AppendLine();
-                // report.AppendLine($"❌ Unknown stats: {string.Join(", ", notFoundStats)}");
-                report.AppendLine("RICS.MPCH.UnknownStats".Translate(string.Join(", ", notFoundStats)));    
-                // report.AppendLine("Use !mypawn stats to see available stats.");
+                report.AppendLine("RICS.MPCH.UnknownStats".Translate(string.Join(", ", notFoundStats)));
                 report.AppendLine("RICS.MPCH.UseStatsCommand".Translate());
             }
 
@@ -2097,12 +2105,36 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
 
         private static StatDef FindStatDef(string statName)
         {
-            string searchName = statName.ToLower().Replace("_", "").Replace(" ", "");
+            if (string.IsNullOrWhiteSpace(statName)) return null;
 
-            return DefDatabase<StatDef>.AllDefs
-                .FirstOrDefault(stat =>
-                    stat.defName.ToLower().Replace("_", "").Contains(searchName) ||
-                    stat.label.ToLower().Replace(" ", "").Contains(searchName));
+            string search = statName.ToLower().Trim().Replace("_", "").Replace(" ", "");
+
+            var allStats = DefDatabase<StatDef>.AllDefsListForReading;
+
+            // 1. Exact defName match (highest priority - vanilla best practice)
+            var exact = allStats.FirstOrDefault(s =>
+                string.Equals(s.defName.Replace("_", ""), search, StringComparison.OrdinalIgnoreCase));
+            if (exact != null) return exact;
+
+            // 2. Exact label match (e.g. "psychic sensitivity")
+            exact = allStats.FirstOrDefault(s =>
+                string.Equals(s.label.Replace(" ", ""), search, StringComparison.OrdinalIgnoreCase));
+            if (exact != null) return exact;
+
+            // 3. Smart contains: prefer base stats over Offset/Factor variants (fixes the reported bug)
+            //    + shorter defName first (PsychicSensitivity beats PsychicSensitivityOffset)
+            return allStats
+                .Where(s =>
+                {
+                    string defClean = s.defName.ToLower().Replace("_", "");
+                    string labelClean = s.label.ToLower().Replace(" ", "");
+                    return defClean.Contains(search) || labelClean.Contains(search);
+                })
+                .OrderBy(s => (s.defName.ToLower().EndsWith("offset") || s.defName.ToLower().EndsWith("factor")) &&
+                               !search.Contains("offset") && !search.Contains("factor") ? 1 : 0)
+                .ThenBy(s => s.defName.Length)   // shorter = more likely the "real" stat
+                .ThenBy(s => s.label.Length)
+                .FirstOrDefault();
         }
 
         private static string FormatStatValue(StatDef statDef, float value)
