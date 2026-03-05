@@ -362,7 +362,7 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 resultMessage = $"No worker for incident {incident.Label}.";
                 return false;
             }
-
+            /*  Old method
             var playerMaps = Current.Game.Maps.Where(map => map.IsPlayerHome).ToList();
             playerMaps.Shuffle();
 
@@ -372,8 +372,43 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                 {
                     target = map,
                     forced = true,
-                    points = StorytellerUtility.DefaultThreatPointsNow(map)
+                    points = StorytellerUtility.DefaultThreatPointsNow(map),
+                    
                 };
+
+                if (worker.CanFireNow(parms) && !worker.FiredTooRecently(map))
+                {
+                    bool executed = worker.TryExecute(parms);
+                    if (executed)
+                    {
+                        resultMessage = GetIncidentSuccessMessage(incident);
+                        return true;
+                    }
+                }
+            }
+            */
+
+            var playerMaps = Current.Game.Maps.Where(map => map.IsPlayerHome).ToList();
+            playerMaps.Shuffle();
+
+            foreach (var map in playerMaps)
+            {
+                // Vanilla factory — respects IncidentDef.category, PopulationIntent, DLC rules, etc.
+                // This alone already fixes most weird scaling.
+                var parms = StorytellerUtility.DefaultParmsNow(incidentDef.category, map);
+                parms.forced = true;
+
+                // Friendly events (good/neutral) now use population-based scaling instead of wealth.
+                // Visitors / traders / wanderers now spawn exactly like the storyteller (usually 2–8 pawns).
+                // Bad/doom events keep full threat scaling (raids stay dangerous).
+                //string karmaLower = incident.KarmaType?.ToLowerInvariant() ?? "neutral";
+                //if (karmaLower == "good" || karmaLower == "neutral")
+                //{
+                //    // 85f is tuned from vanilla visitor/trader values (AdjustedPopulation * ~80–100 works perfectly).
+                //    // You can tweak to 75f or 100f in settings later if you want.
+                //    parms.points = StorytellerUtilityPopulation.AdjustedPopulation * 10f;
+                //}
+                // pawnCount deliberately left untouched — workers calculate it themselves from points
 
                 if (worker.CanFireNow(parms) && !worker.FiredTooRecently(map))
                 {
