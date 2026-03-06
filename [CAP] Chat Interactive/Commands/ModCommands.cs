@@ -200,15 +200,15 @@ namespace CAP_ChatInteractive.Commands.ModCommands
 
                 //string statusWord = newState ? "**ENABLED**" : "**DISABLED**";
                 string statusWord = newState ? "RICS.CC.common.store.enabled" : "RICS.CC.common.store.disabled";
-                Logger.Message($"[CAP] Store commands toggled to {statusWord} by {user.Username}");
+                // Logger.Message($"[CAP] Store commands toggled to {statusWord} by {user.Username}");
 
                 // return $"Store commands now {statusWord}!";
                 return "RICS.CC.Togglestore.success".Translate(statusWord);
             }
 
             // No change occurred
-            return $"Store commands already {(currentState ? "**ENABLED**" : "**DISABLED**")}.";
-        }
+            // return $"Store commands already {(currentState ? "**ENABLED**" : "**DISABLED**")}.";
+            return "RICS.CC.togglestore.already_status".Translate();
     }
 
     public class FixAllPawns : ChatCommand

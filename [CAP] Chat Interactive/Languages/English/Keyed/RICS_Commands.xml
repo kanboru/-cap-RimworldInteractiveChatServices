@@ -103,6 +103,10 @@
   <RICS.CC.togglestore.already_status>
     Store commands already {0}.
   </RICS.CC.togglestore.already_status>
+
+  <RICS.CC.Togglestore.success>
+    Store commands now {0}
+  </RICS.CC.Togglestore.success>
   
   <!-- Pawn Command-->
   <RICS.CC.pawn.usage>
