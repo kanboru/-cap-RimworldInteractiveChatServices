@@ -617,8 +617,35 @@ Warning: resets all custom store settings to defaults
                 "TraitsCommandHandler.xml added.\r\n" +
                 "UseItemCommandHandler.xml added.\r\n" +
                 "WealthCommandHandler.xml added."
-            }
-                        // Add more versions here as they're released
+            },
+                        {"1.22",
+                @"RICS 1.22 Update Notes
+
+Updated:
+- Store Item Editor
+  New checkmarks added at the top of the Items View
+  • Quick enable/disable checkboxes (All, Buy, Use, Wear, Equip)
+  • Improved Use/Wear/Equip logic (fixes items that previously showed incorrect flags)
+  • Automatically updates your StoreItems.json without removing any custom settings
+  • Medicine is no longer usable in the store (it never worked)
+  • Items like beer that can be equipped or used are now available in both categories
+
+- Interaction Commands
+  !animalchat and !nuzzle now let you talk to or nuzzle your pets. Just include the pet name.
+
+Fixed:
+- Incidents now use full RimWorld + mod defaults (should eliminate 100+ visitors issues)
+- !mypawn stats command fixed for multi-word stats (psychic sensitivity, Research Speed, Body Size, etc.)
+
+Compatibility Notes:
+- XML Extensions: Do not open RICS settings from inside XML Extensions (causes UI issues)
+- Cherry Picker: Changes Defs and may break RICS JSON storage (no workaround known)
+- [FSF] FrozenSnowFox Tweaks: Do NOT use the ""No Default Storage"" setting. Use ""No Default Shelf Storage"" MOD instead.
+- ToolkitCore (all versions): Officially incompatible (blocked in About.xml)
+
+Translation updates added for Weather, Use Item, moderator coin commands, store toggle, and Store Editor UI.
+"
+            }                        // Add more versions here as they're released
         };
 
         public static void CheckForVersionUpdate()
