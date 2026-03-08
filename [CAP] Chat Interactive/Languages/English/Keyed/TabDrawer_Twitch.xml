@@ -238,10 +238,12 @@ When "Force whisper-only commands" is enabled, this controls how often the remin
 
   <!-- Extra note inside Token Generator dialog -->
   <RICS.Twitch.TokenGeneratorClientIdHeader>
-    📋 <b>Also copy your CLIENT ID!</b>
+    <![CDATA[
+    📋 <b>Also copy your CLIENT ID!</b>]]>
   </RICS.Twitch.TokenGeneratorClientIdHeader>
   <RICS.Twitch.TokenGeneratorClientIdDesc>
-    It appears <b>right below your Access Token</b> on the same page (see screenshot in mod help).
+    <![CDATA[
+    It appears <b>right below your Access Token</b> on the same page.]]>
   </RICS.Twitch.TokenGeneratorClientIdDesc>
 
 </LanguageData>

@@ -500,7 +500,7 @@ namespace CAP_ChatInteractive
             this.platformIds = new Dictionary<string, string>(viewer.PlatformUserIds);
 
             // DEBUG: Log what's being copied
-            Logger.Debug($"SimpleViewer created for {username} with {platformIds.Count} platform IDs:");
+            // Logger.Debug($"SimpleViewer created for {username} with {platformIds.Count} platform IDs:");
             foreach (var platformId in platformIds)
             {
                 Logger.Debug($"  {platformId.Key}: {platformId.Value}");

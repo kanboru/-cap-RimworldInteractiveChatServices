@@ -418,11 +418,12 @@ namespace CAP_ChatInteractive
                 {
                     if (message.IsWhisper)
                     {
-                        // NEW: Private whisper reply when user whispered us
+                        Logger.Debug($"[SEND TO USER] Whisper detected from @{message.Username} → routing to SendWhisperAsync");
                         _ = twitchService.SendWhisperAsync(message.Username, cleanText); // fire-and-forget (safe on main thread)
                     }
                     else
                     {
+                        Logger.Debug($"[SEND TO USER] Public chat reply to @{message.Username}");
                         twitchService.SendMessage($"{message.Username} {cleanText}");
                     }
                 }

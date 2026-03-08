@@ -282,8 +282,9 @@ namespace _CAP__Chat_Interactive
                     "RICS.Twitch.TokenGeneratorSecurityNote1".Translate() + "\n" +
                     "RICS.Twitch.TokenGeneratorSecurityNote2".Translate() + "\n" +
                     "RICS.Twitch.TokenGeneratorSecurityNote3".Translate() + "\n" +
-                    "RICS.Twitch.TokenGeneratorSecurityNote4".Translate() + "\n\n" +
-                    "RICS.Twitch.TokenGeneratorConfirmation".Translate();
+                    "RICS.Twitch.TokenGeneratorSecurityNote4".Translate() + "\n\n" // +
+                    // "RICS.Twitch.TokenGeneratorConfirmation".Translate();
+                    ;
 
                 Find.WindowStack.Add(new Dialog_MessageBox(
                     message,

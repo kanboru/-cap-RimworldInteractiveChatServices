@@ -521,10 +521,18 @@ namespace CAP_ChatInteractive
         /// Uses newRecipient: false (allows 10k chars). Our messages are always < 500 chars so safe.
         /// Falls back to public @reply on any error (no ClientId, rate limit, missing scope, etc.).
         /// </summary>
+        /// <summary>
+        /// Sends private whisper via Helix API (replaces obsolete IRC whisper).
+        /// Uses newRecipient: false (allows 10k chars). Our messages are always < 500 chars so safe.
+        /// Falls back to public @reply on any error (no ClientId, rate limit, missing scope, etc.).
+        /// </summary>
         public async Task SendWhisperAsync(string username, string message)
         {
+            Logger.Debug($"[WHISPER SEND] Called for @{username} | Message: \"{message}\" | IsConnected: {IsConnected} | HelixApi: {_helixApi != null}");
+
             if (!IsConnected || string.IsNullOrEmpty(username) || _helixApi == null)
             {
+                Logger.Debug($"[WHISPER SEND] Fallback to public chat (no connection / no username / no HelixApi)");
                 SendMessage($"@{username} {message}");
                 return;
             }
@@ -534,9 +542,11 @@ namespace CAP_ChatInteractive
                 string fromUserId = await GetBotUserIdAsync();
                 string toUserId = await GetUserIdAsync(username);
 
+                Logger.Debug($"[WHISPER SEND] Resolved IDs → From: {fromUserId} | To: {toUserId}");
+
                 if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId))
                 {
-                    Logger.Warning($"Could not resolve User ID for whisper to {username} — falling back to public");
+                    Logger.Warning($"[WHISPER SEND] Could not resolve User ID for whisper to {username} — falling back to public");
                     SendMessage($"@{username} {message}");
                     return;
                 }
@@ -545,15 +555,15 @@ namespace CAP_ChatInteractive
                     fromUserId,
                     toUserId,
                     message,
-                    newRecipient: false   // false = repeat recipient (10k char limit)
+                    newRecipient: false
                 );
 
                 _lastMessageTime = DateTime.Now;
-                Logger.Debug($"✅ Private whisper sent to {username}");
+                Logger.Debug($"[WHISPER SEND] ✅ SUCCESS — Private whisper sent to @{username}");
             }
             catch (Exception ex)
             {
-                Logger.Error($"Helix whisper failed to {username}: {ex.Message} — falling back to public");
+                Logger.Error($"[WHISPER SEND] Helix whisper failed to @{username}: {ex.Message} — falling back to public");
                 SendMessage($"@{username} {message}");
             }
         }
