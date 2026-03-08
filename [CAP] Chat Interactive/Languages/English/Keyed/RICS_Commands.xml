@@ -355,7 +355,7 @@
   </RICS.CC.givecoins.notfound>
 
   <RICS.CC.givecoins.success>
-    Gave {0:N0} coins to {1}. {1} now has {2:N0} coins.
+    Gave {0} coins to {1}. {1} now has {2} coins.
   </RICS.CC.givecoins.success>
 
   <!-- ToggleStore -->

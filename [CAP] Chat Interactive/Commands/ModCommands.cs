@@ -156,7 +156,7 @@ namespace CAP_ChatInteractive.Commands.ModCommands
                 }
                 else
                 {
-                    string statusKey = currentState ? "RICS.CC.common.store.enabled" : "RICS.CC.common.store.disabled";
+                    string statusKey = currentState ? "RICS.CC.common.store.enabled".Translate() : "RICS.CC.common.store.disabled".Translate();
                     return "RICS.CC.togglestore.invalid_and_usage".Translate(statusKey.Translate());
 
                     //return $"Invalid argument.\n" +
@@ -199,8 +199,8 @@ namespace CAP_ChatInteractive.Commands.ModCommands
                 CommandSettingsManager.SaveSettings();  // ← Make sure this method exists and works!
 
                 //string statusWord = newState ? "**ENABLED**" : "**DISABLED**";
-                string statusWord = newState ? "RICS.CC.common.store.enabled" : "RICS.CC.common.store.disabled";
-                // Logger.Message($"[CAP] Store commands toggled to {statusWord} by {user.Username}");
+                string statusWord = newState ? "RICS.CC.common.store.enabled".Translate() : "RICS.CC.common.store.disabled".Translate();
+                Logger.Message($"[CAP] Store commands toggled to {statusWord} by {user.Username}");
 
                 // return $"Store commands now {statusWord}!";
                 return "RICS.CC.Togglestore.success".Translate(statusWord);
@@ -208,7 +208,8 @@ namespace CAP_ChatInteractive.Commands.ModCommands
 
             // No change occurred
             // return $"Store commands already {(currentState ? "**ENABLED**" : "**DISABLED**")}.";
-            return "RICS.CC.togglestore.already_status".Translate();
+            return "RICS.CC.Togglestore.success".Translate();
+        }
     }
 
     public class FixAllPawns : ChatCommand
