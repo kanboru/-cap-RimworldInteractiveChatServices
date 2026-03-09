@@ -27,7 +27,7 @@ namespace CAP_ChatInteractive.Patch.HAR
 {
     [UsedImplicitly]
     // [StaticConstructorOnStartup]
-    public class HARPatch: IAlienCompatibilityProvider
+    public class HARPatch : IAlienCompatibilityProvider
     {
         public string ModId => "erdelf.HumanoidAlienRaces";
 
@@ -271,6 +271,25 @@ namespace CAP_ChatInteractive.Patch.HAR
             float femaleProb = 1f - maleProb;
 
             return (maleProb, femaleProb);
+        }
+
+        // === NEW: HAR race restriction checks (uses exact statics from ThingDef_AlienRace.cs) ===
+        // Prevents coin loss + silent item disappearance for !wear / !equip
+        public bool CanWear(ThingDef apparel, ThingDef race)
+        {
+            if (apparel == null || race == ThingDefOf.Human)
+                return true; // Humans + safety (matches HAR fallback)
+
+            // Direct delegation to HAR's static method (respects onlyUseRaceRestrictedApparel, white/black lists)
+            return RaceRestrictionSettings.CanWear(apparel, race);
+        }
+
+        public bool CanEquip(ThingDef weapon, ThingDef race)
+        {
+            if (weapon == null || race == ThingDefOf.Human)
+                return true;
+
+            return RaceRestrictionSettings.CanEquip(weapon, race);
         }
     }
 }

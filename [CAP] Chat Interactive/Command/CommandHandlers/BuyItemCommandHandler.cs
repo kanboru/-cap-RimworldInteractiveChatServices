@@ -186,6 +186,26 @@ namespace CAP_ChatInteractive.Commands.CommandHandlers
                         // return "Your pawn is dead. You cannot equip/wear items.";
                         return "RICS.BICH.Return.PawnDead".Translate();
                     }
+
+                    // === HAR RACE RESTRICTION CHECK (critical safety net) ===
+                    // Runs BEFORE TakeCoins() and SpawnItemForPawn — prevents "coins taken, item vanishes".
+                    // Uses our new provider (delegates to HAR's verified CanWear/CanEquip).
+                    if (requireEquippable || requireWearable)
+                    {
+                        var provider = CAPChatInteractiveMod.Instance?.AlienProvider;
+                        if (provider != null)
+                        {
+                            bool canUseItem = requireWearable
+                                ? provider.CanWear(thingDef, viewerPawn.def)
+                                : provider.CanEquip(thingDef, viewerPawn.def);
+
+                            if (!canUseItem)
+                            {
+                                Logger.Debug($"HAR restriction blocked: {viewerPawn.def.defName} cannot {(requireWearable ? "wear" : "equip")} {itemName}");
+                                return "RICS.BICH.Return.HARRaceRestricted".Translate(itemName, requireWearable ? "worn" : "equipped");
+                            }
+                        }
+                    }
                 }
                 else
                 {

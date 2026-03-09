@@ -36,6 +36,18 @@ namespace _CAP__Chat_Interactive.Interfaces
 
         // Gender restriction methods
         bool IsGenderAllowed(ThingDef raceDef, Gender gender);
+        // HAR race restriction support (prevents "coins taken, item disappears" bug)
+        /// <summary>
+        /// Delegates to HAR's RaceRestrictionSettings.CanWear (verified from provided decompile).
+        /// Returns true for humans / non-HAR races.
+        /// </summary>
+        bool CanWear(ThingDef apparel, ThingDef race);
+
+        /// <summary>
+        /// Delegates to HAR's RaceRestrictionSettings.CanEquip.
+        /// Returns true for humans / non-HAR races.
+        /// </summary>
+        bool CanEquip(ThingDef weapon, ThingDef race);
         GenderPossibility GetAllowedGenders(ThingDef raceDef);
         (float maleProbability, float femaleProbability) GetGenderProbabilities(ThingDef raceDef);
     }
