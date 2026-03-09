@@ -525,14 +525,37 @@ namespace CAP_ChatInteractive
         /// Sends private whisper via Helix API (replaces obsolete IRC whisper).
         /// Uses newRecipient: false (allows 10k chars). Our messages are always < 500 chars so safe.
         /// Falls back to public @reply on any error (no ClientId, rate limit, missing scope, etc.).
+        ///
+        /// Sends private whisper via Helix API (replaces obsolete IRC whisper).
+        /// 
+        /// OFFICIAL TWITCH HELIX WHISPER LIMITS (March 2026):
+        /// 
+        /// 1. Daily unique recipients: MAX 40 per day (resets midnight Pacific Time)
+        ///    → This is the hard limit that matters most for big streamers.
+        /// 
+        /// 2. Rate limits:
+        ///    • 3 whispers per second
+        ///    • 100 whispers per minute
+        /// 
+        /// 3. Message length:
+        ///    • First whisper to a user today = 500 characters max
+        ///    • Repeat whispers to same user = 10,000 characters max
+        ///    (We use newRecipient: false so we always get the higher limit)
+        /// 
+        /// 4. Other requirements:
+        ///    • Bot account MUST have a verified phone number
+        ///    • Twitch can silently drop whispers (returns 204 success anyway)
+        ///    • Verified bots get NO higher limits
+        /// 
+        /// RICS impact: We only whisper in response to viewer commands, so we stay well under limits.
+        /// Fallback to public @reply is already built-in and safe.
+        /// 
+        /// Source: https://dev.twitch.tv/docs/chat/whispers/
         /// </summary>
         public async Task SendWhisperAsync(string username, string message)
         {
-            Logger.Debug($"[WHISPER SEND] Called for @{username} | Message: \"{message}\" | IsConnected: {IsConnected} | HelixApi: {_helixApi != null}");
-
             if (!IsConnected || string.IsNullOrEmpty(username) || _helixApi == null)
             {
-                Logger.Debug($"[WHISPER SEND] Fallback to public chat (no connection / no username / no HelixApi)");
                 SendMessage($"@{username} {message}");
                 return;
             }
@@ -542,11 +565,9 @@ namespace CAP_ChatInteractive
                 string fromUserId = await GetBotUserIdAsync();
                 string toUserId = await GetUserIdAsync(username);
 
-                Logger.Debug($"[WHISPER SEND] Resolved IDs → From: {fromUserId} | To: {toUserId}");
-
                 if (string.IsNullOrEmpty(fromUserId) || string.IsNullOrEmpty(toUserId))
                 {
-                    Logger.Warning($"[WHISPER SEND] Could not resolve User ID for whisper to {username} — falling back to public");
+                    Logger.Warning($"Could not resolve User ID for whisper to {username} — falling back to public");
                     SendMessage($"@{username} {message}");
                     return;
                 }
@@ -559,11 +580,11 @@ namespace CAP_ChatInteractive
                 );
 
                 _lastMessageTime = DateTime.Now;
-                Logger.Debug($"[WHISPER SEND] ✅ SUCCESS — Private whisper sent to @{username}");
+                Logger.Debug($"✅ Private whisper sent to @{username}");
             }
             catch (Exception ex)
             {
-                Logger.Error($"[WHISPER SEND] Helix whisper failed to @{username}: {ex.Message} — falling back to public");
+                Logger.Error($"Helix whisper failed to @{username}: {ex.Message} — falling back to public");
                 SendMessage($"@{username} {message}");
             }
         }

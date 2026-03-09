@@ -618,7 +618,7 @@ Warning: resets all custom store settings to defaults
                 "UseItemCommandHandler.xml added.\r\n" +
                 "WealthCommandHandler.xml added."
             },
-                        {"1.22",
+                        {"1.23",
                 @"RICS 1.23 Update Notes
 
 1.23 NOTES
