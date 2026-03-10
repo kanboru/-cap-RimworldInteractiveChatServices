@@ -657,11 +657,19 @@ Translation updates added for Weather, Use Item, moderator coin commands, store 
             },
             {"1.24",
                 "RICS 1.24 Update Notes" + "\r\n" +
+                "☑️UPDATED:\r\n" +
+                " - Updated the first feature of RICS, the live chat window is updated.  Open with CRTL-V" +
+                " - I bet you didnt know you could see chat ingame"
+                + "\r\n" +
                 "FIXED:" + "\r\n" +
+                " - Har Race Restrictions added for equip and wear." + "\r\n" +
                 "\r\n" +
-                " - Har Race Restrictions added for equip and wear." + "\r\n" + "\r\n" +
-                "TRANSLATIONS" + "\r\n" +
-                " - BuyItemCommandHandler.xml (modified)"
+                "ADDED:\r\n" +
+                " - 🔒 for locked Traits In !mypawn traits" + "\r\n" +
+                "\r\n" +
+                "TRANSLATIONS:" + "\r\n" +
+                " - BuyItemCommandHandler.xml (modified)" + "\r\n" +
+                "\r\n"
 
             }    
                 
