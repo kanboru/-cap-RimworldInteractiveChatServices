@@ -94,6 +94,12 @@ namespace CAP_ChatInteractive
         public bool LogAllMessages = true;
         public int MessageCooldownSeconds = 1;
 
+        // Live Chat window persistence
+        public float LiveChatWindowX = -1f;     // -1 = use default middle-left on first open
+        public float LiveChatWindowY = -1f;
+        public float LiveChatWindowWidth = 400f;
+        public float LiveChatWindowHeight = 300f;
+
         // economy properties
         public bool StoreCommandsEnabled  = true;   // ← global kill-switch for buying/interacting commands
         public int StartingCoins = 100;
@@ -129,8 +135,6 @@ namespace CAP_ChatInteractive
         // Pawn queue settings
         public int PawnOfferTimeoutSeconds = 300; // 5 minutes default
 
-
-
         // Command settings could be added here in the future
         public string Prefix = "!";
         public string BuyPrefix = "#";
@@ -140,7 +144,6 @@ namespace CAP_ChatInteractive
         public int LootBoxesPerDay = 1;
         public bool LootBoxShowWelcomeMessage = true;
         public bool LootBoxForceOpenAllAtOnce = false;
-
 
         // Quality settings
         public bool AllowAwfulQuality = true;
@@ -228,6 +231,12 @@ namespace CAP_ChatInteractive
             Scribe_Values.Look(ref EnableDebugLogging, "enableDebugLogging", false);
             Scribe_Values.Look(ref LogAllMessages, "logAllMessages", true);
             Scribe_Values.Look(ref MessageCooldownSeconds, "messageCooldownSeconds", 1);
+
+            // Live Chat window position/size persistence
+            Scribe_Values.Look(ref LiveChatWindowX, "liveChatWindowX", -1f);
+            Scribe_Values.Look(ref LiveChatWindowY, "liveChatWindowY", -1f);
+            Scribe_Values.Look(ref LiveChatWindowWidth, "liveChatWindowWidth", 400f);
+            Scribe_Values.Look(ref LiveChatWindowHeight, "liveChatWindowHeight", 300f);
 
             // New economy settings
             Scribe_Values.Look(ref StartingCoins, "startingCoins", 100);

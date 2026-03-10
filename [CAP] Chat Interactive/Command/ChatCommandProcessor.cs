@@ -250,6 +250,13 @@ namespace CAP_ChatInteractive
                 return; // Silent fail for banned users
             }
 
+            // NEW: Broadcaster safety — always allow streamer commands (even if somehow banned)
+            if (message.Username.Equals(CAPChatInteractiveMod.Instance.Settings.TwitchSettings.ChannelName, StringComparison.OrdinalIgnoreCase) ||
+                message.Username.Equals(CAPChatInteractiveMod.Instance.Settings.YouTubeSettings.ChannelName, StringComparison.OrdinalIgnoreCase))
+            {
+                // streamer bypasses all restrictions for in-game commands
+            }
+
             // Fast exit: Command disabled
             if (!CommandSettingsManager.GetSettings(commandText).Enabled)
             {

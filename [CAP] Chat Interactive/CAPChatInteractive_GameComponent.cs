@@ -21,9 +21,12 @@
 
 using _CAP__Chat_Interactive.Utilities;
 using CAP_ChatInteractive.Incidents;
-using CAP_ChatInteractive.Store;
 using CAP_ChatInteractive.Incidents.Weather;
+using CAP_ChatInteractive.Store;
 using CAP_ChatInteractive.Traits;
+using CAP_ChatInteractive.Utilities;
+using CAP_ChatInteractive.Windows;
+using UnityEngine;
 using Verse;
 
 namespace CAP_ChatInteractive
@@ -138,6 +141,25 @@ namespace CAP_ChatInteractive
             TraitsManager.InitializeTraits();
             traitsInitialized = true;
             Logger.Debug("Traits initialized");
+        }
+
+        /// <summary>
+        /// Runs every frame (like Update). Checks Ctrl+V globally to toggle live chat.
+        /// Very cheap (only 1 GetKey call) and ignores input when typing.
+        /// </summary>
+        public override void GameComponentUpdate()
+        {
+            base.GameComponentUpdate();
+
+            if (ChatUtility.IsToggleHotkeyPressed())
+            {
+                // Safety: never toggle while user is typing in any text field (prevents closing while pasting)
+                string focused = GUI.GetNameOfFocusedControl();
+                if (string.IsNullOrEmpty(focused) || !focused.Contains("Input"))
+                {
+                    Window_LiveChat.ToggleLiveChatWindow();
+                }
+            }
         }
     }
 }

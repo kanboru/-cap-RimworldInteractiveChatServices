@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with CAP Chat Interactive. If not, see <https://www.gnu.org/licenses/>.
 // A live chat window for displaying and sending chat messages
+using CAP_ChatInteractive.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,8 +30,8 @@ namespace CAP_ChatInteractive.Windows
         private string _currentMessage = "";
         private float _lastMessageHeight;
         // Updated colors for better contrast
-        private static readonly Color BackgroundColor = new Color(0.08f, 0.08f, 0.08f, 0.95f);
-        private static readonly Color InputBackgroundColor = new Color(0.25f, 0.25f, 0.25f, 1f);
+        private static readonly Color BackgroundColor = new Color(0.08f, 0.08f, 0.08f, 0.55f);   // 68% opacity
+        private static readonly Color InputBackgroundColor = new Color(0.25f, 0.25f, 0.25f, 0.65f); // slightly more solid input
         private static readonly Color MessageTextColor = new Color(1f, 1f, 1f, 1f); // Pure white for maximum contrast
 
         private const float INPUT_HEIGHT = 30f;
@@ -46,40 +47,105 @@ namespace CAP_ChatInteractive.Windows
             absorbInputAroundWindow = false;
             closeOnClickedOutside = false;
             closeOnAccept = false;
-
-            // Set larger initial size and enforce minimum through windowRect
-            windowRect = new Rect(20f , UI.screenHeight - (UI.screenHeight/3) * 2, 400f, 200f);
-
-            // Enforce minimum size in constructor
-            if (windowRect.width < 200f) windowRect.width = 200f;  // Half of 400
-            if (windowRect.height < 150f) windowRect.height = 150f; // Half of 300
-            // Logger.Debug("Live Chat window initialized: "+windowRect);
+            doWindowBackground = false;
+            preventCameraMotion = false;
+            layer = WindowLayer.GameUI;
         }
-        public override void PreOpen()
+
+        public override Vector2 InitialSize => new Vector2(400f, 300f);
+
+        /// <summary>
+        /// RimWorld's official hook for initial window position/size.
+        /// Loads saved position or defaults to middle-left of screen (exactly as requested).
+        /// </summary>
+        protected override void SetInitialSizeAndPosition()   // ← protected (required by Verse.Window)
         {
-            base.PreOpen();
+            base.SetInitialSizeAndPosition();
 
-            // Force the window to your desired position and size
-            // windowRect = new Rect(20f, UI.screenHeight - 320f, 400f, 300f);
-            windowRect = new Rect(20f, UI.screenHeight * 0.66f, 400f, UI.screenHeight * 0.33f);
-            // Logger.Debug($"Live Chat window PreOpen: {windowRect}");
+            var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
+
+            // First time ever (or reset) → middle-left default
+            if (settings.LiveChatWindowX < 0f)
+            {
+                windowRect = new Rect(
+                    20f,                                      // left edge
+                    (UI.screenHeight - 300f) / 2f,            // exact middle vertically
+                    400f,
+                    300f
+                );
+            }
+            else
+            {
+                // Restore saved position/size
+                windowRect = new Rect(
+                    settings.LiveChatWindowX,
+                    settings.LiveChatWindowY,
+                    settings.LiveChatWindowWidth,
+                    settings.LiveChatWindowHeight
+                );
+            }
+
+            // Enforce minimum size (RimWorld standard)
+            if (windowRect.width < 200f) windowRect.width = 200f;
+            if (windowRect.height < 150f) windowRect.height = 150f;
+
+            // Keep window fully on screen
+            if (windowRect.xMax > UI.screenWidth) windowRect.x = UI.screenWidth - windowRect.width;
+            if (windowRect.yMax > UI.screenHeight) windowRect.y = UI.screenHeight - windowRect.height;
+            if (windowRect.x < 0f) windowRect.x = 0f;
+            if (windowRect.y < 0f) windowRect.y = 0f;
         }
+
+        /// <summary>
+        /// Save exact position + size when player closes the window (drag/resize).
+        /// </summary>
+        public override void PreClose()
+        {
+            base.PreClose();
+
+            var settings = CAPChatInteractiveMod.Instance.Settings.GlobalSettings;
+            settings.LiveChatWindowX = windowRect.x;
+            settings.LiveChatWindowY = windowRect.y;
+            settings.LiveChatWindowWidth = windowRect.width;
+            settings.LiveChatWindowHeight = windowRect.height;
+
+            // Write immediately so Ctrl+V reopen is instant
+            CAPChatInteractiveMod.Instance.WriteSettings();
+        }
+
+        /// <summary>
+        /// Public static toggle so GameComponent and future commands can open/close instantly.
+        /// </summary>
+        public static void ToggleLiveChatWindow()
+        {
+            ChatUtility.ToggleLiveChatWindow();
+        }
+
         public override void DoWindowContents(Rect inRect)
         {
             // Logger.Debug("Live Chat window start render. " + windowRect);
             try
             {
+                // CUSTOM GLASS BACKGROUND (full control — map shows through perfectly)
+                // This is the 100% reliable way in RimWorld 1.6 for transparent overlays
+                Widgets.DrawBoxSolid(inRect, BackgroundColor);
+
+                // Optional faint border (feels like modern game overlay)
+                GUI.color = new Color(1f, 1f, 1f, 0.25f);
+                Widgets.DrawBox(inRect, 1);
+                GUI.color = Color.white;
+
                 // Calculate areas - FIXED: Input at bottom with proper spacing
                 float inputAreaHeight = INPUT_HEIGHT + (PADDING * 2);
                 float chatAreaHeight = inRect.height - inputAreaHeight;
-                
+
                 // Chat messages area (top)
                 var chatRect = new Rect(0f, 0f, inRect.width, chatAreaHeight);
                 DrawChatMessages(chatRect);
 
                 // Input area (bottom) - FIXED positioning
                 var inputRect = new Rect(0f, chatAreaHeight, inRect.width, inputAreaHeight);
-               
+
                 DrawInputArea(inputRect);
                 // Logger.Debug("Live Chat window rendered successfully. " + windowRect);
             }
@@ -91,7 +157,7 @@ namespace CAP_ChatInteractive.Windows
 
         private void DrawChatMessages(Rect rect)
         {
-            // Background
+            // Background — now semi-transparent thanks to new DoWindowBackground + lower alpha
             Widgets.DrawBoxSolid(rect, BackgroundColor);
 
             // Get messages
@@ -191,24 +257,33 @@ namespace CAP_ChatInteractive.Windows
 
         private void DrawInputArea(Rect rect)
         {
-            // Background - make input area stand out with distinct background
+            // Background - glass style (slightly more opaque so input is readable)
             Widgets.DrawBoxSolid(rect, InputBackgroundColor);
 
-            // Input field and button positioned at bottom of THIS rect
-            float localY = rect.yMax - INPUT_HEIGHT - PADDING; // This positions it at bottom
+            // Input field + button positioned at BOTTOM of the input area
+            // (absolute coordinates because we are not inside a BeginGroup — this is the exact pattern that worked before)
+            float localY = rect.y + (rect.height - INPUT_HEIGHT - PADDING);
             var inputRect = new Rect(PADDING, localY, rect.width - 70f - PADDING * 2, INPUT_HEIGHT);
             var buttonRect = new Rect(inputRect.xMax + PADDING, localY, 60f, INPUT_HEIGHT);
-            // Message input
+
             GUI.SetNextControlName("ChatInput");
             _currentMessage = Widgets.TextField(inputRect, _currentMessage);
-            // Send button
+
             if (Widgets.ButtonText(buttonRect, "Send"))
             {
                 TrySendMessage();
             }
-            // Add a separator line at top of input area to clearly separate from chat
+
+            // Visual hint when typing (appears just above the input field)
+            if (ChatUtility.IsChatInputFocused())
+            {
+                Text.Font = GameFont.Tiny;
+                Widgets.Label(new Rect(PADDING, localY - 28f, inputRect.width, 18f), "Press <color=#ffcc00>ESC</color> to unfocus • SEND to send");
+                Text.Font = GameFont.Small;
+            }
+
+            // Separator line at top of input area + border
             Widgets.DrawLineHorizontal(0f, 0f, rect.width);
-            // Border around entire input area
             Widgets.DrawBox(rect);
         }
 
@@ -218,7 +293,7 @@ namespace CAP_ChatInteractive.Windows
             {
                 SendMessage(_currentMessage.Trim());
                 _currentMessage = "";
-                // Keep focus on input field
+                // Keep focus after send (fast typing flow) — change to GUI.FocusControl(null) if you prefer auto-unfocus
                 GUI.FocusControl("ChatInput");
             }
         }
@@ -247,14 +322,14 @@ namespace CAP_ChatInteractive.Windows
                 var mod = CAPChatInteractiveMod.Instance;
                 bool messageSent = false;
 
-                // Send to Twitch
+                // Send to Twitch (priority for streamer commands)
                 if (mod.TwitchService?.IsConnected == true)
                 {
                     mod.TwitchService.SendMessage(message);
                     messageSent = true;
                 }
 
-                // Send to YouTube
+                // Send to YouTube (fallback / multi-stream)
                 if (mod.YouTubeService?.IsConnected == true && mod.YouTubeService.CanSendMessages)
                 {
                     mod.YouTubeService.SendMessage(message);
@@ -263,12 +338,22 @@ namespace CAP_ChatInteractive.Windows
 
                 if (messageSent)
                 {
-                    // Add to local display as "You" - this will now display correctly
+                    // Add to local display as "You"
                     ChatMessageLogger.AddSystemMessage($"You: {message}");
                 }
                 else
                 {
                     ChatMessageLogger.AddSystemMessage("Not connected to any chat service");
+                }
+
+                // === NEW: Streamer command processing (this was the missing piece) ===
+                // We already know the message was sent, so now check if it's a command
+                // and feed it directly into our processor (services never echo broadcaster messages).
+                if (ChatCommandProcessor.IsCommand(message))
+                {
+                    var wrapper = CreateBroadcasterCommandWrapper(message);
+                    ChatCommandProcessor.ProcessMessage(wrapper);   // full command flow (cooldowns, pawn lookup, etc.)
+                    Logger.Debug($"Broadcaster command processed locally: {message}");
                 }
             }
             catch (Exception ex)
@@ -276,6 +361,42 @@ namespace CAP_ChatInteractive.Windows
                 Logger.Error($"Error sending message: {ex.Message}");
                 ChatMessageLogger.AddSystemMessage($"Error: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Creates a ChatMessageWrapper for the broadcaster so commands typed in the in-game window
+        /// are processed exactly like normal viewer commands (pawn assignment, buy, heal, etc.).
+        /// PlatformUserId is pulled from the existing Viewer entry (secure, works with pawn commands).
+        /// </summary>
+        private ChatMessageWrapper CreateBroadcasterCommandWrapper(string rawMessage)
+        {
+            var settings = CAPChatInteractiveMod.Instance.Settings;
+
+            // Choose primary platform (Twitch first — matches 99% of streamers)
+            string platform = "Twitch";
+            string channelName = settings.TwitchSettings.ChannelName;
+            if (string.IsNullOrEmpty(channelName) || !settings.TwitchSettings.IsConnected)
+            {
+                platform = "YouTube";
+                channelName = settings.YouTubeSettings.ChannelName;
+            }
+
+            // Get or create the broadcaster viewer (guaranteed to exist after first chat)
+            var broadcasterViewer = Viewers.GetViewer(channelName);
+            string platformUserId = broadcasterViewer?.GetPlatformUserId(platform) ?? "streamer";
+
+            return new ChatMessageWrapper(
+                username: channelName,
+                message: rawMessage,
+                platform: platform,
+                platformUserId: platformUserId,
+                channelId: channelName,
+                platformMessage: null,
+                isWhisper: false,
+                customRewardId: null,
+                bits: 0,
+                shouldIgnoreForCommands: false   // broadcaster always allowed
+            );
         }
 
         private List<ChatMessageDisplay> GetRecentMessages()
@@ -288,16 +409,38 @@ namespace CAP_ChatInteractive.Windows
         {
             base.WindowUpdate();
 
-            // Check for Enter key in a better way
-            if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Return)
+            // DYNAMIC CAMERA CONTROL — update every frame (cheap, exactly like professional overlays)
+            // This is the RimWorld 1.6 way to have conditional camera blocking while using the field pattern Dubs Mint Minimap uses.
+            preventCameraMotion = ChatUtility.ShouldPreventCameraMovement();
+
+            if (Event.current.type != EventType.KeyDown) return;
+
+            string focused = GUI.GetNameOfFocusedControl();
+
+            // Custom overlay behavior (Esc unfocus + Enter focus/send)
+            if (Event.current.keyCode == KeyCode.Escape && focused == "ChatInput")
             {
-                if (GUI.GetNameOfFocusedControl() == "ChatInput")
+                GUI.FocusControl(null);           // Unfocus → full camera control returns
+                Event.current.Use();
+                return;
+            }
+
+            if (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter)
+            {
+                if (focused == "ChatInput")
                 {
                     TrySendMessage();
                     Event.current.Use();
                 }
+                else
+                {
+                    // Press Enter anywhere on the window → focus chat (standard game chat UX)
+                    GUI.FocusControl("ChatInput");
+                    Event.current.Use();
+                }
             }
         }
+
         public static void NotifyNewChatMessage()
         {
             Find.WindowStack.Windows.OfType<Window_LiveChat>().FirstOrDefault()?.NotifyNewMessage();
