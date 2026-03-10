@@ -666,6 +666,9 @@ Translation updates added for Weather, Use Item, moderator coin commands, store 
                 "\r\n" +
                 "ADDED:\r\n" +
                 " - 🔒 for locked Traits In !mypawn traits" + "\r\n" +
+                "- Added :no_entry_sign: for Disabled Skills  `!mypawn skills`\r\n" +
+                "- Added `!mypawn skills <skill> `lookup- Added :no_entry_sign: for Disabled Skills  `!mypawn skills`\r\n" +
+                "- Added `!mypawn skills <skill> `lookup\r\n" +
                 "\r\n" +
                 "TRANSLATIONS:" + "\r\n" +
                 " - BuyItemCommandHandler.xml (modified)" + "\r\n" +
