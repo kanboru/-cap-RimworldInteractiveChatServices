@@ -141,27 +141,16 @@ namespace CAP_ChatInteractive
             listing.GapLine(6f);
 
             // Show unavailable events setting
-            bool showUnavailable = settings.GetType().GetField("ShowUnavailableEvents")?.GetValue(settings) as bool? ?? true;
-            bool newShowUnavailable = showUnavailable;
+            // Show unavailable events setting
+            bool newShowUnavailable = settings.ShowUnavailableEvents;
 
-            // listing.CheckboxLabeled("Show unavailable events", ref newShowUnavailable,
-            // "When enabled, events that are not available via commands will still be visible in the editor");
             listing.CheckboxLabeled("RICS.Message.ShowUnavailable".Translate(),
                 ref newShowUnavailable,
                 "RICS.Message.ShowUnavailableDesc".Translate());
 
-            if (newShowUnavailable != showUnavailable)
+            if (newShowUnavailable != settings.ShowUnavailableEvents)
             {
-                var field = settings.GetType().GetField("ShowUnavailableEvents");
-                if (field != null)
-                {
-                    field.SetValue(settings, newShowUnavailable);
-                }
-                else
-                {
-                    // If the field doesn't exist, we need to add it to the settings class
-                    Logger.Warning("ShowUnavailableEvents field not found in settings");
-                }
+                settings.ShowUnavailableEvents = newShowUnavailable;
             }
 
             listing.Gap(4f);
@@ -189,7 +178,7 @@ namespace CAP_ChatInteractive
 
             // Cooldown days
             // NumericField(listing, "Event cooldown duration (days):", ref settings.EventCooldownDays, 1f, 30f);
-            NumericField(listing, "RICS.Message.CooldownDuration".Translate(), ref settings.EventCooldownDays, 1f, 30f);
+            NumericField(listing, "RICS.Message.CooldownDuration".Translate(), ref settings.EventCooldownDays, 1f, 1000);
             Text.Font = GameFont.Tiny;
             // listing.Label($"Events will be unavailable for {settings.EventCooldownDays} in-game days after purchase");
             listing.Label("RICS.Message.CooldownDurationDesc".Translate(settings.EventCooldownDays));
@@ -197,7 +186,7 @@ namespace CAP_ChatInteractive
 
             // Events per cooldown period
             //NumericField(listing, "Events per cooldown period:", ref settings.EventsperCooldown, 1f, 50f);
-            NumericField(listing, "RICS.Message.EventsPerCooldown".Translate(), ref settings.EventsperCooldown, 1f, 50f);
+            NumericField(listing, "RICS.Message.EventsPerCooldown".Translate(), ref settings.EventsperCooldown, 1f, 1000);
             Text.Font = GameFont.Tiny;
             // listing.Label($"Limit of {settings.EventsperCooldown} event purchases per cooldown period");
             listing.Label("RICS.Message.EventsPerCooldownDesc".Translate(settings.EventsperCooldown));
@@ -218,22 +207,26 @@ namespace CAP_ChatInteractive
                 // NumericField(listing, "Max bad event purchases:", ref settings.MaxBadEvents, 1f, 20f);
                 // NumericField(listing, "Max good event purchases:", ref settings.MaxGoodEvents, 1f, 20f);
                 // NumericField(listing, "Max neutral event purchases:", ref settings.MaxNeutralEvents, 1f, 20f);
-                NumericField(listing, "RICS.Message.MaxNeutralEvents".Translate(), ref settings.MaxNeutralEvents, 1f, 20f);
-                NumericField(listing, "RICS.Message.MaxBadEvents".Translate(), ref settings.MaxBadEvents, 1f, 20f);
-                NumericField(listing, "RICS.Message.MaxGoodEvents".Translate(), ref settings.MaxGoodEvents, 1f, 20f);
+                NumericField(listing, "RICS.Message.MaxNeutralEvents".Translate(), ref settings.MaxNeutralEvents, 1f, 1000);
+                NumericField(listing, "RICS.Message.MaxBadEvents".Translate(), ref settings.MaxBadEvents, 1f, 1000);
+                NumericField(listing, "RICS.Message.MaxGoodEvents".Translate(), ref settings.MaxGoodEvents, 1f, 1000);
             }
 
             listing.Gap(12f);
 
             // Store purchase limits
             // NumericField(listing, "Max item purchases per day:", ref settings.MaxItemPurchases, 1, 50);
-            NumericField(listing, "RICS.Message.MaxItemPurchases".Translate(), ref settings.MaxItemPurchases, 1, 50);
+            NumericField(listing, "RICS.Message.MaxItemPurchases".Translate(), ref settings.MaxItemPurchases, 1, 1000);
             Text.Font = GameFont.Tiny;
             // listing.Label($"Viewers can purchase up to {settings.MaxItemPurchases} items per game day before cooldown");
             listing.Label("RICS.Message.MaxItemPurchasesDesc".Translate(settings.MaxItemPurchases));
             Text.Font = GameFont.Small;
         }
 
+        /// <summary>
+        /// Draws a labeled numeric input with persistent buffer (exact pattern from DrawCooldownControl).
+        /// Prevents input fighting during constant UI redraws.
+        /// </summary>
         private void NumericField(Listing_Standard listing, string label, ref int value, float min, float max)
         {
             Rect rect = listing.GetRect(30f);
@@ -242,18 +235,27 @@ namespace CAP_ChatInteractive
 
             Widgets.Label(leftRect, label);
 
-            // Create a unique key based on the label
+            // Create a unique key based on the label (stable across frames)
             string bufferKey = $"Settings_{label.GetHashCode()}";
             if (!numericBuffers.ContainsKey(bufferKey))
             {
                 numericBuffers[bufferKey] = value.ToString();
             }
 
-            string _numBufferString = numericBuffers[bufferKey];
-            Widgets.TextFieldNumeric(rightRect, ref value, ref _numBufferString, min, max);
+            // Local temporary value + buffer (critical for immediate-mode GUI)
+            int localValue = value;
+            string bufferString = numericBuffers[bufferKey];
 
-            // CRITICAL: Store the modified buffer back into the dictionary
-            numericBuffers[bufferKey] = _numBufferString;
+            Widgets.TextFieldNumeric(rightRect, ref localValue, ref bufferString, min, max);
+
+            // Always persist buffer for next frame
+            numericBuffers[bufferKey] = bufferString;
+
+            // Only commit change if value actually differs (prevents redraw flicker)
+            if (localValue != value)
+            {
+                value = localValue;
+            }
 
             listing.Gap(2f);
         }
